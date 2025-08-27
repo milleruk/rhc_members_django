@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Assign player to a team</h2>
+<div class="card">
+  <form method="post">{% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Assign</button>
+  </form>
+  <p class="muted">Only Coaches / Committee / Full Access can assign.</p>
+</div>
+{% endblock %}

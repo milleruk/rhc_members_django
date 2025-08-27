@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Tasks{% endblock %}
+{% block content %}
+<div class="card">
+  <div class="card-header"><h3 class="card-title">User Tasks</h3></div>
+  <div class="card-body p-0">
+    <table class="table table-striped mb-0">
+      <thead>
+        <tr><th>Title</th><th>Status</th><th>Priority</th><th>Due</th><th>Assigned To</th></tr>
+      </thead>
+      <tbody>
+        {% for t in tasks %}
+          <tr>
+            <td>{{ t.title }}</td>
+            <td><span class="badge badge-secondary">{{ t.get_status_display }}</span></td>
+            <td>{{ t.get_priority_display }}</td>
+            <td>{{ t.due_date|date:"Y-m-d"|default:"—" }}</td>
+            <td>{% if t.assigned_to %}{{ t.assigned_to.get_full_name|default:t.assigned_to.username }}{% else %}—{% endif %}</td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="5" class="text-muted p-3">No tasks yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

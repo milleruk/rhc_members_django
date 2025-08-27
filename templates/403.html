@@ -1,0 +1,21 @@
+{# templates/403.html #}
+{% extends "base.html" %}
+{% block title %}Access denied{% endblock %}
+{% block content %}
+<div class="login-box" style="width:480px">
+  <div class="card card-outline card-danger">
+    <div class="card-header text-center">
+      <span class="h1"><b>403</b> Denied</span>
+    </div>
+    <div class="card-body">
+      <p class="login-box-msg">You don’t have permission to view this page.</p>
+      {% if request.user.is_authenticated %}
+        <p class="mb-3">If you think this is a mistake, contact an administrator.</p>
+        <a href="{% url 'dashboard' %}" class="btn btn-danger btn-block">Back to dashboard</a>
+      {% else %}
+        <a href="{% url 'login' %}" class="btn btn-danger btn-block">Log in</a>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

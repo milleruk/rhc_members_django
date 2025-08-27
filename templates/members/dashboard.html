@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-3">
+  <h1 class="h4 mb-3">Your Players</h1>
+
+  {% if players %}
+    <div class="table-responsive">
+      <table class="table table-striped">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Relation</th>
+            <th class="text-end">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for p in players %}
+            <tr>
+              <td>{{ p.full_name|default:p }}</td>
+              <td>{{ p.player_type }}</td>
+              <td>{{ p.get_relation_display }}</td>
+              <td class="text-end">
+                <a href="{% url 'answer' p.id %}" class="btn btn-sm btn-primary">Update Details</a>
+                <!-- TODO: replace with your real membership URL when ready -->
+                <a href="#" class="btn btn-sm btn-info disabled" aria-disabled="true">Update Membership</a>
+                <a href="{% url 'player_delete' p.id %}" class="btn btn-sm btn-danger">Remove Player</a>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div class="alert alert-info">No players yet. Use “Add a Player” to get started.</div>
+  {% endif %}
+</div>
+{% endblock %}

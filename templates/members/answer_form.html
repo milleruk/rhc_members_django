@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+{% block content %}
+<form method="post" novalidate>
+  {% csrf_token %}
+
+  {% for category, items in grouped_fields.items %}
+    <div class="card card-primary mb-3">
+      <div class="card-header">
+        <h3 class="card-title">{{ category }}</h3>
+      </div>
+
+      <div class="card-body">
+        {% for item in items %}
+          {% if item.main %}
+            <div class="form-group" id="group-{{ item.main.name }}">
+              {{ item.main|as_crispy_field }}
+            </div>
+          {% endif %}
+
+          {% if item.detail %}
+            <div class="form-group detail-field d-none" id="group-{{ item.detail.name }}">
+              {{ item.detail|as_crispy_field }}
+            </div>
+          {% endif %}
+        {% endfor %}
+      </div>
+    </div>
+  {% endfor %}
+
+  <div class="card card-footer p-3">
+    <button type="submit" class="btn btn-primary">
+      <i class="fas fa-save"></i> Save
+    </button>
+  </div>
+</form>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+  document.querySelectorAll("input[type=checkbox]").forEach(function(checkbox) {
+    const detailGroup = document.getElementById("group-" + checkbox.name + "_detail");
+    if (!detailGroup) return;
+    if (checkbox.checked) detailGroup.classList.remove("d-none");
+    checkbox.addEventListener("change", function() {
+      if (this.checked) {
+        detailGroup.classList.remove("d-none");
+      } else {
+        detailGroup.classList.add("d-none");
+        const input = detailGroup.querySelector("input, textarea");
+        if (input) input.value = "";
+      }
+    });
+  });
+});
+</script>
+{% endblock %}
