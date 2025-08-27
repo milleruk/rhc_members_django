@@ -1,41 +1,172 @@
 {% extends "base.html" %}
-
 {% block title %}Dashboard{% endblock %}
 
 {% block content %}
-<div class="container-fluid py-3">
-  <h1 class="h4 mb-3">Your Players</h1>
+<div class="content-header pb-0">
+  <div class="container-fluid">
+    <div class="row mb-2 align-items-center">
+      <div class="col-sm-6">
+        <h1 class="m-0 text-dark h3"><i class="fas fa-users me-2"></i>Your Players</h1>
+      </div>
+      <div class="col-sm-6 text-sm-end mt-2 mt-sm-0">
+        <a href="#" class="btn btn-primary">
+          <i class="fas fa-user-plus me-1"></i> Add Player
+        </a>
+        <a href="{% url 'memberships:mine' %}" class="btn btn-outline-secondary ms-1">
+          <i class="fas fa-id-card-alt me-1"></i> My Memberships
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
 
-  {% if players %}
-    <div class="table-responsive">
-      <table class="table table-striped">
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>Type</th>
-            <th>Relation</th>
-            <th class="text-end">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
+<div class="content">
+  <div class="container-fluid">
+
+    <!-- Quick stats -->
+    <div class="row">
+      <div class="col-12 col-sm-6 col-lg-3">
+        <div class="small-box bg-primary">
+          <div class="inner">
+            <h3 class="mb-1">{{ players|length }}</h3>
+            <p class="mb-0">Total Players</p>
+          </div>
+          <div class="icon"><i class="fas fa-user-friends"></i></div>
+          <a href="#" class="small-box-footer">—</a>
+        </div>
+      </div>
+      <div class="col-12 col-sm-6 col-lg-3">
+        <div class="small-box bg-info">
+          <div class="inner">
+            <h3 class="mb-1">Actions</h3>
+            <p class="mb-0">Update details / memberships</p>
+          </div>
+          <div class="icon"><i class="fas fa-tools"></i></div>
+          <a href="#" class="small-box-footer">—</a>
+        </div>
+      </div>
+    </div>
+
+    {% if players %}
+    <div class="card card-outline card-primary">
+      <div class="card-header">
+        <h3 class="card-title">Players</h3>
+        <div class="card-tools">
+          <div class="input-group input-group-sm" style="width: 260px;">
+            <input type="text" name="table_search" class="form-control float-right" placeholder="Search players…" id="playerSearch">
+            <div class="input-group-append">
+              <button type="button" class="btn btn-default"><i class="fas fa-search"></i></button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="card-body table-responsive p-0">
+        <table class="table table-hover table-striped mb-0" id="playersTable">
+          <thead class="text-muted">
+            <tr>
+              <th style="min-width:220px;">Name</th>
+              <th>Type</th>
+              <th>Relation</th>
+              <th class="text-end" style="width:260px;">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
           {% for p in players %}
             <tr>
-              <td>{{ p.full_name|default:p }}</td>
-              <td>{{ p.player_type }}</td>
-              <td>{{ p.get_relation_display }}</td>
+              <td>
+                <div class="d-flex align-items-center">
+                  <div class="rounded-circle bg-light border text-center me-2" style="width:34px;height:34px;line-height:34px;">
+                    <span class="text-muted small">
+                      {{ p.first_name|default:"?"|slice:":1" }}{{ p.last_name|default:""|slice:":1" }}
+                    </span>
+                  </div>
+                  <div>
+                    <div class="fw-semibold">{{ p.full_name|default:p }}</div>
+                    {% if p.email %}
+                      <div class="small text-muted"><i class="far fa-envelope me-1"></i>{{ p.email }}</div>
+                    {% endif %}
+                  </div>
+                </div>
+              </td>
+              <td>
+                {% if p.player_type %}
+                  <span class="badge bg-secondary">{{ p.player_type }}</span>
+                {% else %}
+                  <span class="text-muted">—</span>
+                {% endif %}
+              </td>
+              <td>
+                {% if p.get_relation_display %}
+                  <span class="badge bg-light text-dark border">{{ p.get_relation_display }}</span>
+                {% else %}
+                  <span class="text-muted">—</span>
+                {% endif %}
+              </td>
               <td class="text-end">
-                <a href="{% url 'answer' p.id %}" class="btn btn-sm btn-primary">Update Details</a>
-                <!-- TODO: replace with your real membership URL when ready -->
-                <a href="{% url 'memberships:choose' p.id %}" class="btn btn-sm btn-info">Update Membership</a>
-                <a href="{% url 'player_delete' p.id %}" class="btn btn-sm btn-danger">Remove Player</a>
+                <div class="btn-group">
+                  <a href="{% url 'answer' p.id %}" class="btn btn-sm btn-primary">
+                    <i class="fas fa-edit"></i> <span class="d-none d-md-inline">Update</span>
+                  </a>
+                  <a href="{% url 'memberships:choose' p.id %}" class="btn btn-sm btn-info">
+                    <i class="fas fa-id-badge"></i> <span class="d-none d-md-inline">Membership</span>
+                  </a>
+                  <button type="button" class="btn btn-sm btn-danger" onclick="confirmDelete{{ p.id }}()">
+                    <i class="fas fa-trash"></i> <span class="d-none d-md-inline">Remove</span>
+                  </button>
+                </div>
+                <form id="delete-form-{{ p.id }}" method="post" action="{% url 'player_delete' p.id %}" class="d-none">
+                  {% csrf_token %}
+                </form>
+                <script>
+                  function confirmDelete{{ p.id }}() {
+                    if (confirm('Remove {{ p.full_name|default:p }}? This cannot be undone.')) {
+                      document.getElementById('delete-form-{{ p.id }}').submit();
+                    }
+                  }
+                </script>
               </td>
             </tr>
           {% endfor %}
-        </tbody>
-      </table>
+          </tbody>
+        </table>
+      </div>
+      <div class="card-footer d-flex justify-content-between align-items-center">
+        <span class="text-muted small"><i class="far fa-list-alt me-1"></i>{{ players|length }} record{{ players|length|pluralize }}</span>
+        <div class="text-muted small">Tip: use the search box to filter by name/type/relation.</div>
+      </div>
     </div>
-  {% else %}
-    <div class="alert alert-info">No players yet. Use “Add a Player” to get started.</div>
-  {% endif %}
+    {% else %}
+      <div class="card card-outline card-info">
+        <div class="card-body">
+          <p class="mb-3"><i class="far fa-smile-wink me-1"></i>No players yet. Use “Add Player” to get started.</p>
+          <a href="{% url 'player_create' %}" class="btn btn-primary">
+            <i class="fas fa-user-plus me-1"></i> Add Player
+          </a>
+        </div>
+      </div>
+    {% endif %}
+
+  </div>
 </div>
+
+<!-- Lightweight client-side search -->
+<script>
+  (function () {
+    const input = document.getElementById('playerSearch');
+    if (!input) return;
+    const table = document.getElementById('playersTable');
+    const rows = table ? Array.from(table.querySelectorAll('tbody tr')) : [];
+
+    function normalize(txt){ return (txt || '').toLowerCase().trim(); }
+
+    function filter() {
+      const q = normalize(input.value);
+      rows.forEach(row => {
+        const text = normalize(row.innerText);
+        row.style.display = text.indexOf(q) !== -1 ? '' : 'none';
+      });
+    }
+    input.addEventListener('input', filter);
+  })();
+</script>
 {% endblock %}

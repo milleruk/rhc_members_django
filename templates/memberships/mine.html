@@ -1,25 +1,124 @@
 {% extends "base.html" %}
 {% block title %}My Memberships{% endblock %}
+
 {% block content %}
 <div class="container py-3">
-  <h4 class="mb-3">My Memberships</h4>
-  {% if subscriptions %}
-    <div class="list-group">
-      {% for s in subscriptions %}
-        <div class="list-group-item">
-          <div class="d-flex justify-content-between">
-            <div>
-              <strong>{{ s.player.first_name }} {{ s.player.last_name }}</strong>
-              <div class="small text-muted">{{ s.product.name }} — {{ s.product.season.name }}</div>
-              <div class="small">Plan: {{ s.plan.label }}</div>
-            </div>
-            <span class="badge bg-info align-self-start">{{ s.get_status_display }}</span>
-          </div>
-        </div>
-      {% endfor %}
+
+  <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+    <h4 class="mb-0">My Memberships</h4>
+    <!-- Quick access to choose page for first player if you want a global button:
+    <a class="btn btn-primary btn-sm" href="{% if players %}{% url 'memberships:choose' players.0.id %}{% else %}#{% endif %}">
+      Choose a membership
+    </a>
+    -->
+  </div>
+
+  <!-- Players you manage: jump straight to choose page -->
+  <div class="card mb-4">
+    <div class="card-header">
+      <h5 class="card-title mb-0"><i class="fas fa-user-friends me-1"></i> Players</h5>
     </div>
-  {% else %}
-    <div class="alert alert-secondary">No subscriptions yet<a href="">add one</a>.</div>
-  {% endif %}
+    <div class="card-body p-0">
+      {% if players %}
+        <div class="list-group list-group-flush">
+          {% for p in players %}
+            <div class="list-group-item d-flex justify-content-between align-items-center flex-wrap gap-2">
+              <div>
+                <strong>{{ p.first_name }} {{ p.last_name }}</strong>
+                {% if p.player_type %}<div class="small text-muted">{{ p.player_type }}</div>{% endif %}
+              </div>
+              <a class="btn btn-primary btn-sm" href="{% url 'memberships:choose' p.id %}">
+                <i class="fas fa-plus me-1"></i> Choose membership
+              </a>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="p-3 text-muted">No players found.</div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Active / Pending -->
+  <div class="card mb-4">
+    <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+      <h5 class="card-title mb-0"><i class="fas fa-check-circle me-1"></i> Active & Pending</h5>
+    </div>
+    <div class="card-body p-0">
+      {% if active_subs %}
+        <div class="list-group list-group-flush">
+          {% for s in active_subs %}
+            <div class="list-group-item">
+              <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+                <div>
+                  <strong>{{ s.player.first_name }} {{ s.player.last_name }}</strong>
+                  <div class="small text-muted">{{ s.product.name }} — {{ s.product.season.name }}</div>
+                  <div class="small">
+                    Plan: {{ s.plan.label|default:"—" }}
+                  </div>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                  <span class="badge {% if s.status == 'active' %}bg-success{% else %}bg-info{% endif %}">
+                    {{ s.get_status_display }}
+                  </span>
+
+                  <form method="post" action="{% url 'memberships:subscription_cancel' s.id %}" class="d-inline">
+                    {% csrf_token %}
+                    <button class="btn btn-outline-warning btn-sm"
+                            onclick="return confirm('Cancel this membership?');">
+                      Cancel
+                    </button>
+                  </form>
+
+                  <a class="btn btn-outline-danger btn-sm"
+                     href="{% url 'memberships:subscription_delete' s.id %}">
+                    Delete
+                  </a>
+                </div>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="p-3 text-muted">No active or pending memberships.</div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Old / Ended (Cancelled, Paused) -->
+  <div class="card">
+    <div class="card-header bg-secondary text-white d-flex justify-content-between align-items-center">
+      <h5 class="card-title mb-0"><i class="fas fa-archive me-1"></i> Cancelled / Old</h5>
+    </div>
+    <div class="card-body p-0">
+      {% if old_subs %}
+        <div class="list-group list-group-flush">
+          {% for s in old_subs %}
+            <div class="list-group-item">
+              <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+                <div>
+                  <strong>{{ s.player.first_name }} {{ s.player.last_name }}</strong>
+                  <div class="small text-muted">{{ s.product.name }} — {{ s.product.season.name }}</div>
+                  <div class="small">Plan: {{ s.plan.label|default:"—" }}</div>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                  <span class="badge {% if s.status == 'cancelled' %}bg-secondary{% else %}bg-warning{% endif %}">
+                    {{ s.get_status_display }}
+                  </span>
+                  <a class="btn btn-outline-danger btn-sm"
+                     href="{% url 'memberships:subscription_delete' s.id %}">
+                    Delete
+                  </a>
+                </div>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="p-3 text-muted">No cancelled or old memberships.</div>
+      {% endif %}
+    </div>
+  </div>
+
 </div>
 {% endblock %}
