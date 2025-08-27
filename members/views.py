@@ -121,10 +121,12 @@ class AdminPlayerListView(LoginRequiredMixin, InGroupsRequiredMixin, ListView):
             .prefetch_related("team_memberships__team", "team_memberships__positions")
         )
 
-        # Existing filters
-        team_id = self.request.GET.get("team")
-        if team_id:
-            qs = qs.filter(team_memberships__team_id=team_id)
+        team_param = self.request.GET.get("team")
+        if team_param:
+            if team_param == "none":
+                qs = qs.filter(team_memberships__isnull=True)
+            else:
+                qs = qs.filter(team_memberships__team_id=team_param)
 
         player_type_id = self.request.GET.get("player_type")
         if player_type_id:

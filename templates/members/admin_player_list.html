@@ -196,14 +196,15 @@
                 <label class="sr-only" for="filter-team">Team</label>
                 <div class="input-group">
                   <div class="input-group-prepend"><span class="input-group-text"><i class="fas fa-users"></i></span></div>
-                  <select id="filter-team" name="team" class="form-control" onchange="this.form.submit()">
-                    <option value="">All Teams</option>
-                    {% for team in teams %}
-                      <option value="{{ team.id }}" {% if request.GET.team == team.id|stringformat:"s" %}selected{% endif %}>
-                        {{ team.name }}
-                      </option>
-                    {% endfor %}
-                  </select>
+                    <select id="filter-team" name="team" class="form-control" onchange="this.form.submit()">
+                      <option value="">All Teams</option>
+                      <option value="none" {% if request.GET.team == "none" %}selected{% endif %}>Unassigned</option>
+                      {% for team in teams %}
+                        <option value="{{ team.id }}" {% if request.GET.team == team.id|stringformat:"s" %}selected{% endif %}>
+                          {{ team.name }}
+                        </option>
+                      {% endfor %}
+                    </select>
                 </div>
               </div>
 
@@ -227,10 +228,17 @@
                 <div class="mt-2">
                   <span class="mr-2">Active filters:</span>
                   {% if request.GET.team %}
-                    <a href="?{% if request.GET.player_type %}player_type={{ request.GET.player_type }}{% endif %}"
-                       class="badge badge-primary">
-                      Team: {{ teams|get_item:request.GET.team|attr:"name"|default:"Selected" }} <i class="fas fa-times ml-1"></i>
-                    </a>
+                    {% if request.GET.team == "none" %}
+                      <a href="?{% if request.GET.player_type %}player_type={{ request.GET.player_type }}&{% endif %}{% if request.GET.subscription_status %}subscription_status={{ request.GET.subscription_status }}{% endif %}"
+                        class="badge badge-primary">
+                        Team: Unassigned <i class="fas fa-times ml-1"></i>
+                      </a>
+                    {% else %}
+                      <a href="?{% if request.GET.player_type %}player_type={{ request.GET.player_type }}&{% endif %}{% if request.GET.subscription_status %}subscription_status={{ request.GET.subscription_status }}{% endif %}"
+                        class="badge badge-primary">
+                        Team: {{ teams|get_item:request.GET.team|attr:"name"|default:"Selected" }} <i class="fas fa-times ml-1"></i>
+                      </a>
+                    {% endif %}
                   {% endif %}
                   {% if request.GET.player_type %}
                     <a href="?{% if request.GET.team %}team={{ request.GET.team }}{% endif %}"
