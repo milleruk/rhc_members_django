@@ -81,6 +81,12 @@
               <p>Add a Player</p>
             </a>
           </li>
+          <li class="nav-item">
+            <a href="{% url 'memberships:mine' %}" class="nav-link {% if request.path|slice:':14' == '/emberships/mine' %}active{% endif %}">
+              <i class="nav-icon fas fa-users"></i>
+              <p>Your Subscriptions</p>
+            </a>
+          </li>
 
           {# ===== MEMBERS ===== #}
           {% if perms.members.view_player %}

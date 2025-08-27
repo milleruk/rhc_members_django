@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}My Memberships{% endblock %}
+{% block content %}
+<div class="container py-3">
+  <h4 class="mb-3">My Memberships</h4>
+  {% if subscriptions %}
+    <div class="list-group">
+      {% for s in subscriptions %}
+        <div class="list-group-item">
+          <div class="d-flex justify-content-between">
+            <div>
+              <strong>{{ s.player.first_name }} {{ s.player.last_name }}</strong>
+              <div class="small text-muted">{{ s.product.name }} — {{ s.product.season.name }}</div>
+              <div class="small">Plan: {{ s.plan.label }}</div>
+            </div>
+            <span class="badge bg-info align-self-start">{{ s.get_status_display }}</span>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="alert alert-secondary">No subscriptions yet<a href="">add one</a>.</div>
+  {% endif %}
+</div>
+{% endblock %}

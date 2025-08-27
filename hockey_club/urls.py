@@ -22,9 +22,12 @@ path("accounts/reset/<uidb64>/<token>/", auth_views.PasswordResetConfirmView.as_
 path("accounts/reset/done/", auth_views.PasswordResetCompleteView.as_view(), name="password_reset_complete"),
 
 
+path("memberships/", include("memberships.urls", namespace="memberships")),
+
 path("terms/", TermsView.as_view(), name="terms"),
 path("privacy/", PrivacyView.as_view(), name="privacy_policy"),
 ]
+
 
 def permission_denied_view(request, exception=None):
     from django.shortcuts import render

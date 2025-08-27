@@ -14,8 +14,9 @@ from .views import (
 urlpatterns = [
     path("dashboard/", dashboard, name="dashboard"),
     path("players/add/", PlayerCreateView.as_view(), name="player_add"),
-    path("players/<int:player_id>/answers/", answer_view, name="answer"),
+    path("players/profile/<int:player_id>/", answer_view, name="answer"),
     path("players/<int:pk>/delete/", player_delete, name="player_delete"),
+    
 
     # Staff views restricted by Groups (avoid clashing with Django admin at /admin/)
     path("staff/players/", AdminPlayerListView.as_view(), name="admin_player_list"),

@@ -1,0 +1,306 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Player Dashboard{% endblock %}
+
+{% block content_header %}
+<div class="container-fluid">
+  <div class="row mb-2 align-items-center">
+    <div class="col-sm-6">
+      <h1 class="m-0">Player Dashboard</h1>
+    </div>
+    <div class="col-sm-6 d-flex justify-content-sm-end align-items-center gap-2">
+      <ol class="breadcrumb mb-0 mr-2 d-none d-sm-flex">
+        <li class="breadcrumb-item"><a href="{% url 'home' %}">Home</a></li>
+        <li class="breadcrumb-item active">Dashboard</li>
+      </ol>
+
+      {# Optional quick switcher if user has multiple players #}
+      {% if other_players %}
+      <div class="btn-group">
+        <a href="{% url 'members:dashboard_overview' %}" class="btn btn-outline-secondary btn-sm">
+          <i class="fas fa-users mr-1"></i> All Players
+        </a>
+        <button type="button" class="btn btn-primary btn-sm dropdown-toggle dropdown-icon" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+          Switch
+        </button>
+        <div class="dropdown-menu dropdown-menu-right">
+          {% for p in other_players %}
+            <a class="dropdown-item" href="{% url 'members:player_dashboard' p.id %}">
+              {{ p.first_name }} {{ p.last_name }}
+            </a>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock content_header %}
+
+{% block content %}
+<div class="row">
+  <!-- Left column -->
+  <div class="col-12 col-lg-4">
+
+    <!-- Profile Image Card -->
+    <div class="card card-primary card-outline">
+      <div class="card-body box-profile">
+        <div class="text-center">
+          {% with fn=player.first_name|default:"Player" ln=player.last_name|default:"" %}
+            {% with full_name=fn|add:" "|add:ln %}
+              <img class="profile-user-img img-fluid img-circle"
+                   src="{{ player.avatar_url|default:'https://ui-avatars.com/api/?name='|add:full_name|urlencode }}"
+                   alt="Player profile picture">
+            {% endwith %}
+          {% endwith %}
+        </div>
+
+        <h3 class="profile-username text-center">
+          {{ player.first_name|default:"Player" }} {{ player.last_name|default:"" }}
+        </h3>
+        <p class="text-muted text-center">
+          {{ player.player_type.name|default:"" }}{% if player.relation %} • {{ player.relation }}{% endif %}
+        </p>
+
+        <ul class="list-group list-group-unbordered mb-3">
+          <li class="list-group-item d-flex justify-content-between align-items-center">
+            <span>Teams</span>
+            <span class="badge bg-primary">{{ teams|default:list|length }}</span>
+          </li>
+          <li class="list-group-item d-flex justify-content-between align-items-center">
+            <span>Forms Outstanding</span>
+            <span class="badge bg-warning text-dark">{{ outstanding_forms_count|default:0 }}</span>
+          </li>
+          <li class="list-group-item d-flex justify-content-between align-items-center">
+            <span>Last Updated</span>
+            <span>{{ player.updated_at|date:"d M Y"|default:"—" }}</span>
+          </li>
+        </ul>
+
+        <a href="{% url 'players:answers' player.id %}" class="btn btn-primary btn-block">
+          <i class="fas fa-edit mr-1"></i> Update Details
+        </a>
+        <a href="{% url 'players:medical' player.id %}" class="btn btn-outline-secondary btn-block">
+          <i class="fas fa-notes-medical mr-1"></i> Medical & Consents
+        </a>
+      </div>
+    </div>
+
+    <!-- Key Info -->
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">Key Info</h3>
+      </div>
+      <div class="card-body">
+        <strong><i class="fas fa-birthday-cake mr-1"></i> Date of Birth</strong>
+        <p class="text-muted mb-2">{{ player.date_of_birth|date:"d M Y"|default:"—" }}</p>
+
+        <strong><i class="fas fa-venus-mars mr-1"></i> Gender</strong>
+        <p class="text-muted mb-2">{{ player.get_gender_display|default:"—" }}</p>
+
+        <strong><i class="fas fa-shield-alt mr-1"></i> Consents</strong>
+        <p class="mb-1">
+          {% with c=consent_ok|default:False m=medical_ok|default:False %}
+            <span class="badge {{ c|yesno:'bg-success,bg-danger' }}">Consent {{ c|yesno:'OK,Missing' }}</span>
+            <span class="badge {{ m|yesno:'bg-success,bg-danger' }}">Medical {{ m|yesno:'OK,Missing' }}</span>
+          {% endwith %}
+        </p>
+
+        <hr>
+        <strong><i class="fas fa-users mr-1"></i> Teams</strong>
+        <p class="text-muted mb-0">
+          {% if teams %}
+            {% for tm in teams %}
+              <span class="badge bg-info mr-1 mb-1">{{ tm.team.name }}</span>
+            {% endfor %}
+          {% else %}
+            <em>No team assignments yet.</em>
+          {% endif %}
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right column -->
+  <div class="col-12 col-lg-8">
+
+    <!-- Stats Boxes -->
+    <div class="row">
+      <div class="col-6 col-md-3">
+        <div class="small-box bg-primary">
+          <div class="inner">
+            <h3>{{ season_apps|default:0 }}</h3>
+            <p>Appearances</p>
+          </div>
+          <div class="icon"><i class="fas fa-hockey-puck"></i></div>
+          <a href="{% url 'players:appearances' player.id %}" class="small-box-footer">
+            More info <i class="fas fa-arrow-circle-right"></i>
+          </a>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="small-box bg-success">
+          <div class="inner">
+            <h3>{{ season_goals|default:0 }}</h3>
+            <p>Goals</p>
+          </div>
+          <div class="icon"><i class="fas fa-bullseye"></i></div>
+          <a href="{% url 'players:stats' player.id %}" class="small-box-footer">
+            More info <i class="fas fa-arrow-circle-right"></i>
+          </a>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="small-box bg-warning">
+          <div class="inner">
+            <h3>{{ outstanding_forms_count|default:0 }}</h3>
+            <p>Actions</p>
+          </div>
+          <div class="icon"><i class="fas fa-clipboard-check"></i></div>
+          <a href="{% url 'players:answers' player.id %}" class="small-box-footer">
+            Complete now <i class="fas fa-arrow-circle-right"></i>
+          </a>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="small-box bg-info">
+          <div class="inner">
+            <h3>{{ next_fixture_count|default:0 }}</h3>
+            <p>Upcoming Fixtures</p>
+          </div>
+          <div class="icon"><i class="far fa-calendar-alt"></i></div>
+          <a href="{% url 'fixtures:list' %}" class="small-box-footer">
+            View fixtures <i class="fas fa-arrow-circle-right"></i>
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tabs (Activity / Fixtures / Settings) -->
+    <div class="card">
+      <div class="card-header p-2">
+        <ul class="nav nav-pills" role="tablist">
+          <li class="nav-item"><a class="nav-link active" href="#activity" data-toggle="tab" role="tab">Recent Activity</a></li>
+          <li class="nav-item"><a class="nav-link" href="#fixtures" data-toggle="tab" role="tab">Next Fixtures</a></li>
+          <li class="nav-item"><a class="nav-link" href="#settings" data-toggle="tab" role="tab">Quick Settings</a></li>
+        </ul>
+      </div>
+      <div class="card-body">
+        <div class="tab-content">
+
+          <!-- Activity -->
+          <div class="active tab-pane" id="activity" role="tabpanel">
+            {% if activity %}
+              <div class="timeline timeline-inverse">
+                {% for ev in activity %}
+                <div class="time-label">
+                  <span class="bg-secondary">{{ ev.when|date:"D d M Y" }}</span>
+                </div>
+                <div>
+                  <i class="fas {{ ev.icon|default:'fa-info-circle' }} bg-primary"></i>
+                  <div class="timeline-item">
+                    <span class="time"><i class="far fa-clock"></i> {{ ev.when|time:"H:i" }}</span>
+                    <h3 class="timeline-header">{{ ev.title }}</h3>
+                    {% if ev.body %}
+                      <div class="timeline-body">{{ ev.body|safe }}</div>
+                    {% endif %}
+                    {% if ev.link_url %}
+                      <div class="timeline-footer">
+                        <a href="{{ ev.link_url }}" class="btn btn-sm btn-primary">View</a>
+                      </div>
+                    {% endif %}
+                  </div>
+                </div>
+                {% endfor %}
+                <div><i class="far fa-clock bg-gray"></i></div>
+              </div>
+            {% else %}
+              <p class="text-muted mb-0">No recent activity.</p>
+            {% endif %}
+          </div>
+
+          <!-- Fixtures -->
+          <div class="tab-pane" id="fixtures" role="tabpanel">
+            {% if next_fixtures %}
+              <div class="table-responsive">
+                <table class="table table-sm table-striped">
+                  <thead>
+                    <tr>
+                      <th>Date</th>
+                      <th>Team</th>
+                      <th>Opponent</th>
+                      <th>Where</th>
+                      <th class="text-right"></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for fx in next_fixtures %}
+                    <tr>
+                      <td>{{ fx.kickoff|date:"D d M H:i" }}</td>
+                      <td>{{ fx.team.name }}</td>
+                      <td>{{ fx.opponent }}</td>
+                      <td>{{ fx.venue|default:"TBC" }}</td>
+                      <td class="text-right">
+                        <a class="btn btn-xs btn-outline-primary" href="{% url 'fixtures:detail' fx.id %}">Details</a>
+                      </td>
+                    </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            {% else %}
+              <p class="text-muted mb-0">No fixtures scheduled.</p>
+            {% endif %}
+          </div>
+
+          <!-- Settings -->
+          <div class="tab-pane" id="settings" role="tabpanel">
+            <form method="post" action="{% url 'players:quick_settings' player.id %}" class="form-horizontal">
+              {% csrf_token %}
+              <div class="form-group row">
+                <label class="col-sm-4 col-form-label">Email Notifications</label>
+                <div class="col-sm-8">
+                  <div class="custom-control custom-switch">
+                    <input type="checkbox" class="custom-control-input" id="notifEmail" name="notif_email"
+                           {% if player.notif_email %}checked{% endif %}>
+                    <label class="custom-control-label" for="notifEmail">Enabled</label>
+                  </div>
+                </div>
+              </div>
+
+              <div class="form-group row">
+                <label class="col-sm-4 col-form-label">Phone Visible to Captains</label>
+                <div class="col-sm-8">
+                  <div class="custom-control custom-switch">
+                    <input type="checkbox" class="custom-control-input" id="phoneVisible" name="phone_visible"
+                           {% if player.phone_visible %}checked{% endif %}>
+                    <label class="custom-control-label" for="phoneVisible">Yes</label>
+                  </div>
+                </div>
+              </div>
+
+              <div class="form-group row">
+                <div class="offset-sm-4 col-sm-8">
+                  <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save mr-1"></i> Save
+                  </button>
+                </div>
+              </div>
+            </form>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock content %}
+
+{% block extra_js %}
+<script>
+  // Enable Bootstrap tooltips (if used elsewhere)
+  $(function () { $('[data-toggle="tooltip"]').tooltip() })
+</script>
+{% endblock %}

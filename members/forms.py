@@ -39,7 +39,7 @@ class DynamicAnswerForm(forms.Form):
             if q.question_type == "text":
                 field = forms.CharField(
                     label=q.label,
-                    help_text=q.help_text,
+                    help_text=q.description,  # 👈 description shows under the label
                     required=q.required,
                 )
                 if q.id in existing and existing[q.id].text_answer:
@@ -48,8 +48,8 @@ class DynamicAnswerForm(forms.Form):
 
             elif q.question_type == "boolean":
                 field = forms.BooleanField(
+                    help_text=q.description,
                     label=q.label,
-                    help_text=q.help_text,
                     required=False,
                 )
                 if q.id in existing and existing[q.id].boolean_answer is not None:

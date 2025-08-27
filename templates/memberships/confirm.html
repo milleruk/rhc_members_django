@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}Confirm Membership{% endblock %}
+
+{% block content %}
+<div class="container py-3">
+
+  <div class="card shadow-sm">
+    <div class="card-body">
+      <h4 class="mb-3">Confirm Subscription</h4>
+
+      <dl class="row">
+        <dt class="col-4 col-md-3">Player</dt>
+        <dd class="col-8 col-md-9">
+          {{ player.first_name }} {{ player.last_name }}
+        </dd>
+
+        <dt class="col-4 col-md-3">Product</dt>
+        <dd class="col-8 col-md-9">
+          {{ product.name }}
+        </dd>
+
+        <dt class="col-4 col-md-3">Season</dt>
+        <dd class="col-8 col-md-9">
+          {{ product.season.name }}
+        </dd>
+
+        <dt class="col-4 col-md-3">Payment</dt>
+        <dd class="col-8 col-md-9">
+          {% if plan %}
+            <div>
+              <strong>Membership:</strong> {{ plan.label }}
+              — £{{ plan.instalment_amount_gbp }} × {{ plan.instalment_count }}
+              ({{ plan.get_frequency_display }})
+              {% if plan.includes_match_fees %} • includes match fees{% endif %}
+            </div>
+          {% elif product.list_price_gbp and product.list_price_gbp|floatformat != "0" %}
+            <div><strong>Membership fee:</strong> £{{ product.list_price_gbp }}</div>
+          {% endif %}
+
+          {% if product.pay_per_match %}
+            <div>
+              <strong>Match fee:</strong>
+              {% if match_fee %}£{{ match_fee.amount_gbp }} ({{ match_fee.name }}){% else %}applies per game{% endif %}
+            </div>
+          {% endif %}
+        </dd>
+      </dl>
+
+      <form method="post" class="mt-3">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit" class="btn btn-success">
+          Confirm Subscription
+        </button>
+        <a href="{% url 'memberships:choose' player.id %}" class="btn btn-secondary">
+          Cancel
+        </a>
+      </form>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
