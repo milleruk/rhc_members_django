@@ -1,132 +1,330 @@
 {% extends "base.html" %}
+{% load members_extras %}
+{% block title %}Players{% endblock %}
+
 {% block content %}
-<div class="row">
-  <!-- Total Players -->
-  <div class="col-lg-3 col-6">
-    <div class="small-box bg-info">
-      <div class="inner"><h3>{{ total_players }}</h3><p>Total Players</p></div>
-      <div class="icon"><i class="fas fa-users"></i></div>
-    </div>
-  </div>
-  <!-- Updated in last 12 months -->
-  <div class="col-lg-3 col-6">
-    <div class="small-box bg-success">
-      <div class="inner"><h3>{{ recent_updates }}</h3><p>Updated Last 12 Months</p></div>
-      <div class="icon"><i class="fas fa-sync-alt"></i></div>
-    </div>
-  </div>
-  <!-- Gender diversity -->
-  <div class="col-lg-3 col-6">
-    <div class="small-box bg-warning">
-      <div class="inner"><h3>{{ totals_by_gender|length }}</h3><p>Genders</p></div>
-      <div class="icon"><i class="fas fa-venus-mars"></i></div>
-    </div>
-  </div>
-  <!-- Inactive players -->
-  <div class="col-lg-3 col-6">
-    <div class="small-box bg-danger">
-      <div class="inner"><h3>{{ inactive_players }}</h3><p>Inactive > 12 Months</p></div>
-      <div class="icon"><i class="fas fa-user-slash"></i></div>
+<!-- Page header -->
+<div class="content-header py-2">
+  <div class="container-fluid">
+    <div class="row mb-2 align-items-center">
+      <div class="col-sm-6"><h1 class="m-0">Players</h1></div>
+      <div class="col-sm-6">
+        <ol class="breadcrumb float-sm-right">
+          <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
+          <li class="breadcrumb-item active">Players</li>
+        </ol>
+      </div>
     </div>
   </div>
 </div>
 
-<div class="row">
-  <!-- Membership Types -->
-  <div class="col-lg-3 col-6">
-    <div class="small-box bg-primary">
-      <div class="inner">
-        <h3>{{ membership_types|length }}</h3>
-        <p>Membership Types</p>
-      </div>
-      <div class="icon"><i class="fas fa-id-card"></i></div>
-    </div>
-  </div>
-  <!-- Age Distribution -->
-  <div class="col-lg-3 col-6">
-    <div class="small-box bg-secondary">
-      <div class="inner">
-        <h3>{{ age_distribution.Adults }}</h3>
-        <p>Adults</p>
-      </div>
-      <div class="icon"><i class="fas fa-birthday-cake"></i></div>
-    </div>
-  </div>
-  <!-- Questionnaire completion -->
-  <div class="col-lg-3 col-6">
-    <div class="small-box bg-success">
-      <div class="inner">
-        <h3>{{ questionnaire_completion }}%</h3>
-        <p>Questionnaire Completion</p>
-      </div>
-      <div class="icon"><i class="fas fa-clipboard-check"></i></div>
-    </div>
-  </div>
-  <!-- Access logs today -->
-  <div class="col-lg-3 col-6">
-    <div class="small-box bg-info">
-      <div class="inner">
-        <h3>{{ today_access_logs }}</h3>
-        <p>Player Records Viewed Today</p>
-      </div>
-      <div class="icon"><i class="fas fa-eye"></i></div>
-    </div>
-  </div>
-</div>
+<section class="content">
+  <div class="container-fluid">
 
-<!-- Upcoming birthdays -->
-<div class="card">
-  <div class="card-header"><h3 class="card-title">Upcoming Birthdays (Next 30 Days)</h3></div>
-  <div class="card-body">
-    {% if upcoming_birthdays %}
-      <ul>
-      {% for p in upcoming_birthdays %}
-        <li>{{ p.first_name }} {{ p.last_name }} – {{ p.date_of_birth|date:"j M" }}</li>
-      {% endfor %}
-      </ul>
-    {% else %}
-      <p>No upcoming birthdays.</p>
-    {% endif %}
-  </div>
-</div>
+    <!-- ROW 1: Key metrics -->
+    <div class="row">
+      <div class="col-lg-3 col-6">
+        <div class="small-box bg-info">
+          <div class="inner">
+            <h3>{{ total_players }}</h3><p>Total Players</p>
+          </div>
+          <div class="icon"><i class="fas fa-users"></i></div>
+        </div>
+      </div>
 
-<div class="card">
-  <div class="card-header"><h3 class="card-title">Player List</h3></div>
-  <div class="card-body">
-    <form method="get" class="form-inline mb-2">
-      <label class="mr-2">Team:</label>
-      <select name="team" class="form-control mr-3" onchange="this.form.submit()">
-        <option value="">All</option>
-        {% for team in teams %}
-          <option value="{{ team.id }}" {% if request.GET.team == team.id|stringformat:"s" %}selected{% endif %}>{{ team.name }}</option>
-        {% endfor %}
-      </select>
-      <label class="mr-2">Type:</label>
-      <select name="player_type" class="form-control" onchange="this.form.submit()">
-        <option value="">All</option>
-        {% for pt in player_types %}
-          <option value="{{ pt.id }}" {% if request.GET.player_type == pt.id|stringformat:"s" %}selected{% endif %}>{{ pt.name }}</option>
-        {% endfor %}
-      </select>
-    </form>
-    <table class="table table-striped">
-      <thead><tr><th>Name</th><th>Gender</th><th>Type</th><th>Teams</th><th>Actions</th></tr></thead>
-      <tbody>
-        {% for p in players %}
-        <tr>
-          <td>{{ p.first_name }} {{ p.last_name }}</td>
-          <td>{{ p.get_gender_display }}</td>
-          <td>{{ p.player_type }}</td>
-          <td>
-            {% for m in p.team_memberships.all %}
-              <span class="badge badge-info">{{ m.team.name }}</span>
-            {% empty %}—{% endfor %}
-          </td>
-          <td><a href="{% url 'admin_player_detail' p.id %}" class="btn btn-sm btn-primary">View</a></td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+      <div class="col-lg-3 col-6">
+        <div class="small-box bg-success">
+          <div class="inner">
+            <h3>{{ recent_updates }}</h3><p>Updated Last 12 Months</p>
+          </div>
+          <div class="icon"><i class="fas fa-sync-alt"></i></div>
+        </div>
+      </div>
+
+      <div class="col-lg-3 col-6">
+        <div class="small-box bg-danger">
+          <div class="inner">
+            <h3>{{ inactive_players }}</h3><p>Inactive Last 12 Months</p>
+          </div>
+          <div class="icon"><i class="fas fa-user-slash"></i></div>
+        </div>
+      </div>
+
+      <div class="col-lg-3 col-6">
+        <div class="small-box bg-primary">
+          <div class="inner">
+            <h3>{{ today_access_logs }}</h3><p>Records Viewed Today</p>
+          </div>
+          <div class="icon"><i class="fas fa-eye"></i></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ROW 2: Breakdown cards -->
+    <div class="row">
+      <!-- Membership Types -->
+      <div class="col-lg-3 col-12">
+        <div class="card card-outline card-primary h-100">
+          <div class="card-header d-flex align-items-center justify-content-between">
+            <h3 class="card-title mb-0">Membership Types</h3>
+            <span class="badge badge-primary">{{ membership_types|length }}</span>
+          </div>
+          <div class="card-body p-2">
+            {% if membership_breakdown %}
+              <ul class="list-group list-group-flush">
+                {% for t, c in membership_breakdown.items %}
+                  <li class="list-group-item d-flex justify-content-between align-items-center py-2">
+                    <span><i class="fas fa-id-card mr-2 text-muted"></i>{{ t }}</span>
+                    <span class="badge badge-secondary">{{ c }}</span>
+                  </li>
+                {% endfor %}
+              </ul>
+            {% else %}
+              {% if membership_types %}
+                <ul class="list-group list-group-flush">
+                  {% for t in membership_types %}
+                    <li class="list-group-item py-2">
+                      <i class="fas fa-id-card mr-2 text-muted"></i>{{ t.player_type__name|default:"Unspecified" }}
+                      <span class="badge badge-secondary float-right">{{ t.total }}</span>
+                    </li>
+                  {% endfor %}
+                </ul>
+              {% else %}
+                <div class="text-muted">No data.</div>
+              {% endif %}
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      <!-- Age Distribution -->
+      <div class="col-lg-3 col-12">
+        <div class="card card-outline card-secondary h-100">
+          <div class="card-header d-flex align-items-center justify-content-between">
+            <h3 class="card-title mb-0">Age Distribution</h3>
+            {% if age_distribution %}<span class="badge badge-secondary">{{ age_distribution|length }} groups</span>{% endif %}
+          </div>
+          <div class="card-body p-2">
+            {% if age_distribution %}
+              <ul class="list-group list-group-flush">
+                {% for label, count in age_distribution.items %}
+                  <li class="list-group-item d-flex justify-content-between align-items-center py-2">
+                    <span><i class="fas fa-birthday-cake mr-2 text-muted"></i>{{ label }}</span>
+                    <span class="badge badge-secondary">{{ count }}</span>
+                  </li>
+                {% endfor %}
+              </ul>
+            {% else %}
+              <div class="text-muted">No data.</div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      <!-- Genders -->
+      <div class="col-lg-3 col-12">
+        <div class="card card-outline card-warning h-100">
+          <div class="card-header d-flex align-items-center justify-content-between">
+            <h3 class="card-title mb-0">Genders</h3>
+            <span class="badge badge-warning">{{ totals_by_gender|length }} types</span>
+          </div>
+          <div class="card-body p-2">
+            {% if totals_by_gender %}
+              <ul class="list-group list-group-flush">
+                {% for g, c in totals_by_gender.items %}
+                  <li class="list-group-item d-flex justify-content-between align-items-center py-2">
+                    <span><i class="fas fa-venus-mars mr-2 text-muted"></i>{{ g }}</span>
+                    <span class="badge badge-secondary">{{ c }}</span>
+                  </li>
+                {% endfor %}
+              </ul>
+            {% else %}
+              <div class="text-muted">No data.</div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      <!-- Birthdays (next 30 days) -->
+      <div class="col-lg-3 col-12">
+        <div class="card card-outline card-warning h-100">
+          <div class="card-header">
+            <h3 class="card-title mb-0">Upcoming Birthdays</h3>
+          </div>
+          <div class="card-body p-0">
+            {% if upcoming_birthdays %}
+              <ul class="list-group list-group-flush">
+                {% for p in upcoming_birthdays %}
+                  <li class="list-group-item d-flex align-items-center">
+                    <div class="img-circle bg-warning d-inline-flex justify-content-center align-items-center mr-3"
+                         style="width:36px;height:36px;color:#fff;font-weight:600;">
+                      {{ p.first_name|slice:":1" }}{{ p.last_name|slice:":1" }}
+                    </div>
+                    <div class="flex-fill">
+                      <div class="mb-0">{{ p.first_name }} {{ p.last_name }}</div>
+                      <small class="text-muted">{{ p.date_of_birth|date:"j M" }}</small>
+                    </div>
+                  </li>
+                {% endfor %}
+              </ul>
+            {% else %}
+              <div class="p-3 text-muted">No upcoming birthdays.</div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+    <br>
+    <!-- PLAYER LIST -->
+    <div class="row">
+      <div class="col-12">
+        <div class="card">
+          <div class="card-header d-flex align-items-center">
+            <h3 class="card-title mb-0">Player List</h3>
+            <div class="card-tools">
+              <a href="?{% if request.GET %}{{ request.GET.urlencode }}&{% endif %}export=csv"
+                 class="btn btn-tool" title="Export CSV">
+                <i class="fas fa-file-export"></i>
+              </a>
+            </div>
+          </div>
+
+          <div class="card-body">
+            <!-- Filters -->
+            <form method="get" class="form-row">
+              <div class="form-group col-sm-6">
+                <label class="sr-only" for="filter-team">Team</label>
+                <div class="input-group">
+                  <div class="input-group-prepend"><span class="input-group-text"><i class="fas fa-users"></i></span></div>
+                  <select id="filter-team" name="team" class="form-control" onchange="this.form.submit()">
+                    <option value="">All Teams</option>
+                    {% for team in teams %}
+                      <option value="{{ team.id }}" {% if request.GET.team == team.id|stringformat:"s" %}selected{% endif %}>
+                        {{ team.name }}
+                      </option>
+                    {% endfor %}
+                  </select>
+                </div>
+              </div>
+
+              <div class="form-group col-sm-6">
+                <label class="sr-only" for="filter-type">Type</label>
+                <div class="input-group">
+                  <div class="input-group-prepend"><span class="input-group-text"><i class="fas fa-id-badge"></i></span></div>
+                  <select id="filter-type" name="player_type" class="form-control" onchange="this.form.submit()">
+                    <option value="">All Types</option>
+                    {% for pt in player_types %}
+                      <option value="{{ pt.id }}" {% if request.GET.player_type == pt.id|stringformat:"s" %}selected{% endif %}>
+                        {{ pt.name }}
+                      </option>
+                    {% endfor %}
+                  </select>
+                </div>
+              </div>
+
+            {% if request.GET.team or request.GET.player_type %}
+              <div class="col-12">
+                <div class="mt-2">
+                  <span class="mr-2">Active filters:</span>
+                  {% if request.GET.team %}
+                    <a href="?{% if request.GET.player_type %}player_type={{ request.GET.player_type }}{% endif %}"
+                       class="badge badge-primary">
+                      Team: {{ teams|get_item:request.GET.team|attr:"name"|default:"Selected" }} <i class="fas fa-times ml-1"></i>
+                    </a>
+                  {% endif %}
+                  {% if request.GET.player_type %}
+                    <a href="?{% if request.GET.team %}team={{ request.GET.team }}{% endif %}"
+                       class="badge badge-info">
+                      Type: {{ player_types|get_item:request.GET.player_type|attr:"name"|default:"Selected" }} <i class="fas fa-times ml-1"></i>
+                    </a>
+                  {% endif %}
+                  <a href="." class="badge badge-secondary">Clear all</a>
+                </div>
+              </div>
+              {% endif %}
+            </form>
+
+            <!-- Table -->
+            <div class="table-responsive mt-3">
+              <table class="table table-striped table-hover table-sm mb-0">
+                <thead class="thead-light">
+                  <tr>
+                    <th style="min-width:200px;">Name</th>
+                    <th>Gender</th>
+                    <th>Type</th>
+                    <th>Teams</th>
+                    <th>Membership</th>
+                    <th class="text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for p in players %}
+                  <tr>
+                    <td class="align-middle">
+                      <div class="d-flex align-items-center">
+                        <div class="img-circle bg-primary d-inline-flex justify-content-center align-items-center mr-2"
+                             style="width:28px;height:28px;color:#fff;font-weight:600;">
+                          {{ p.first_name|slice:":1" }}{{ p.last_name|slice:":1" }}
+                        </div>
+                        <a href="{% url 'admin_player_detail' p.id %}">{{ p.first_name }} {{ p.last_name }}</a>
+                      </div>
+                    </td>
+                    <td class="align-middle">{{ p.get_gender_display }}</td>
+                    <td class="align-middle">
+                      <span class="badge badge-pill badge-info">{{ p.player_type }}</span>
+                    </td>
+                    <td class="align-middle">
+                      {% for m in p.team_memberships.all %}
+                        <span class="badge badge-secondary mr-1 mb-1">{{ m.team.name }}</span>
+                      {% empty %}—{% endfor %}
+                    </td>
+                    <td class="align-middle">
+                      {% if p.active_sub_product %}
+                        <span class="badge badge-success">{{ p.active_sub_product }}</span>
+                        <div class="small text-muted">
+                          {{ p.active_sub_season|default:"—" }} · {{ p.active_sub_status|title }}
+                        </div>
+                      {% else %}
+                        <span class="text-muted">—</span>
+                      {% endif %}
+                    </td>
+                    <td class="align-middle text-right">
+                      <a href="{% url 'admin_player_detail' p.id %}" class="btn btn-primary btn-xs">
+                        <i class="fas fa-eye mr-1"></i>View
+                      </a>
+                    </td>
+                  </tr>
+                  {% empty %}
+                  <tr><td colspan="5" class="text-muted text-center py-4">No players match your filters.</td></tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {% if page_obj %}
+          <div class="card-footer bg-white d-flex justify-content-between align-items-center py-2">
+            <div>
+              Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+            </div>
+            <div>
+              {% if page_obj.has_previous %}
+                <a class="btn btn-outline-secondary btn-sm" href="?page={{ page_obj.previous_page_number }}{% if request.GET.team %}&team={{ request.GET.team }}{% endif %}{% if request.GET.player_type %}&player_type={{ request.GET.player_type }}{% endif %}">
+                  <i class="fas fa-chevron-left mr-1"></i>Previous
+                </a>
+              {% endif %}
+              {% if page_obj.has_next %}
+                <a class="btn btn-outline-secondary btn-sm ml-1" href="?page={{ page_obj.next_page_number }}{% if request.GET.team %}&team={{ request.GET.team }}{% endif %}{% if request.GET.player_type %}&player_type={{ request.GET.player_type }}{% endif %}">
+                  Next<i class="fas fa-chevron-right ml-1"></i>
+                </a>
+              {% endif %}
+            </div>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
   </div>
-</div>
+</section>
 {% endblock %}

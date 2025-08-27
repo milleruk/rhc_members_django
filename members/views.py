@@ -7,15 +7,18 @@ from django.urls import reverse, reverse_lazy
 from django.views.generic import CreateView, ListView, DetailView, TemplateView
 from django.views.decorators.http import require_POST
 from django.http import HttpResponseForbidden
-from django.db.models import Count
+from django.db.models import Count, OuterRef, Subquery
 from django.utils.timezone import now
 from django.core.paginator import Paginator
 from django.utils import timezone
 from django.contrib import messages
 from collections import OrderedDict
+from datetime import timedelta
+
 
 from .forms import PlayerForm, DynamicAnswerForm, TeamAssignmentForm
 from .models import Player, PlayerAnswer, DynamicQuestion, PlayerType, TeamMembership
+from memberships.models import Subscription
 
 # --- Helpers ---
 ALLOWED_GROUPS = ["Full Access", "Committee", "Captain", "Coach", "Helper"]
@@ -117,6 +120,8 @@ class AdminPlayerListView(LoginRequiredMixin, InGroupsRequiredMixin, ListView):
             .select_related("player_type", "created_by")
             .prefetch_related("team_memberships__team", "team_memberships__positions")
         )
+
+        # Existing filters
         team_id = self.request.GET.get("team")
         if team_id:
             qs = qs.filter(team_memberships__team_id=team_id)
@@ -125,25 +130,67 @@ class AdminPlayerListView(LoginRequiredMixin, InGroupsRequiredMixin, ListView):
         if player_type_id:
             qs = qs.filter(player_type_id=player_type_id)
 
+        # NEW: membership subscription status filter
+        sub_status = self.request.GET.get("subscription_status", "").strip().lower()
+        if sub_status in {"active", "pending", "paused", "cancelled"}:
+            qs = qs.filter(subscriptions__status=sub_status)
+        elif sub_status == "none":
+            # Players with NO active/pending subscriptions at all
+            qs = qs.exclude(subscriptions__status__in=["active", "pending"])
+
+        # Annotations to show the most recent pending/active subscription in the table
+        active_sub_qs = (
+            Subscription.objects
+            .filter(player=OuterRef("pk"), status__in=["active", "pending"])
+            .order_by("-started_at")
+        )
+        qs = qs.annotate(
+            active_sub_product=Subquery(active_sub_qs.values("product__name")[:1]),
+            active_sub_status=Subquery(active_sub_qs.values("status")[:1]),
+            active_sub_season=Subquery(active_sub_qs.values("season__name")[:1]),
+        )
+
         return qs.distinct()
+
+
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        from .models import Team, PlayerType, PlayerAccessLog
+        from .models import Team, PlayerType, PlayerAccessLog, Player
+
         players = self.get_queryset()
         today = now().date()
 
-        # Filters
+        # --- Filters ---
         ctx["teams"] = Team.objects.filter(active=True)
         ctx["player_types"] = PlayerType.objects.all()
 
-        # Existing Widgets
+        # --- Time windows ---
+        twelve_months_ago = now() - timedelta(days=365)
+
+        # --- Top counters ---
         ctx["total_players"] = players.count()
-        twelve_months_ago = now().date().replace(year=now().year - 1)
         ctx["recent_updates"] = players.filter(updated_at__gte=twelve_months_ago).count()
-        ctx["totals_by_gender"] = (
+        ctx["inactive_players"] = players.filter(updated_at__lt=twelve_months_ago).count()
+
+        # --- Gender breakdown -> dict { "Male": 10, "Female": 8, "Other": 1 } ---
+        # map stored values -> human labels from choices
+        try:
+            gender_map = dict(Player._meta.get_field("gender").flatchoices)
+        except Exception:
+            gender_map = {}
+
+        raw_gender_counts = (
             players.values("gender").annotate(total=Count("id")).order_by("gender")
         )
+        totals_by_gender = {}
+        for row in raw_gender_counts:
+            code = row["gender"]
+            label = gender_map.get(code, code or "Unspecified")
+            totals_by_gender[label] = row["total"]
+        ctx["totals_by_gender"] = totals_by_gender  # dict for template .items
+
+        # --- Teams with players (kept if you use it elsewhere) ---
         ctx["totals_per_team"] = (
             players.filter(team_memberships__isnull=False)
             .values("team_memberships__team__name")
@@ -151,15 +198,19 @@ class AdminPlayerListView(LoginRequiredMixin, InGroupsRequiredMixin, ListView):
             .order_by("team_memberships__team__name")
         )
 
-        # --- New widgets ---
-        # 1. Membership types breakdown
-        ctx["membership_types"] = (
+        # --- Membership types breakdown -> dict { "Senior": 42, "Junior": 19 } ---
+        membership_qs = (
             players.values("player_type__name")
             .annotate(total=Count("id"))
             .order_by("player_type__name")
         )
+        ctx["membership_breakdown"] = {
+            row["player_type__name"] or "Unspecified": row["total"] for row in membership_qs
+        }
+        # Keep your original list if you still reference it (e.g., length badge)
+        ctx["membership_types"] = membership_qs
 
-        # 3. Age distribution
+        # --- Age distribution (uses your p.age property) ---
         age_ranges = {
             "U10": (0, 9),
             "U12": (10, 11),
@@ -169,38 +220,46 @@ class AdminPlayerListView(LoginRequiredMixin, InGroupsRequiredMixin, ListView):
         }
         age_distribution = {}
         for label, (min_age, max_age) in age_ranges.items():
-            count = sum(1 for p in players if min_age <= p.age <= max_age)
+            # iterate once; players is a queryset, but iterating is fine at this scale
+            count = sum(1 for p in players if getattr(p, "age", None) is not None and min_age <= p.age <= max_age)
             age_distribution[label] = count
         ctx["age_distribution"] = age_distribution
 
-        # 4. Inactive players (not updated in > 12 months)
-        ctx["inactive_players"] = players.filter(updated_at__lt=twelve_months_ago).count()
-
-        # 5. Teams with no players
-        ctx["empty_teams"] = Team.objects.annotate(total=Count("memberships")).filter(total=0)
-
-        # 6. Access logs today
-        today = now().date()
+        # --- Access logs today ---
         ctx["today_access_logs"] = PlayerAccessLog.objects.filter(accessed_at__date=today).count()
-        #ctx["today_access_logs"] = PlayerAccessLog.objects.filter(timestamp__date=today).count()
 
-        # 7. Questionnaire completion
-        total_players = players.count()
-        answered_players = (
-            players.filter(answers__isnull=False).distinct().count()
-        )
-        ctx["questionnaire_completion"] = (
-            round((answered_players / total_players) * 100, 1) if total_players > 0 else 0
-        )
+        # --- Questionnaire completion ---
+        total_players = ctx["total_players"]
+        answered_players = players.filter(answers__isnull=False).distinct().count()
+        ctx["questionnaire_completion"] = round((answered_players / total_players) * 100, 1) if total_players else 0
 
-        # 8. Upcoming birthdays (next 30 days)
+        # --- Upcoming birthdays (next 30 days) ---
         upcoming_birthdays = []
         for p in players:
-            if p.date_of_birth:
-                dob_this_year = p.date_of_birth.replace(year=today.year)
-                if 0 <= (dob_this_year - today).days <= 30:
-                    upcoming_birthdays.append(p)
+            dob = getattr(p, "date_of_birth", None)
+            if not dob:
+                continue
+            # Compute next birthday (handles year rollover)
+            try:
+                next_bd = dob.replace(year=today.year)
+            except ValueError:
+                # handle Feb 29 -> Mar 1 (or choose Feb 28); here we pick Mar 1
+                next_bd = dob.replace(year=today.year, day=1, month=3)
+            if next_bd < today:
+                try:
+                    next_bd = dob.replace(year=today.year + 1)
+                except ValueError:
+                    next_bd = dob.replace(year=today.year + 1, day=1, month=3)
+            delta = (next_bd - today).days
+            if 0 <= delta <= 30:
+                upcoming_birthdays.append(p)
         ctx["upcoming_birthdays"] = upcoming_birthdays
+
+        # --- Optional: selected filter names (if you ever want them) ---
+        # team_id = self.request.GET.get("team")
+        # pt_id = self.request.GET.get("player_type")
+        # ctx["selected_team_name"] = Team.objects.filter(pk=team_id).values_list("name", flat=True).first() if team_id else ""
+        # ctx["selected_player_type_name"] = PlayerType.objects.filter(pk=pt_id).values_list("name", flat=True).first() if pt_id else ""
 
         return ctx
 
