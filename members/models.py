@@ -191,6 +191,7 @@ class TeamMembership(models.Model):
         permissions = (
             ("view_team_assignment", "Can View Team Assignments"),
             ("edit_team_assignment", "Can Edit Team Assignments"),
+            ("view_access_logs", "Can View Access logs of a player"),
         )
         unique_together = ("team", "player")
         verbose_name = "Team membership"
