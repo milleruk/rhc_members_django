@@ -61,6 +61,10 @@ class Player(models.Model):
             (today.month, today.day)
             < (self.date_of_birth.month, self.date_of_birth.day)
         )
+    
+    @property
+    def has_active_spond_link(self):
+        return self.spond_links.filter(active=True).exists()
 
 
 QUESTION_TYPE_CHOICES = (

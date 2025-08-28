@@ -5,7 +5,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin, PermissionRequiredMixin
 from django.core.paginator import Paginator
-from django.db.models import Count, OuterRef, Subquery, Prefetch
+from django.db.models import Count, OuterRef, Subquery, Prefetch, Q
 from django.http import HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -28,6 +28,7 @@ from .models import (
     
 )
 from memberships.models import Subscription
+from spond_integration.models import PlayerSpondLink
 
 
 # ------------------------------------------------------
@@ -281,7 +282,31 @@ class AdminPlayerListView(LoginRequiredMixin, PermissionRequiredMixin, InGroupsR
             active_sub_season=Subquery(active_sub_qs.values("season__name")[:1]),
         )
 
+        
+        
+        active_sub_qs = (
+            Subscription.objects
+            .filter(player=OuterRef("pk"), status__in=["active", "pending"])
+            .order_by("-started_at")
+        )
+        qs = qs.annotate(
+            active_sub_product=Subquery(active_sub_qs.values("product__name")[:1]),
+            active_sub_status=Subquery(active_sub_qs.values("status")[:1]),
+            active_sub_season=Subquery(active_sub_qs.values("season__name")[:1]),
+        )
+
+        # NEW: count of active Spond links for each player
+        qs = qs.annotate(
+            active_spond_count=Count(
+                "spond_links",
+                filter=Q(spond_links__active=True),
+                distinct=True,
+            )
+        )
+
         return qs
+
+
 
     # --- Context -------------------------------------------------------------
 

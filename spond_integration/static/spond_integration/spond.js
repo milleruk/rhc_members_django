@@ -45,29 +45,37 @@
   });
 
   list.addEventListener("click", async (e) => {
-    const btn = e.target.closest("button[data-spond-pk]");
-    if(!btn) return;
+  const btn = e.target.closest("button[data-spond-pk]");
+  if(!btn) return;
 
-    const pk = btn.getAttribute("data-spond-pk");
-    const playerId = document.getElementById("spondPlayerId")?.value;   // <-- read from hidden input
-    if(!playerId) return alert("Missing player id on page.");
+  // disable immediately to prevent double-clicks
+  if (btn.disabled) return;
+  btn.disabled = true;
 
-    const form = new FormData();
-    form.append("spond_member_pk", pk);
+  const playerId = document.getElementById("spondPlayerId")?.value;
+  if(!playerId) { alert("Missing player id"); return; }
 
-    const r = await fetch(`/spond/link/${playerId}/`, {
-      method: "POST",
-      body: form,
-      headers: {"X-CSRFToken": getCookie("csrftoken")}
-    });
+  const pk = btn.getAttribute("data-spond-pk");
+  const form = new FormData();
+  form.append("spond_member_pk", pk);
 
-    if(r.ok){
-      btn.textContent = "Linked";
-      btn.disabled = true;
-    } else {
-      alert("Failed to link.");
-    }
+  const resp = await fetch(`/spond/link/${playerId}/`, {
+    method: "POST",
+    body: form,
+    headers: {"X-CSRFToken": getCookie("csrftoken")},
+    credentials: "same-origin"
   });
+
+  if ([200,201,204].includes(resp.status)) {
+    btn.textContent = "Linked";
+  } else {
+    const text = await resp.text();
+    console.error("Link failed", resp.status, text);
+    alert("Failed to link");
+    btn.disabled = false;  // allow retry if server failed
+  }
+  });
+
 
   function getCookie(name) {
     const value = `; ${document.cookie}`;

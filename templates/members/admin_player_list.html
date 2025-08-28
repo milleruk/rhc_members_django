@@ -298,20 +298,50 @@
                       {% endif %}
                     </td>
                     <td class="align-middle text-right">
+
+                      {% if p.active_spond_count %}
+  <span class="badge badge-info">Spond linked</span>
+{% endif %}
+                      
                       <a href="{% url 'admin_player_detail' p.id %}" class="btn btn-primary btn-xs">
                         <i class="fas fa-eye mr-1"></i>View
                       </a>
 
 
-  <button
-    class="btn btn-outline-primary btn-xs"
-    data-toggle="modal" data-target="#spondLinker"
-    data-player-id="{{ p.id }}"
-  >
-    Link Spond
-  </button>
+<button
+  class="btn btn-outline-primary btn-xs js-spond-link"
+  data-toggle="modal" data-target="#spondLinker"
+  data-player-id="{{ p.id }}"
+>
+  Link Spond
+</button>
 
     {% include "spond_integration/_link_modal.html" %}
+
+    <script>
+  // Set the hidden input whenever a "Link Spond" button is clicked
+  document.addEventListener('click', function(e){
+    const btn = e.target.closest('.js-spond-link');
+    if (!btn) return;
+    const pid = btn.getAttribute('data-player-id') || '';
+    const hid = document.getElementById('spondPlayerId');
+    if (hid) hid.value = pid;
+  });
+
+  // (Optional) when the modal actually shows, sanity check/log
+  document.addEventListener('shown.bs.modal', function(ev){
+    if (ev.target && ev.target.id === 'spondLinker') {
+      const hid = document.getElementById('spondPlayerId');
+      // console.log('spondPlayerId is', hid && hid.value);
+      const input = document.getElementById('spondSearch');
+      if (input) input.focus();
+      if (window.SpondSearch && typeof window.SpondSearch.initialSearch === 'function') {
+        window.SpondSearch.initialSearch();
+      }
+    }
+  });
+</script>
+
 
                     </td>
                   </tr>
