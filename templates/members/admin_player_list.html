@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% load members_extras %}
+{% load static %}
 {% block title %}Players{% endblock %}
 
 {% block content %}
@@ -300,6 +301,18 @@
                       <a href="{% url 'admin_player_detail' p.id %}" class="btn btn-primary btn-xs">
                         <i class="fas fa-eye mr-1"></i>View
                       </a>
+
+
+  <button
+    class="btn btn-outline-primary btn-xs"
+    data-toggle="modal" data-target="#spondLinker"
+    data-player-id="{{ p.id }}"
+  >
+    Link Spond
+  </button>
+
+    {% include "spond_integration/_link_modal.html" %}
+
                     </td>
                   </tr>
                   {% empty %}
@@ -335,4 +348,23 @@
 
   </div>
 </section>
+
+<script>
+  // When the modal is about to show (BS4), event.relatedTarget is the button that opened it
+  $('#spondLinker').on('show.bs.modal', function (event) {
+    var button = $(event.relatedTarget);                 // the button that triggered the modal
+    var playerId = button.data('player-id');             // read data-player-id
+    document.getElementById('spondPlayerId').value = playerId || '';
+  });
+
+  // Optional: on shown, kick off an initial search so the list isn't empty
+  $('#spondLinker').on('shown.bs.modal', function () {
+    if (window.SpondSearch && typeof window.SpondSearch.initialSearch === 'function') {
+      window.SpondSearch.initialSearch();
+    }
+    document.getElementById('spondSearch')?.focus();
+  });
+</script>
+
 {% endblock %}
+

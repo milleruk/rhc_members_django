@@ -11,6 +11,7 @@ path("admin/", admin.site.urls),
 path("accounts/", include("accounts.urls")),
 
 
+
 path("resources/", include(("resources.urls", "resources"), namespace="resources")),
 path("", include("members.urls")),
 path("", RedirectView.as_view(pattern_name="dashboard", permanent=False)),
@@ -23,6 +24,7 @@ path("accounts/reset/done/", auth_views.PasswordResetCompleteView.as_view(), nam
 
 
 path("memberships/", include("memberships.urls", namespace="memberships")),
+path("spond/", include("spond_integration.urls", namespace="spond")),
 
 path("terms/", TermsView.as_view(), name="terms"),
 path("privacy/", PrivacyView.as_view(), name="privacy_policy"),
@@ -34,3 +36,7 @@ def permission_denied_view(request, exception=None):
     return render(request, "403.html", status=403)
 
 handler403 = permission_denied_view
+
+admin.site.site_title = "Redditch Hockey Club Portal (DEV)"
+admin.site.site_header = "Redditch Hockey Club Portal"
+admin.site.index_title = "Site administration"

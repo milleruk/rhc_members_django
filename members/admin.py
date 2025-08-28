@@ -7,7 +7,8 @@ class PlayerTypeAdmin(admin.ModelAdmin):
 
 @admin.register(Player)
 class PlayerAdmin(admin.ModelAdmin):
-    list_display = ("first_name", "last_name", "player_type", "relation", "created_by", "created_at")
+    list_display = ("public_id", "first_name", "last_name", "player_type", "relation", "created_by", "created_at")
+    readonly_fields = ("public_id",)
     search_fields = ("first_name", "last_name", "created_by__username", "created_by__email")
     list_filter = ("player_type", "relation")
 

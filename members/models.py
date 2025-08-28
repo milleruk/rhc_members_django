@@ -2,6 +2,7 @@ from django.conf import settings
 from django.contrib.auth.models import Group
 from django.db import models
 from django.utils import timezone
+import uuid
 
 class PlayerType(models.Model):
     name = models.CharField(max_length=20, unique=True)  # "Senior" / "Junior"
@@ -27,6 +28,7 @@ GENDER_CHOICES = (
 
 
 class Player(models.Model):
+    public_id = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="players"
     )

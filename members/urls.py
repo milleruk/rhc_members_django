@@ -1,4 +1,5 @@
-from django.urls import path
+# members/urls.py
+from django.urls import path, include
 from .views import (
     dashboard,
     PlayerCreateView,
@@ -6,22 +7,18 @@ from .views import (
     AdminPlayerListView,
     AdminPlayerDetailView,
     remove_membership,
-    player_delete
+    player_delete,
 )
 
-
-
 urlpatterns = [
+    # Member-facing (UUIDs)
     path("dashboard/", dashboard, name="dashboard"),
     path("players/add/", PlayerCreateView.as_view(), name="player_add"),
-    path("players/profile/<int:player_id>/", answer_view, name="answer"),
-    path("players/<int:pk>/delete/", player_delete, name="player_delete"),
-    
+    path("players/<uuid:public_id>/answers/", answer_view, name="answer"),         
+    path("players/<uuid:public_id>/delete/", player_delete, name="player_delete"), 
 
-    # Staff views restricted by Groups (avoid clashing with Django admin at /admin/)
+    # Staff (ints)
     path("staff/players/", AdminPlayerListView.as_view(), name="admin_player_list"),
     path("staff/players/<int:player_id>/", AdminPlayerDetailView.as_view(), name="admin_player_detail"),
     path("staff/memberships/<int:membership_id>/remove/", remove_membership, name="remove_membership"),
-
-
 ]
