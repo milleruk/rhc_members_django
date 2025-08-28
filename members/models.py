@@ -46,6 +46,7 @@ class Player(models.Model):
     class Meta:
         permissions = (
             ("view_staff_area", "Can view staff area"),
+            ("view_all_players", "Can view all players"),
         )
         ordering = ["last_name", "first_name"]
         unique_together = ("created_by", "first_name", "last_name", "date_of_birth")
@@ -187,6 +188,10 @@ class TeamMembership(models.Model):
     assigned_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
+        permissions = (
+            ("view_team_assignment", "Can View Team Assignments"),
+            ("edit_team_assignment", "Can Edit Team Assignments"),
+        )
         unique_together = ("team", "player")
         verbose_name = "Team membership"
         verbose_name_plural = "Team memberships"

@@ -3,7 +3,7 @@ from collections import OrderedDict
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin, PermissionRequiredMixin
 from django.core.paginator import Paginator
 from django.db.models import Count, OuterRef, Subquery, Prefetch
 from django.http import HttpResponseForbidden
@@ -12,7 +12,9 @@ from django.urls import reverse
 from django.utils.timezone import now
 from django.views.decorators.http import require_POST
 from django.views.generic import CreateView, DetailView, ListView, TemplateView
+from django.core.exceptions import PermissionDenied
 from django.utils import timezone
+from django.apps import apps
 
 
 from .forms import DynamicAnswerForm, PlayerForm, TeamAssignmentForm
@@ -23,6 +25,7 @@ from .models import (
     PlayerType,
     TeamMembership,
     PlayerAccessLog,
+    
 )
 from memberships.models import Subscription
 
@@ -165,30 +168,94 @@ def player_delete(request, public_id):
 # ------------------------------------------------------
 # Staff (admin) views — group-gated using InGroupsRequiredMixin
 # ------------------------------------------------------
-class AdminPlayerListView(LoginRequiredMixin, InGroupsRequiredMixin, ListView):
+
+class AdminPlayerListView(LoginRequiredMixin, PermissionRequiredMixin, InGroupsRequiredMixin, ListView):
     """
     Staff dashboard for browsing players.
-    Group-gated; NOT owner-gated by design.
+
+    Access:
+      - Requires `members.view_staff_area`.
+      - If user has `members.view_all_players` -> sees all players.
+      - Else -> only players on teams the user is associated with, determined by:
+          1) Team.staff M2M (if present), OR
+          2) Teams where the user has created memberships (TeamMembership.assigned_by = user).
     """
     model = Player
     template_name = "members/admin_player_list.html"
     context_object_name = "players"
-    raise_exception = True  # raise 403 instead of redirect when blocked
+    permission_required = "members.view_staff_area"
+    raise_exception = True  # 403 instead of redirect
 
-    def get_queryset(self):
-        qs = (
+    # --- Helpers -------------------------------------------------------------
+
+    def _base_qs(self):
+        return (
             Player.objects
             .select_related("player_type", "created_by")
             .prefetch_related("team_memberships__team", "team_memberships__positions")
+            .distinct()
         )
 
-        # Team filter, including "none" for unassigned
-        team_param = self.request.GET.get("team")
+    def _get_user_team_ids(self, user):
+        """Return IDs of teams this user can manage/see."""
+        from .models import Team, TeamMembership
+        team_ids = set()
+
+        # 1) If Team has an M2M field 'staff' to User (future-proof)
+        try:
+            Team._meta.get_field("staff")
+            team_ids.update(
+                Team.objects.filter(staff=user).values_list("id", flat=True)
+            )
+        except Exception:
+            pass
+
+        # 2) Fallback: teams where this user assigned players
+        team_ids.update(
+            TeamMembership.objects.filter(assigned_by=user)
+            .values_list("team_id", flat=True)
+            .distinct()
+        )
+
+        return list(team_ids)
+
+    def _restrict_to_user_teams(self, qs):
+        user = self.request.user
+        if user.has_perm("members.view_all_players"):
+            return qs, None  # unrestricted
+        team_ids = self._get_user_team_ids(user)
+        if not team_ids:
+            # No teams -> show nothing (but allow page load)
+            return qs.none(), set()
+        return qs.filter(team_memberships__team_id__in=team_ids).distinct(), set(team_ids)
+
+    # --- Queryset ------------------------------------------------------------
+
+    def get_queryset(self):
+        qs = self._base_qs()
+
+        # Enforce data-level permission first
+        qs, allowed_team_ids = self._restrict_to_user_teams(qs)
+
+        # Team filter (respect restriction)
+        team_param = (self.request.GET.get("team") or "").strip()
         if team_param:
             if team_param == "none":
-                qs = qs.filter(team_memberships__isnull=True)
+                # Only admins (view_all_players) may see unassigned
+                if self.request.user.has_perm("members.view_all_players"):
+                    qs = qs.filter(team_memberships__isnull=True)
+                else:
+                    qs = qs.none()
             else:
-                qs = qs.filter(team_memberships__team_id=team_param)
+                try:
+                    team_id = int(team_param)
+                except ValueError:
+                    team_id = None
+                if team_id:
+                    if (allowed_team_ids is None) or (team_id in allowed_team_ids):
+                        qs = qs.filter(team_memberships__team_id=team_id)
+                    else:
+                        qs = qs.none()
 
         # Player type filter
         player_type_id = self.request.GET.get("player_type")
@@ -202,7 +269,7 @@ class AdminPlayerListView(LoginRequiredMixin, InGroupsRequiredMixin, ListView):
         elif sub_status == "none":
             qs = qs.exclude(subscriptions__status__in=["active", "pending"])
 
-        # Annotations for the most recent active/pending sub
+        # Annotations for latest active/pending sub
         active_sub_qs = (
             Subscription.objects
             .filter(player=OuterRef("pk"), status__in=["active", "pending"])
@@ -214,23 +281,30 @@ class AdminPlayerListView(LoginRequiredMixin, InGroupsRequiredMixin, ListView):
             active_sub_season=Subquery(active_sub_qs.values("season__name")[:1]),
         )
 
-        return qs.distinct()
+        return qs
+
+    # --- Context -------------------------------------------------------------
 
     def get_context_data(self, **kwargs):
-        from .models import Team, PlayerType as PT
-
+        from .models import Team, PlayerType as PT, PlayerAccessLog
         ctx = super().get_context_data(**kwargs)
-        players = self.get_queryset()
+        players = ctx["players"]  # already restricted
         today = now().date()
 
-        # Filters
-        ctx["teams"] = Team.objects.filter(active=True)
+        # Team dropdown: only teams the user can see (admins see all)
+        if self.request.user.has_perm("members.view_all_players"):
+            ctx["teams"] = Team.objects.filter(active=True)
+        else:
+            ctx["teams"] = Team.objects.filter(
+                id__in=self._get_user_team_ids(self.request.user),
+                active=True,
+            )
+
+        # Player types
         ctx["player_types"] = PT.objects.all()
 
-        # Time windows
-        twelve_months_ago = now() - timedelta(days=365)
-
         # Top counters
+        twelve_months_ago = now() - timedelta(days=365)
         ctx["total_players"] = players.count()
         ctx["recent_updates"] = players.filter(updated_at__gte=twelve_months_ago).count()
         ctx["inactive_players"] = players.filter(updated_at__lt=twelve_months_ago).count()
@@ -240,14 +314,11 @@ class AdminPlayerListView(LoginRequiredMixin, InGroupsRequiredMixin, ListView):
             gender_map = dict(Player._meta.get_field("gender").flatchoices)
         except Exception:
             gender_map = {}
-
         raw_gender_counts = players.values("gender").annotate(total=Count("id")).order_by("gender")
-        totals_by_gender = {}
-        for row in raw_gender_counts:
-            code = row["gender"]
-            label = gender_map.get(code, code or "Unspecified")
-            totals_by_gender[label] = row["total"]
-        ctx["totals_by_gender"] = totals_by_gender
+        ctx["totals_by_gender"] = {
+            (gender_map.get(row["gender"], row["gender"] or "Unspecified")): row["total"]
+            for row in raw_gender_counts
+        }
 
         # Teams with players
         ctx["totals_per_team"] = (
@@ -268,17 +339,12 @@ class AdminPlayerListView(LoginRequiredMixin, InGroupsRequiredMixin, ListView):
         }
         ctx["membership_types"] = membership_qs
 
-        # Age distribution (uses p.age property if present)
+        # Age distribution (expects a .age property)
         age_ranges = {"U10": (0, 9), "U12": (10, 11), "U14": (12, 13), "U16": (14, 15), "Adults": (16, 200)}
-        age_distribution = {}
-        for label, (min_age, max_age) in age_ranges.items():
-            count = sum(
-                1
-                for p in players
-                if getattr(p, "age", None) is not None and min_age <= p.age <= max_age
-            )
-            age_distribution[label] = count
-        ctx["age_distribution"] = age_distribution
+        ctx["age_distribution"] = {
+            label: sum(1 for p in players if getattr(p, "age", None) is not None and lo <= p.age <= hi)
+            for label, (lo, hi) in age_ranges.items()
+        }
 
         # Access logs today
         ctx["today_access_logs"] = PlayerAccessLog.objects.filter(accessed_at__date=today).count()
@@ -289,7 +355,7 @@ class AdminPlayerListView(LoginRequiredMixin, InGroupsRequiredMixin, ListView):
         ctx["questionnaire_completion"] = round((answered_players / total_players) * 100, 1) if total_players else 0
 
         # Upcoming birthdays (next 30 days)
-        upcoming_birthdays = []
+        upcoming = []
         for p in players:
             dob = getattr(p, "date_of_birth", None)
             if not dob:
@@ -297,42 +363,106 @@ class AdminPlayerListView(LoginRequiredMixin, InGroupsRequiredMixin, ListView):
             try:
                 next_bd = dob.replace(year=today.year)
             except ValueError:
-                next_bd = dob.replace(year=today.year, day=1, month=3)  # handle Feb 29
+                next_bd = dob.replace(year=today.year, day=1, month=3)  # 29 Feb → 1 Mar
             if next_bd < today:
                 try:
                     next_bd = dob.replace(year=today.year + 1)
                 except ValueError:
                     next_bd = dob.replace(year=today.year + 1, day=1, month=3)
-            delta = (next_bd - today).days
-            if 0 <= delta <= 30:
-                upcoming_birthdays.append(p)
-        ctx["upcoming_birthdays"] = upcoming_birthdays
+            if 0 <= (next_bd - today).days <= 30:
+                upcoming.append(p)
+        ctx["upcoming_birthdays"] = upcoming
 
         return ctx
 
 
-class AdminPlayerDetailView(LoginRequiredMixin, InGroupsRequiredMixin, DetailView):
+class AdminPlayerDetailView(LoginRequiredMixin, PermissionRequiredMixin, InGroupsRequiredMixin, DetailView):
     """
     Staff view of a single player with answers + team memberships.
+
+    Access:
+      - Requires `members.view_staff_area`.
+      - If user has `members.view_all_players` -> can view any player.
+      - Else -> only players on teams the user is associated with:
+          * Team.staff M2M (if present), OR
+          * Teams where the user assigned memberships (TeamMembership.assigned_by=user).
     """
     model = Player
     pk_url_kwarg = "player_id"
     template_name = "members/admin_player_detail.html"
     context_object_name = "player"
-    raise_exception = True
+    permission_required = "members.view_staff_area"
+    raise_exception = True  # 403 on missing global permission
+
+    # ---- helpers ------------------------------------------------------------
+
+    def _get_user_team_ids(self, user):
+        """Return IDs of teams this user can manage/see."""
+        from .models import Team, TeamMembership
+        team_ids = set()
+
+        # Optional future-proof: Team.staff (M2M to User)
+        try:
+            Team._meta.get_field("staff")
+            team_ids.update(Team.objects.filter(staff=user).values_list("id", flat=True))
+        except Exception:
+            pass
+
+        # Fallback: teams where this user assigned players
+        team_ids.update(
+            TeamMembership.objects.filter(assigned_by=user)
+            .values_list("team_id", flat=True)
+            .distinct()
+        )
+
+        return list(team_ids)
+
+    # ---- object-level permission -> 403 on fail -----------------------------
+
+    def get_queryset(self):
+        # Unrestricted base queryset; object-level check happens in get_object()
+        return (
+            Player.objects
+            .select_related("player_type", "created_by")
+            .prefetch_related("team_memberships__team", "team_memberships__positions")
+        )
+
+    def get_object(self, queryset=None):
+        obj = super().get_object(queryset)
+        user = self.request.user
+
+        # Full access -> allowed
+        if user.has_perm("members.view_all_players"):
+            return obj
+
+        # Team-restricted access
+        allowed_team_ids = self._get_user_team_ids(user)
+        if allowed_team_ids and obj.team_memberships.filter(team_id__in=allowed_team_ids).exists():
+            return obj
+
+        # Not allowed -> 403 (shows your 403 denied page)
+        raise PermissionDenied("You do not have access to this player.")
+
+    # ---- GET with access logging -------------------------------------------
 
     def get(self, request, *args, **kwargs):
-        response = super().get(request, *args, **kwargs)
+        response = super().get(request, *args, **kwargs)  # will raise PermissionDenied if blocked
+        from .models import PlayerAccessLog
         PlayerAccessLog.objects.create(player=self.object, accessed_by=request.user)
         return response
 
+    # ---- context ------------------------------------------------------------
+
     def get_context_data(self, **kwargs):
         from django.contrib.auth.models import Group as DGroup
+        from .models import PlayerAnswer
+        from .forms import TeamAssignmentForm
 
         ctx = super().get_context_data(**kwargs)
         user = self.request.user
         player: Player = ctx["player"]
 
+        # Answers visibility by group
         if user.is_superuser or user.groups.filter(name="Full Access").exists():
             answers = (
                 PlayerAnswer.objects.filter(player=player)
@@ -354,15 +484,18 @@ class AdminPlayerDetailView(LoginRequiredMixin, InGroupsRequiredMixin, DetailVie
         ctx["memberships"] = player.team_memberships.select_related("team").all()
         ctx["team_form"] = TeamAssignmentForm(player=player)
 
+        # Access logs (paginated)
         logs = player.access_logs.select_related("accessed_by").all()
         paginator = Paginator(logs, 10)
-        page_obj = paginator.get_page(self.request.GET.get("page"))
-        ctx["log_page"] = page_obj
+        ctx["log_page"] = paginator.get_page(self.request.GET.get("page"))
 
         return ctx
 
+    # ---- POST (assign team) -------------------------------------------------
+
     def post(self, request, *args, **kwargs):
-        self.object = self.get_object()
+        self.object = self.get_object()  # respects object-level permissions
+        from .forms import TeamAssignmentForm
         form = TeamAssignmentForm(request.POST, player=self.object)
         if form.is_valid():
             form.save(user=request.user)
