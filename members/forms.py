@@ -112,12 +112,16 @@ class DynamicAnswerForm(forms.Form):
                 ans.detail_text = ""
 
             elif q.question_type == "boolean":
-                ans.boolean_answer = bool(self.cleaned_data.get(f"q_{qid}") or False)
-                if q.requires_detail_if_yes and ans.boolean_answer:
-                    ans.detail_text = self.cleaned_data.get(f"q_{qid}_detail", "")
-                else:
-                    ans.detail_text = ""
-                ans.text_answer = ""
+                field = forms.BooleanField(
+                    label=q.label,
+                    required=False,
+                    help_text="",  # keep empty so Crispy doesn't print anything below
+                )
+                # store the QUESTION DESCRIPTION here (not help_text)
+                field.widget.attrs["data_description"] = q.description or ""
+                if q.id in existing and existing[q.id].boolean_answer is not None:
+                    field.initial = existing[q.id].boolean_answer
+                self.fields[base_name] = field
 
             elif q.question_type == "choice":
                 ans.text_answer = self.cleaned_data.get(f"q_{qid}", "")

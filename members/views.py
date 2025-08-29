@@ -16,7 +16,6 @@ from django.core.exceptions import PermissionDenied
 from django.utils import timezone
 from django.apps import apps
 
-
 from .forms import DynamicAnswerForm, PlayerForm, TeamAssignmentForm
 from .models import (
     DynamicQuestion,
@@ -96,10 +95,6 @@ class PlayerCreateView(LoginRequiredMixin, CreateView):
 
 @login_required
 def answer_view(request, public_id):
-    """
-    Owner-gated dynamic Q&A form.
-    Only the user who created the player can view/update their answers.
-    """
     player = get_owned_player_or_404(request.user, public_id=public_id)
 
     if request.method == "POST":
@@ -117,26 +112,30 @@ def answer_view(request, public_id):
         .order_by("category__display_order", "category__name", "display_order", "id")
     )
 
-    # Build groups of BoundFields for the template
     grouped_fields = OrderedDict()
     for q in questions:
-        cat_name = q.category.name if q.category else "General"
-        grouped_fields.setdefault(cat_name, [])
+        cat = q.category
+        cat_key = cat.id if cat else "general"
+
+        if cat_key not in grouped_fields:
+            grouped_fields[cat_key] = {
+                "name": cat.name if cat else "General",
+                # handle both 'description' and the earlier 'discription' field name
+                "description": (getattr(cat, "description", None) 
+                                or getattr(cat, "discription", "") 
+                                if cat else ""),
+                "items": [],
+            }
 
         main_name = q.get_field_name()
         detail_name = q.get_detail_field_name()
-
         main_bf = form[main_name] if main_name in form.fields else None
         detail_bf = form[detail_name] if q.requires_detail_if_yes and detail_name in form.fields else None
 
-        grouped_fields[cat_name].append({"main": main_bf, "detail": detail_bf})
+        grouped_fields[cat_key]["items"].append({"main": main_bf, "detail": detail_bf})
 
-    # NEW: use TeamMembership to fetch teams + positions
     memberships = (
-        player.team_memberships
-        .select_related("team")
-        .prefetch_related("positions")
-        .order_by("team__name")
+        player.team_memberships.select_related("team").prefetch_related("positions").order_by("team__name")
     )
 
     return render(
@@ -146,7 +145,7 @@ def answer_view(request, public_id):
             "player": player,
             "form": form,
             "grouped_fields": grouped_fields,
-            "team_memberships": memberships,  # <-- pass to template
+            "team_memberships": memberships,
         },
     )
 

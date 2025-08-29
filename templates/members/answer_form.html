@@ -126,33 +126,41 @@
         <form method="post" novalidate>
           {% csrf_token %}
 
-          {% for category, items in grouped_fields.items %}
-            <div class="card card-outline card-primary mb-3">
-              <div class="card-header d-flex justify-content-between align-items-center">
-                <h3 class="card-title mb-0">{{ category }}</h3>
-                <!-- collapse toggle -->
-                <button class="btn btn-tool" type="button" data-bs-toggle="collapse" data-bs-target="#section-{{forloop.counter}}" aria-expanded="true" aria-controls="section-{{forloop.counter}}">
-                  <i class="fas fa-minus"></i>
-                </button>
-              </div>
+          {% for cat in grouped_fields.values %}
+              <div class="card card-outline card-primary mb-3">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                  <h3 class="card-title mb-0">
+                    {{ cat.name }}<br>
+                    {% if cat.description %}
+                      <small class="text-muted">{{ cat.description }}</small>
+                    {% endif %}
+                  </h3>
+                  <button class="btn btn-tool" type="button"
+                          data-bs-toggle="collapse"
+                          data-bs-target="#section-{{ forloop.counter }}"
+                          aria-expanded="true"
+                          aria-controls="section-{{ forloop.counter }}">
+                    <i class="fas fa-minus"></i>
+                  </button>
+                </div>
 
-              <div id="section-{{forloop.counter}}" class="card-body collapse show">
-                {% for item in items %}
-                  {% if item.main %}
-                    <div class="form-group mb-3" id="group-{{ item.main.name }}">
-                      {{ item.main|as_crispy_field }}
-                    </div>
-                  {% endif %}
-
-                  {% if item.detail %}
-                    <div class="form-group mb-3 detail-field d-none" id="group-{{ item.detail.name }}">
-                      {{ item.detail|as_crispy_field }}
-                    </div>
-                  {% endif %}
-                {% endfor %}
+                <div id="section-{{ forloop.counter }}" class="card-body collapse show">
+                  {% for item in cat.items %}
+                    {% if item.main %}
+                      <div class="form-group mb-3" id="group-{{ item.main.name }}">
+                        {{ item.main|as_crispy_field }}
+                      </div>
+                    {% endif %}
+                    {% if item.detail %}
+                      <div class="form-group mb-3 detail-field d-none" id="group-{{ item.detail.name }}">
+                        {{ item.detail|as_crispy_field }}
+                      </div>
+                    {% endif %}
+                  {% endfor %}
+                </div>
               </div>
-            </div>
           {% endfor %}
+
 
           <!-- Sticky action bar -->
           <div class="card mb-5">

@@ -77,6 +77,10 @@ QUESTION_TYPE_CHOICES = (
 class QuestionCategory(models.Model):
     name = models.CharField(max_length=100, unique=True)
     display_order = models.PositiveIntegerField(default=0)
+    description = models.TextField(
+        blank=True,
+        help_text="Optional detailed description or instructions (Markdown supported)."
+    )
 
     class Meta:
         ordering = ["display_order", "name"]

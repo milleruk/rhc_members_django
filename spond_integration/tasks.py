@@ -11,7 +11,6 @@ from datetime import datetime, timedelta
 from .models import SpondEvent, SpondAttendance, SpondGroup, SpondMember
 from .services import SpondClient, run_async, fetch_events_between
 
-from .services.spond_api import SpondClient
 
 def _pick(*vals):
     """Return the first truthy trimmed string from candidates."""
@@ -89,7 +88,7 @@ def _parse_aware(val):
     return dt
 
 @shared_task
-def sync_spond_events(days_back=14, days_forward=60):
+def sync_spond_events(days_back=14, days_forward=120):
     user = getattr(settings, "SPOND_USERNAME", "")
     pwd  = getattr(settings, "SPOND_PASSWORD", "")
     if not user or not pwd:
@@ -362,67 +361,3 @@ def sync_spond_members():
             linked += 1
 
     return f"Synced {linked} members; groups indexed: {len(group_index)}"
-
-
-
-@transaction.atomic
-def sync_spond_transactions(since: dt.datetime | None = None, until: dt.datetime | None = None, page_size: int = 100) -> dict:
-    """
-    Pull transactions from Spond and upsert into SpondTransaction.
-    Returns a summary dict.
-    """
-    client = SpondClient()
-    created = 0
-    updated = 0
-    seen = 0
-
-    page = 1
-    while True:
-        payload = client.list_transactions(since=since, until=until, page=page, page_size=page_size)
-        results = payload.get("results") or payload  # support both shapes
-        if not results:
-            break
-
-        for item in results:
-            seen += 1
-            spond_txn_id = str(item.get("id") or item.get("transaction_id"))
-            if not spond_txn_id:
-                continue
-
-            member_id = _extract_member_id(item)
-            smember = SpondMember.objects.filter(spond_member_id=member_id).first() if member_id else None
-
-            # resolve player via link (first match)
-            player = None
-            if smember:
-                link = PlayerSpondLink.objects.select_related("player").filter(spond_member=smember).first()
-                player = getattr(link, "player", None)
-
-            defaults = {
-                "spond_member": smember,
-                "player": player,
-                "amount_minor": int(item.get("amount_minor") or item.get("amount", 0)),
-                "currency": item.get("currency") or "GBP",
-                "status": (item.get("status") or "paid").lower(),
-                "description": item.get("description") or "",
-                "reference": item.get("reference") or "",
-                "created_at": _parse_dt(item.get("created_at")) or now(),
-                "paid_at": _parse_dt(item.get("paid_at")),
-                "raw": item,
-            }
-
-            obj, is_created = SpondTransaction.objects.update_or_create(
-                spond_txn_id=spond_txn_id,
-                defaults=defaults,
-            )
-            created += 1 if is_created else 0
-            updated += 0 if is_created else 1
-
-        # paginated?
-        next_url = payload.get("next")
-        if next_url:
-            page += 1
-            continue
-        break
-
-    return {"created": created, "updated": updated, "seen": seen}
