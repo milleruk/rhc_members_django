@@ -514,6 +514,35 @@ class AdminPlayerDetailView(LoginRequiredMixin, PermissionRequiredMixin, InGroup
         paginator = Paginator(logs, 10)
         ctx["log_page"] = paginator.get_page(self.request.GET.get("page"))
 
+         # --- Spond: all attendances for the active link, newest first, paginated ---
+        link = (
+            player.spond_links.filter(active=True)
+            .select_related("spond_member")
+            .first()
+        )
+        ctx["spond_member"] = getattr(link, "spond_member", None)
+
+        attendances_qs = None
+        if ctx["spond_member"]:
+            attendances_qs = (
+                ctx["spond_member"]
+                .attendances.select_related("event")
+                .order_by("-event__start_at")
+            )
+
+        page_number = self.request.GET.get("spond_page", 1)
+        if attendances_qs is not None:
+            paginator = Paginator(attendances_qs, 25)  # show 25 per page
+            try:
+                page_obj = paginator.page(page_number)
+            except PageNotAnInteger:
+                page_obj = paginator.page(1)
+            except EmptyPage:
+                page_obj = paginator.page(paginator.num_pages)
+        else:
+            page_obj = None
+
+        ctx["spond_attendances_page"] = page_obj
         return ctx
 
     # ---- POST (assign team) -------------------------------------------------

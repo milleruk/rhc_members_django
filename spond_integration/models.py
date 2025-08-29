@@ -49,3 +49,46 @@ class SpondGroup(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class SpondEvent(models.Model):
+    spond_event_id = models.CharField(max_length=64, unique=True)
+    title          = models.CharField(max_length=255, blank=True)          # from "heading"
+    description    = models.TextField(blank=True)                           # from "description"
+    start_at       = models.DateTimeField(null=True, blank=True)            # from "startTimestamp"
+    end_at         = models.DateTimeField(null=True, blank=True)            # from "endTimestamp"
+    meetup_at      = models.DateTimeField(null=True, blank=True)            # from "meetupTimestamp" (optional)
+    timezone       = models.CharField(max_length=64, blank=True)            # not in sample, kept if appears
+    location_name  = models.CharField(max_length=255, blank=True)           # from location.feature
+    location_addr  = models.CharField(max_length=512, blank=True)           # from location.address
+    location_lat   = models.FloatField(null=True, blank=True)
+    location_lng   = models.FloatField(null=True, blank=True)
+    group          = models.ForeignKey("SpondGroup", null=True, blank=True,
+                                       on_delete=models.SET_NULL, related_name="events")
+    data           = models.JSONField(default=dict, blank=True)
+    last_synced_at = models.DateTimeField(null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.title or self.spond_event_id} @ {self.start_at or 'TBA'}"
+    
+
+class SpondAttendance(models.Model):
+    STATUS = (
+        ("going", "Going"),
+        ("maybe", "Maybe"),
+        ("declined", "Not going"),
+        ("attended", "Attended / Checked-in"),
+        ("unknown", "Unknown"),
+    )
+    event         = models.ForeignKey("SpondEvent", on_delete=models.CASCADE, related_name="attendances")
+    member        = models.ForeignKey("SpondMember", on_delete=models.CASCADE, related_name="attendances")
+    status        = models.CharField(max_length=16, choices=STATUS, default="unknown")
+    responded_at  = models.DateTimeField(null=True, blank=True)
+    checked_in_at = models.DateTimeField(null=True, blank=True)
+    data          = models.JSONField(default=dict, blank=True)
+
+    class Meta:
+        unique_together = [("event", "member")]
+
+    def __str__(self):
+        return f"{self.member} → {self.event}: {self.status}"

@@ -52,11 +52,12 @@
     </a>
 
     <div class="sidebar">
-
-      <div class="user-panel mt-3 pb-3 mb-3 d-flex">
-        <div class="image">
-          <img src="https://adminlte.io/themes/v3/dist/img/AdminLTELogo.png" class="img-circle elevation-2" alt="User Image">
-        </div>
+<div class="user-panel mt-3 pb-3 mb-3 d-flex">
+                        <div class="image">
+                            
+                                <i class="fas fa-inverse user-profile fa-user-circle"></i>
+                            
+                        </div>
         <div class="info">
           <a href="#" class="d-block">{{ user.first_name }} {{ user.last_name }}</a>
         </div>
@@ -102,7 +103,6 @@
           {% endif %}
 
           {# ===== RESOURCES ===== #}
-          {% if perms.resources.view_policy or perms.resources.view_document or perms.resources.view_task %}
             <li class="nav-header">CLUB RESOURCES</li>
 
             {% if perms.resources.view_policy %}
@@ -142,7 +142,6 @@
                 <p>Useful Links</p>
               </a>
             </li>
-          {% endif %}
 
           {# ===== REPORTS (placeholder) ===== #}
           {% if perms.members.view_player %}

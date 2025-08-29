@@ -29,7 +29,6 @@
         <div class="card card-primary card-outline">
           <div class="card-body box-profile">
             <div class="text-center">
-              {% comment %} Avatar placeholder with initials {% endcomment %}
               <div class="img-circle elevation-2 bg-primary d-inline-flex align-items-center justify-content-center"
                    style="width:96px;height:96px;font-size:28px;color:#fff;">
                 {{ player.first_name|default:"?"|slice:":1" }}{{ player.last_name|default:""|slice:":1" }}
@@ -38,9 +37,7 @@
             <h3 class="profile-username text-center mt-2 mb-0">
               {{ player.first_name }} {{ player.last_name }}
             </h3>
-            <p class="text-muted text-center">
-              {{ player.player_type }}
-            </p>
+            <p class="text-muted text-center">{{ player.player_type }}</p>
 
             <ul class="list-group list-group-unbordered mb-3">
               <li class="list-group-item">
@@ -87,38 +84,43 @@
             </small>
           </div>
         </div>
-
       </div>
 
       <!-- RIGHT COLUMN: tabs -->
       <div class="col-md-9">
         <div class="card">
           <div class="card-header p-2">
-            {# --- TABS HEADER --- #}
-              <ul class="nav nav-pills" id="profile-tabs">
+            <ul class="nav nav-pills" id="profile-tabs">
+              <li class="nav-item">
+                <a class="nav-link active" href="#answers" data-toggle="tab">
+                  <i class="fas fa-list-ul mr-1"></i> Answers
+                </a>
+              </li>
+
+              {% if perms.members.view_team_assignment %}
                 <li class="nav-item">
-                  <a class="nav-link active" href="#answers" data-toggle="tab">
-                    <i class="fas fa-list-ul mr-1"></i> Answers
+                  <a class="nav-link" href="#teams" data-toggle="tab">
+                    <i class="fas fa-users mr-1"></i> Team Memberships
                   </a>
                 </li>
+              {% endif %}
 
-                {# Only show Team tab if user can view assignments #}
-                {% if perms.members.view_team_assignment %}
-                  <li class="nav-item">
-                    <a class="nav-link" href="#teams" data-toggle="tab">
-                      <i class="fas fa-users mr-1"></i> Team Memberships
-                    </a>
-                  </li>
-                {% endif %}
-                {% if perms.members.view_access_logs %}
-                  <li class="nav-item">
-                    <a class="nav-link" href="#logs" data-toggle="tab">
-                      <i class="fas fa-clipboard-list mr-1"></i> Access Logs
-                    </a>
-                  </li>
-                {% endif %}
-              </ul>
+              {% if perms.members.view_access_logs %}
+                <li class="nav-item">
+                  <a class="nav-link" href="#logs" data-toggle="tab">
+                    <i class="fas fa-clipboard-list mr-1"></i> Access Logs
+                  </a>
+                </li>
+              {% endif %}
+
+              <li class="nav-item">
+                <a class="nav-link" href="#spond" data-toggle="tab">
+                  <i class="fas fa-calendar-check mr-1"></i> Spond
+                </a>
+              </li>
+            </ul>
           </div>
+
           <div class="card-body">
             <div class="tab-content">
               <!-- Answers -->
@@ -127,9 +129,7 @@
                 {% for group in category_list %}
                   <div class="card card-outline card-info mb-3">
                     <div class="card-header py-2">
-                      <h3 class="card-title mb-0">
-                        {{ group.grouper|default:"General" }}
-                      </h3>
+                      <h3 class="card-title mb-0">{{ group.grouper|default:"General" }}</h3>
                     </div>
                     <div class="card-body p-0">
                       <table class="table table-sm mb-0">
@@ -163,10 +163,9 @@
               </div>
 
               <!-- Team Memberships -->
-              {# Only render the pane at all if they have view permission #}
               {% if perms.members.view_team_assignment %}
                 <div class="tab-pane" id="teams">
-                  {% with show_actions=perms.members.edit_team_assignment %}
+                  {% with show_actions=perms.members.edit_team_assignments %}
                     <div class="card card-outline card-success mb-3">
                       <div class="card-header py-2">
                         <h3 class="card-title mb-0">Current Assignments</h3>
@@ -197,7 +196,6 @@
                                     {{ m.assigned_by }} · {{ m.assigned_at|date:"Y-m-d H:i" }}
                                   </small>
                                 </td>
-
                                 {% if show_actions %}
                                   <td class="align-middle text-right">
                                     <form method="post" action="{% url 'remove_membership' m.id %}" class="d-inline">
@@ -221,7 +219,6 @@
                       </div>
                     </div>
 
-                    {# Add form only if they have edit permission #}
                     {% if show_actions %}
                       <div class="card card-outline card-success">
                         <div class="card-header py-2">
@@ -288,12 +285,97 @@
                 </div>
               {% endif %}
 
+              <!-- Spond -->
+              <div class="tab-pane" id="spond">
+                <a id="spond-events"></a>
+                <div class="card card-outline card-warning">
+                  <div class="card-header py-2">
+                    <h3 class="card-title mb-0">Spond</h3>
+                    <div class="card-tools">
+                      {% if spond_attendances_page %}
+                        <span class="badge badge-secondary">
+                          {{ spond_attendances_page.paginator.count }} total
+                        </span>
+                      {% endif %}
+                    </div>
+                  </div>
+
+                  <div class="card-body p-0">
+                    {% if spond_member %}
+                      {% if spond_attendances_page and spond_attendances_page.object_list %}
+                        <div class="table-responsive">
+                          <table class="table table-sm table-striped mb-0">
+                            <thead class="text-muted">
+                              <tr>
+                                <th style="width:45%;">Event</th>
+                                <th style="width:25%;">Start</th>
+                                <th style="width:15%;">Status</th>
+                                <th style="width:15%;">Notes</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {% for att in spond_attendances_page.object_list %}
+                                <tr>
+                                  <td class="align-middle"><strong>{{ att.event.title|default:"(No title)" }}</strong></td>
+                                  <td class="align-middle">{{ att.event.start_at|date:"D j M Y, H:i" }}</td>
+                                  <td class="align-middle"><span class="badge badge-light">{{ att.status }}</span></td>
+                                  <td class="align-middle">{{ att.note|default:"—" }}</td>
+                                </tr>
+                              {% endfor %}
+                            </tbody>
+                          </table>
+                        </div>
+                      {% else %}
+                        <div class="p-3 text-muted">No Spond attendance records found for this player.</div>
+                      {% endif %}
+                    {% else %}
+                      <div class="p-3">
+                        <div class="alert alert-secondary mb-0">
+                          <i class="far fa-link mr-1"></i>
+                          No active Spond link found for this player.
+                        </div>
+                      </div>
+                    {% endif %}
+                  </div>
+
+                  {% if spond_attendances_page and spond_attendances_page.paginator.num_pages > 1 %}
+                    <div class="card-footer py-2">
+                      <nav aria-label="Spond pagination">
+                        <ul class="pagination pagination-sm mb-0 justify-content-end">
+                          {% if spond_attendances_page.has_previous %}
+                            <li class="page-item">
+                              <a class="page-link" href="?spond_page={{ spond_attendances_page.previous_page_number }}#spond" aria-label="Previous">&laquo;</a>
+                            </li>
+                          {% else %}
+                            <li class="page-item disabled"><span class="page-link">&laquo;</span></li>
+                          {% endif %}
+
+                          <li class="page-item disabled">
+                            <span class="page-link">
+                              Page {{ spond_attendances_page.number }} of {{ spond_attendances_page.paginator.num_pages }}
+                            </span>
+                          </li>
+
+                          {% if spond_attendances_page.has_next %}
+                            <li class="page-item">
+                              <a class="page-link" href="?spond_page={{ spond_attendances_page.next_page_number }}#spond" aria-label="Next">&raquo;</a>
+                            </li>
+                          {% else %}
+                            <li class="page-item disabled"><span class="page-link">&raquo;</span></li>
+                          {% endif %}
+                        </ul>
+                      </nav>
+                    </div>
+                  {% endif %}
+                </div>
               </div>
+              <!-- /Spond -->
 
             </div><!-- /.tab-content -->
           </div><!-- /.card-body -->
         </div><!-- /.card -->
       </div>
+      <!-- /RIGHT COLUMN -->
     </div>
   </div>
 </section>

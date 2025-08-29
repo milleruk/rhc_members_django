@@ -5,6 +5,192 @@ from django.utils import timezone
 from django.db import transaction
 from .models import SpondMember, SpondGroup
 from .services import SpondClient, run_async, fetch_groups_and_members
+from django.utils.dateparse import parse_datetime
+from datetime import datetime, timedelta
+
+from .models import SpondEvent, SpondAttendance, SpondGroup, SpondMember
+from .services import SpondClient, run_async, fetch_events_between
+
+def _pick(*vals):
+    """Return the first truthy trimmed string from candidates."""
+    for v in vals:
+        if isinstance(v, str) and v.strip():
+            return v.strip()
+        if v:
+            return v
+    return ""
+
+def _parse_dt(val):
+    """Parse ISO-like strings to aware datetimes if possible."""
+    if not val:
+        return None
+    dt = parse_datetime(val)
+    if dt and timezone.is_naive(dt):
+        dt = timezone.make_aware(dt, timezone.get_current_timezone())
+    return dt
+
+def _norm_status(raw, fallback="unknown"):
+    raw = (raw or "").lower()
+    if raw in {"going", "yes", "accepted"}:
+        return "going"
+    if raw in {"maybe", "tentative"}:
+        return "maybe"
+    if raw in {"no", "declined", "not_going", "notgoing"}:
+        return "declined"
+    if raw in {"attended", "checked_in", "checkedin"}:
+        return "attended"
+    return fallback
+
+def _iter_participants(ev):
+    """
+    Yield tuples (payload, status_hint) from any of:
+      * list of dicts
+      * list of strings (member ids)
+      * dict with buckets {'going': [...], 'declined': [...], 'maybe': [...]}
+    """
+    for key in ("participants", "attendees", "responses"):
+        if key not in ev:
+            continue
+        block = ev[key]
+        # Case A: list
+        if isinstance(block, list):
+            for item in block:
+                yield item, None
+            return
+        # Case B: dict of buckets
+        if isinstance(block, dict):
+            for status_key, items in block.items():
+                if not isinstance(items, list):
+                    continue
+                for item in items:
+                    yield item, status_key  # status hint from key
+            return
+    # Nothing found
+    return
+
+def _parse_aware(val):
+    if not val:
+        return None
+    dt = parse_datetime(val) if isinstance(val, str) else val
+    if not dt:
+        return None
+    if timezone.is_naive(dt):
+        dt = timezone.make_aware(dt, timezone.get_current_timezone())
+    return dt
+
+@shared_task
+def sync_spond_events(days_back=14, days_forward=60):
+    user = getattr(settings, "SPOND_USERNAME", "")
+    pwd  = getattr(settings, "SPOND_PASSWORD", "")
+    if not user or not pwd:
+        return "SPOND creds missing"
+
+    start = datetime.now() - timedelta(days=int(days_back))
+    end   = datetime.now() + timedelta(days=int(days_forward))
+
+    async def _fetch():
+        async with SpondClient(user, pwd) as session:
+            return await fetch_events_between(session, start, end) or []
+
+    raw_events = run_async(_fetch())
+    now = timezone.now()
+
+    created_or_updated = 0
+    attendance_upserts = 0
+
+    with transaction.atomic():
+        group_by_id  = {g.spond_group_id: g for g in SpondGroup.objects.all()}
+        member_by_id = {m.spond_member_id: m for m in SpondMember.objects.all()}
+
+        for ev in raw_events:
+            ev_id = ev.get("id") or ev.get("uuid")
+            if not ev_id:
+                continue
+
+            # --- Event fields from your sample ---
+            title       = (ev.get("heading") or "").strip()
+            description = ev.get("description") or ""
+            start_at    = _parse_aware(ev.get("startTimestamp"))
+            end_at      = _parse_aware(ev.get("endTimestamp"))
+            meetup_at   = _parse_aware(ev.get("meetupTimestamp"))
+
+            loc = ev.get("location") or {}
+            location_name = loc.get("feature") or ""
+            location_addr = loc.get("address") or ""
+            lat = loc.get("latitude"); lng = loc.get("longitude")
+
+            # Group id: prefer ev["group"]["id"], else recipients.group.id
+            group_id = (ev.get("group") or {}).get("id") \
+                       or ((ev.get("recipients") or {}).get("group") or {}).get("id")
+            group_obj = group_by_id.get(group_id) if group_id else None
+
+            # Upsert event
+            evt, _ = SpondEvent.objects.update_or_create(
+                spond_event_id=ev_id,
+                defaults={
+                    "title": title,
+                    "description": description,
+                    "start_at": start_at,
+                    "end_at": end_at,
+                    "meetup_at": meetup_at,
+                    "location_name": location_name,
+                    "location_addr": location_addr,
+                    "location_lat": lat,
+                    "location_lng": lng,
+                    "group": group_obj,
+                    "data": ev,
+                    "last_synced_at": now,
+                },
+            )
+            created_or_updated += 1
+
+            # --- Attendance from responses buckets ---
+            resp = ev.get("responses") or {}
+            accepted     = set(resp.get("acceptedIds") or [])
+            declined     = set(resp.get("declinedIds") or [])
+            unanswered   = set(resp.get("unansweredIds") or [])
+
+            # Override map: memberId -> "ATTENDED"/"ABSENT"
+            reg_att = resp.get("registeredAttendance") or {}
+
+            def _status_for(member_id: str) -> str:
+                # registeredAttendance overrides everything
+                ra = (reg_att.get(member_id) or "").upper()
+                if ra == "ATTENDED":
+                    return "attended"
+                if ra == "ABSENT":
+                    return "declined"  # or "absent" if you want a separate status; keep "declined" for now
+
+                # else bucket decision
+                if member_id in accepted:
+                    return "going"
+                if member_id in declined:
+                    return "declined"
+                if member_id in unanswered:
+                    return "unknown"
+                return "unknown"
+
+            # Upsert attendance for all ids appearing in any bucket or override
+            member_ids = set().union(accepted, declined, unanswered, reg_att.keys())
+            for mid in member_ids:
+                sm = member_by_id.get(mid)
+                if not sm:
+                    continue  # ensure member sync ran first
+
+                status = _status_for(mid)
+                SpondAttendance.objects.update_or_create(
+                    event=evt, member=sm,
+                    defaults={
+                        "status": status,
+                        # your sample didn't show response/checked-in timestamps per member in these buckets
+                        "responded_at": None,
+                        "checked_in_at": (now if status == "attended" else None),
+                        "data": {"source": "responses", "memberId": mid},
+                    },
+                )
+                attendance_upserts += 1
+
+    return f"Events upserted: {created_or_updated}; attendance upserts: {attendance_upserts}"
 
 @shared_task
 def sync_spond_members():
