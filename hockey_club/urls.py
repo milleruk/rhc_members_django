@@ -8,6 +8,7 @@ from members.views import TermsView, PrivacyView
 
 urlpatterns = [
 path("admin/", admin.site.urls),
+path('hijack/', include('hijack.urls')),
 path("accounts/", include("accounts.urls")),
 
 

@@ -11,6 +11,8 @@ from datetime import datetime, timedelta
 from .models import SpondEvent, SpondAttendance, SpondGroup, SpondMember
 from .services import SpondClient, run_async, fetch_events_between
 
+from .services.spond_api import SpondClient
+
 def _pick(*vals):
     """Return the first truthy trimmed string from candidates."""
     for v in vals:
@@ -68,6 +70,14 @@ def _iter_participants(ev):
     # Nothing found
     return
 
+
+def _extract_member_id(txn: dict) -> str | None:
+    # Adjust to real path in your payload
+    # e.g. txn["member"]["id"] or txn.get("spond_member_id")
+    m = txn.get("member") or {}
+    return m.get("id") or txn.get("spond_member_id")
+
+
 def _parse_aware(val):
     if not val:
         return None
@@ -107,7 +117,7 @@ def sync_spond_events(days_back=14, days_forward=60):
             if not ev_id:
                 continue
 
-            # --- Event fields from your sample ---
+            # --- core fields ---
             title       = (ev.get("heading") or "").strip()
             description = ev.get("description") or ""
             start_at    = _parse_aware(ev.get("startTimestamp"))
@@ -119,12 +129,11 @@ def sync_spond_events(days_back=14, days_forward=60):
             location_addr = loc.get("address") or ""
             lat = loc.get("latitude"); lng = loc.get("longitude")
 
-            # Group id: prefer ev["group"]["id"], else recipients.group.id
+            # Primary group
             group_id = (ev.get("group") or {}).get("id") \
                        or ((ev.get("recipients") or {}).get("group") or {}).get("id")
             group_obj = group_by_id.get(group_id) if group_id else None
 
-            # Upsert event
             evt, _ = SpondEvent.objects.update_or_create(
                 spond_event_id=ev_id,
                 defaults={
@@ -144,24 +153,74 @@ def sync_spond_events(days_back=14, days_forward=60):
             )
             created_or_updated += 1
 
-            # --- Attendance from responses buckets ---
-            resp = ev.get("responses") or {}
-            accepted     = set(resp.get("acceptedIds") or [])
-            declined     = set(resp.get("declinedIds") or [])
-            unanswered   = set(resp.get("unansweredIds") or [])
+            # --- Subgroups (STRICT): only what the payload lists for the invite ---
+            # Priority: recipients.group.subGroups -> subGroups -> subGroupIds
+            explicit_subs = None
 
-            # Override map: memberId -> "ATTENDED"/"ABSENT"
-            reg_att = resp.get("registeredAttendance") or {}
+            rg = (ev.get("recipients") or {}).get("group") or {}
+            if isinstance(rg.get("subGroups"), list) and rg["subGroups"]:
+                explicit_subs = rg["subGroups"]
+            elif isinstance(ev.get("subGroups"), list) and ev["subGroups"]:
+                explicit_subs = ev["subGroups"]
+            elif isinstance(ev.get("subGroupIds"), list) and ev["subGroupIds"]:
+                explicit_subs = ev["subGroupIds"]
+
+            sub_objs = []
+            if explicit_subs:
+                for item in explicit_subs:
+                    if isinstance(item, str):
+                        gid, gname, gdata = item, "", {}
+                    elif isinstance(item, dict):
+                        gid = item.get("id")
+                        gname = (item.get("name") or "").strip()
+                        gdata = item
+                    else:
+                        continue
+                    if not gid:
+                        continue
+
+                    grp = group_by_id.get(gid)
+                    if not grp:
+                        # Create if missing; if we know the parent (primary group), link it
+                        grp, _ = SpondGroup.objects.get_or_create(
+                            spond_group_id=gid,
+                            defaults={
+                                "name": gname or gid,
+                                "parent": group_obj,  # ok if None
+                                "data": gdata or {},
+                            },
+                        )
+                        group_by_id[gid] = grp
+                    # keep name fresh
+                    if gname and grp.name != gname:
+                        grp.name = gname
+                        grp.save(update_fields=["name"])
+                    # ensure correct parent if not set
+                    if group_obj and grp.parent_id != getattr(group_obj, "id", None):
+                        grp.parent = group_obj
+                        grp.save(update_fields=["parent"])
+
+                    sub_objs.append(grp)
+
+            # Apply only the explicit subgroups; if none, clear.
+            if sub_objs:
+                evt.subgroups.set({g.pk: g for g in sub_objs}.values())
+            else:
+                evt.subgroups.clear()
+
+            # --- Attendance ---
+            resp = ev.get("responses") or {}
+            accepted   = set(resp.get("acceptedIds") or [])
+            declined   = set(resp.get("declinedIds") or [])
+            unanswered = set(resp.get("unansweredIds") or [])
+            reg_att    = resp.get("registeredAttendance") or {}
 
             def _status_for(member_id: str) -> str:
-                # registeredAttendance overrides everything
                 ra = (reg_att.get(member_id) or "").upper()
                 if ra == "ATTENDED":
                     return "attended"
                 if ra == "ABSENT":
-                    return "declined"  # or "absent" if you want a separate status; keep "declined" for now
-
-                # else bucket decision
+                    return "declined"  # or "absent" if you add that choice
                 if member_id in accepted:
                     return "going"
                 if member_id in declined:
@@ -170,19 +229,16 @@ def sync_spond_events(days_back=14, days_forward=60):
                     return "unknown"
                 return "unknown"
 
-            # Upsert attendance for all ids appearing in any bucket or override
             member_ids = set().union(accepted, declined, unanswered, reg_att.keys())
             for mid in member_ids:
                 sm = member_by_id.get(mid)
                 if not sm:
-                    continue  # ensure member sync ran first
-
+                    continue
                 status = _status_for(mid)
                 SpondAttendance.objects.update_or_create(
                     event=evt, member=sm,
                     defaults={
                         "status": status,
-                        # your sample didn't show response/checked-in timestamps per member in these buckets
                         "responded_at": None,
                         "checked_in_at": (now if status == "attended" else None),
                         "data": {"source": "responses", "memberId": mid},
@@ -191,6 +247,7 @@ def sync_spond_events(days_back=14, days_forward=60):
                 attendance_upserts += 1
 
     return f"Events upserted: {created_or_updated}; attendance upserts: {attendance_upserts}"
+
 
 @shared_task
 def sync_spond_members():
@@ -305,3 +362,67 @@ def sync_spond_members():
             linked += 1
 
     return f"Synced {linked} members; groups indexed: {len(group_index)}"
+
+
+
+@transaction.atomic
+def sync_spond_transactions(since: dt.datetime | None = None, until: dt.datetime | None = None, page_size: int = 100) -> dict:
+    """
+    Pull transactions from Spond and upsert into SpondTransaction.
+    Returns a summary dict.
+    """
+    client = SpondClient()
+    created = 0
+    updated = 0
+    seen = 0
+
+    page = 1
+    while True:
+        payload = client.list_transactions(since=since, until=until, page=page, page_size=page_size)
+        results = payload.get("results") or payload  # support both shapes
+        if not results:
+            break
+
+        for item in results:
+            seen += 1
+            spond_txn_id = str(item.get("id") or item.get("transaction_id"))
+            if not spond_txn_id:
+                continue
+
+            member_id = _extract_member_id(item)
+            smember = SpondMember.objects.filter(spond_member_id=member_id).first() if member_id else None
+
+            # resolve player via link (first match)
+            player = None
+            if smember:
+                link = PlayerSpondLink.objects.select_related("player").filter(spond_member=smember).first()
+                player = getattr(link, "player", None)
+
+            defaults = {
+                "spond_member": smember,
+                "player": player,
+                "amount_minor": int(item.get("amount_minor") or item.get("amount", 0)),
+                "currency": item.get("currency") or "GBP",
+                "status": (item.get("status") or "paid").lower(),
+                "description": item.get("description") or "",
+                "reference": item.get("reference") or "",
+                "created_at": _parse_dt(item.get("created_at")) or now(),
+                "paid_at": _parse_dt(item.get("paid_at")),
+                "raw": item,
+            }
+
+            obj, is_created = SpondTransaction.objects.update_or_create(
+                spond_txn_id=spond_txn_id,
+                defaults=defaults,
+            )
+            created += 1 if is_created else 0
+            updated += 0 if is_created else 1
+
+        # paginated?
+        next_url = payload.get("next")
+        if next_url:
+            page += 1
+            continue
+        break
+
+    return {"created": created, "updated": updated, "seen": seen}

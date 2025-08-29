@@ -65,6 +65,8 @@ class SpondEvent(models.Model):
     location_lng   = models.FloatField(null=True, blank=True)
     group          = models.ForeignKey("SpondGroup", null=True, blank=True,
                                        on_delete=models.SET_NULL, related_name="events")
+    subgroups = models.ManyToManyField("SpondGroup", blank=True,
+                                       related_name="events_as_subgroup")
     data           = models.JSONField(default=dict, blank=True)
     last_synced_at = models.DateTimeField(null=True, blank=True)
 
