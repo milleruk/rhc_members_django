@@ -14,6 +14,7 @@ from .models import (
     PaymentPlan,
     Subscription,
     resolve_match_fee_for,
+    MatchFeeTariff,
 )
 from .forms import ConfirmSubscriptionForm
 from .permissions import can_manage_player

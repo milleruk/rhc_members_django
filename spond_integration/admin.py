@@ -1,6 +1,6 @@
 # spond/admin.py
 from django.contrib import admin
-from .models import SpondMember, PlayerSpondLink, SpondGroup, SpondEvent, SpondAttendance
+from .models import SpondMember, PlayerSpondLink, SpondGroup, SpondEvent, SpondAttendance, SpondTransaction
 
 @admin.register(SpondMember)
 class SpondMemberAdmin(admin.ModelAdmin):
@@ -32,3 +32,19 @@ class SpondAttendanceAdmin(admin.ModelAdmin):
     list_display  = ("event", "member", "status", "responded_at", "checked_in_at")
     list_filter   = ("status", "event__group")
     search_fields = ("event__title", "member__full_name", "member__email")
+
+
+@admin.register(SpondTransaction)
+class SpondTransactionAdmin(admin.ModelAdmin):
+    list_display = (
+        "spond_txn_id", "type", "status", "amount_display",
+        "currency", "player", "member", "group", "event", "created_at",
+    )
+    list_filter = ("status", "type", "currency", "group")
+    search_fields = ("spond_txn_id", "description", "reference",
+                     "member__full_name", "player__full_name")
+    autocomplete_fields = ("player", "member", "group", "event")
+
+    @admin.display(description="Amount")
+    def amount_display(self, obj):
+        return f"{obj.currency} {obj.amount_minor/100:.2f}"

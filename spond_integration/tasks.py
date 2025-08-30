@@ -8,7 +8,7 @@ from .services import SpondClient, run_async, fetch_groups_and_members
 from django.utils.dateparse import parse_datetime
 from datetime import datetime, timedelta
 
-from .models import SpondEvent, SpondAttendance, SpondGroup, SpondMember
+from .models import SpondEvent, SpondAttendance, SpondGroup, SpondMember, SpondTransaction
 from .services import SpondClient, run_async, fetch_events_between
 
 
@@ -86,6 +86,19 @@ def _parse_aware(val):
     if timezone.is_naive(dt):
         dt = timezone.make_aware(dt, timezone.get_current_timezone())
     return dt
+
+def _int_minor(amount):
+    """
+    Normalize incoming amount (float/decimal/str/int) to integer minor units (pennies).
+    - If payload is already minor units, set settings.SPOND_AMOUNTS_ARE_MINOR=True
+    """
+    as_minor = getattr(settings, "SPOND_AMOUNTS_ARE_MINOR", False)
+    if amount is None:
+        return 0
+    if as_minor:
+        return int(amount)
+    # major → minor
+    return int(round(float(amount) * 100))
 
 @shared_task
 def sync_spond_events(days_back=14, days_forward=120):
@@ -361,3 +374,100 @@ def sync_spond_members():
             linked += 1
 
     return f"Synced {linked} members; groups indexed: {len(group_index)}"
+
+
+@shared_task
+def sync_spond_transactions(days_back=120, days_forward=1):
+    user = getattr(settings, "SPOND_USERNAME", "")
+    pwd  = getattr(settings, "SPOND_PASSWORD", "")
+    if not user or not pwd:
+        return "SPOND creds missing"
+
+    start = datetime.now() - timedelta(days=int(days_back))
+    end   = datetime.now() + timedelta(days=int(days_forward))
+
+    async def _fetch():
+        async with SpondClient(user, pwd) as session:
+            return await session.fetch_transactions_between(start, end) or []
+
+    raw_txns = run_async(_fetch())
+    now = timezone.now()
+
+    upserts = 0
+    linked  = 0
+
+    # quick caches
+    groups = {g.spond_group_id: g for g in SpondGroup.objects.all()}
+    events = {e.spond_event_id: e for e in SpondEvent.objects.all()}
+    members = {m.spond_member_id: m for m in SpondMember.objects.all()}
+
+    # helper to resolve player by member
+    def _player_for_member(sm: SpondMember):
+        if not sm:
+            return None
+        link = sm.player_links.filter(active=True).select_related("player").first()
+        return link.player if link else None
+
+    with transaction.atomic():
+        for t in raw_txns:
+            txn_id = t.get("id") or t.get("uuid")
+            if not txn_id:
+                continue
+
+            # fields (adapt names if your payload differs)
+            t_type   = (t.get("type") or "").upper()         # PAYMENT / REFUND / CHARGE
+            status   = (t.get("status") or "").upper()
+            desc     = (t.get("description") or "")[:510]
+            currency = (t.get("currency") or "GBP").upper()
+            amount   = _int_minor(t.get("amount"))           # normalize to pennies
+
+            created  = _parse_aware(t.get("createdTime") or t.get("created_at"))
+            settled  = _parse_aware(t.get("settledTime") or t.get("settled_at"))
+
+            group_id = (t.get("group") or {}).get("id") or t.get("groupId")
+            event_id = (t.get("event") or {}).get("id") or t.get("eventId")
+            member_id = (t.get("member") or {}).get("id") or t.get("memberId")
+
+            reference = t.get("reference") or t.get("externalReference") or ""
+
+            grp = groups.get(group_id) if group_id else None
+            evt = events.get(event_id) if event_id else None
+            mem = members.get(member_id) if member_id else None
+
+            # opportunistic creation for missing group/event (optional; comment out if you prefer strict)
+            if group_id and not grp:
+                grp, _ = SpondGroup.objects.get_or_create(
+                    spond_group_id=group_id,
+                    defaults={"name": group_id, "data": {}},
+                )
+                groups[group_id] = grp
+            if event_id and not evt:
+                # we avoid creating placeholder events; leave null
+                pass
+
+            player = _player_for_member(mem)
+
+            obj, _created = SpondTransaction.objects.update_or_create(
+                spond_txn_id=txn_id,
+                defaults={
+                    "type": t_type,
+                    "status": status,
+                    "description": desc,
+                    "amount_minor": amount,
+                    "currency": currency,
+                    "created_at": created,
+                    "settled_at": settled,
+                    "group": grp,
+                    "event": evt,
+                    "member": mem,
+                    "player": player,
+                    "reference": reference[:120],
+                    "metadata": t,
+                    "last_synced_at": now,
+                },
+            )
+            upserts += 1
+            if player:
+                linked += 1
+
+    return f"Transactions upserted: {upserts}; linked to players: {linked}"

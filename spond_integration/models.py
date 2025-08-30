@@ -94,3 +94,47 @@ class SpondAttendance(models.Model):
 
     def __str__(self):
         return f"{self.member} → {self.event}: {self.status}"
+
+
+class SpondTransaction(models.Model):
+    """
+    A payment/charge/refund reported by Spond.
+    We attach it to the SpondMember (payer) and, if possible, resolve to a Player via PlayerSpondLink.
+    """
+    spond_txn_id   = models.CharField(max_length=64, unique=True)  # Spond's id
+    type           = models.CharField(max_length=32, blank=True)   # e.g. "PAYMENT", "REFUND", "CHARGE"
+    status         = models.CharField(max_length=32, blank=True)   # e.g. "COMPLETED", "PENDING", "FAILED"
+    description    = models.CharField(max_length=512, blank=True)
+
+    amount_minor   = models.IntegerField(default=0)                 # store in minor units (pennies)
+    currency       = models.CharField(max_length=8, default="GBP")
+
+    created_at     = models.DateTimeField(null=True, blank=True)    # when Spond recorded the txn
+    settled_at     = models.DateTimeField(null=True, blank=True)
+
+    group          = models.ForeignKey("SpondGroup", null=True, blank=True,
+                                       on_delete=models.SET_NULL, related_name="transactions")
+    event          = models.ForeignKey("SpondEvent", null=True, blank=True,
+                                       on_delete=models.SET_NULL, related_name="transactions")
+
+    member         = models.ForeignKey("SpondMember", null=True, blank=True,
+                                       on_delete=models.SET_NULL, related_name="transactions")
+    player         = models.ForeignKey("members.Player", null=True, blank=True,
+                                       on_delete=models.SET_NULL, related_name="spond_transactions")
+
+    reference      = models.CharField(max_length=128, blank=True)   # external ref / order no if present
+    metadata       = models.JSONField(default=dict, blank=True)     # raw Spond transaction payload
+    last_synced_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["created_at"]),
+            models.Index(fields=["status"]),
+            models.Index(fields=["member"]),
+            models.Index(fields=["player"]),
+        ]
+
+    def __str__(self):
+        amt = f"{self.currency} {self.amount_minor/100:.2f}"
+        who = self.player or self.member or "unknown"
+        return f"{self.type or 'TXN'} {amt} → {who} ({self.status or 'n/a'})"

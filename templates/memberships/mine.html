@@ -53,15 +53,19 @@
                 <div>
                   <strong>{{ s.player.first_name }} {{ s.player.last_name }}</strong>
                   <div class="small text-muted">{{ s.product.name }} — {{ s.product.season.name }}</div>
-                  <div class="small">
-                    Plan: {{ s.plan.label|default:"—" }}
-                  </div>
+                  <div class="small">Plan: {{ s.plan.label|default:"—" }}</div>
+                  <div class="small">Frequency: {{ s.plan.instalment_count|default:"—" }} x {{ s.plan.frequency|default:"—" }}</div>
+                  <div class="small">Amount: {{ s.plan.instalment_amount_gbp|default:"—" }}</div>
                 </div>
-                <div class="d-flex align-items-center gap-2">
+                <div class="text-end">
                   <span class="badge {% if s.status == 'active' %}bg-success{% else %}bg-info{% endif %}">
                     {{ s.get_status_display }}
                   </span>
+                </div>
+              </div>
 
+              {% if s.status != 'active' %}
+                <div class="mt-2 d-flex gap-2">
                   <form method="post" action="{% url 'memberships:subscription_cancel' s.id %}" class="d-inline">
                     {% csrf_token %}
                     <button class="btn btn-outline-warning btn-sm"
@@ -71,11 +75,11 @@
                   </form>
 
                   <a class="btn btn-outline-danger btn-sm"
-                     href="{% url 'memberships:subscription_delete' s.id %}">
+                    href="{% url 'memberships:subscription_delete' s.id %}">
                     Delete
                   </a>
                 </div>
-              </div>
+              {% endif %}
             </div>
           {% endfor %}
         </div>
@@ -105,10 +109,7 @@
                   <span class="badge {% if s.status == 'cancelled' %}bg-secondary{% else %}bg-warning{% endif %}">
                     {{ s.get_status_display }}
                   </span>
-                  <a class="btn btn-outline-danger btn-sm"
-                     href="{% url 'memberships:subscription_delete' s.id %}">
-                    Delete
-                  </a>
+
                 </div>
               </div>
             </div>
