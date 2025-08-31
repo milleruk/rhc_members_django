@@ -1,7 +1,7 @@
 # spond/views.py
 from django.contrib.auth.decorators import permission_required
 from django.db.models import Count, Q, Prefetch
-from django.http import JsonResponse, HttpResponseBadRequest
+from django.http import JsonResponse, HttpResponseBadRequest, HttpResponse
 from django.views.decorators.http import require_GET, require_POST
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.utils.timezone import now
@@ -13,6 +13,10 @@ from django.conf import settings
 from .models import SpondMember, PlayerSpondLink, SpondGroup, SpondEvent
 from members.models import Player
 
+
+import json
+from datetime import datetime, timedelta
+from .services import SpondClient, run_async, fetch_events_between
 
 try:
     from .models import SpondAttendance  # event, member, status
@@ -29,6 +33,12 @@ ATTENDED_STATUSES = getattr(
 )
 
 PERM = "spond_integration.access_spond_app"
+
+def _bool(request, name):
+    v = (request.GET.get(name) or "").strip().lower()
+    return v in {"1", "true", "yes", "y", "on"}
+
+
 
 @require_GET
 def can_access(request):
@@ -186,16 +196,17 @@ class SpondEventsDashboardView(LoginRequiredMixin, PermissionRequiredMixin, Temp
 
         q = self.request.GET.get("q", "").strip()
         group_id = self.request.GET.get("group")  # main group or any subgroup
+        kind = (self.request.GET.get("kind", "") or "").upper()  # "MATCH" | "EVENT" | ""
         when = self.request.GET.get("when", "upcoming")  # upcoming | past | all
         page = self.request.GET.get("page", 1)
         now_dt = now()
 
-        # Base queryset, with your relations
+        # Base queryset
         events = (
             SpondEvent.objects.all()
-            .select_related("group")                 # FK
-            .prefetch_related("subgroups")          # M2M
-            .order_by("-start_at")                   # <-- uses start_at
+            .select_related("group")
+            .prefetch_related("subgroups")
+            .order_by("-start_at")
         )
 
         # Group/Subgroup filter
@@ -210,12 +221,16 @@ class SpondEventsDashboardView(LoginRequiredMixin, PermissionRequiredMixin, Temp
         if q:
             events = events.filter(title__icontains=q)
 
+        # Kind filter (MATCH | EVENT)
+        if kind in {"MATCH", "EVENT"}:
+            events = events.filter(kind=kind)
+
         # Time filter on start_at
         if when == "upcoming":
             events = events.filter(start_at__gte=now_dt)
         elif when == "past":
             events = events.filter(start_at__lt=now_dt)
-        # "all" -> no filter
+        # "all" -> no time filter
 
         # Attendance prefetch (optional)
         if HAS_ATTENDANCE:
@@ -247,7 +262,7 @@ class SpondEventsDashboardView(LoginRequiredMixin, PermissionRequiredMixin, Temp
         if HAS_ATTENDANCE:
             total_attendances = (
                 SpondEvent.objects.annotate(att_count=Count("attendances"))
-                .aggregate(c=Count("attendances"))  # cheap aggregate fallback
+                .aggregate(c=Count("attendances"))
                 .get("c") or 0
             )
 
@@ -260,6 +275,7 @@ class SpondEventsDashboardView(LoginRequiredMixin, PermissionRequiredMixin, Temp
                 "q": q,
                 "when": when,
                 "selected_group": int(group_id) if group_id and group_id.isdigit() else None,
+                "selected_kind": kind if kind in {"MATCH", "EVENT"} else "",
                 "groups": SpondGroup.objects.all().annotate(member_count=Count("members")).order_by("name"),
                 "events_page": page_obj,
                 "HAS_ATTENDANCE": HAS_ATTENDANCE,
@@ -273,3 +289,174 @@ class SpondEventsDashboardView(LoginRequiredMixin, PermissionRequiredMixin, Temp
             }
         )
         return ctx
+    
+@require_GET
+@permission_required(PERM, raise_exception=True)
+def debug_spond_events_json(request):
+    """
+    Returns raw events JSON from Spond (no DB writes).
+    Query params:
+      - days_back (int, default 14)
+      - days_forward (int, default 60)
+      - limit (int, default 100)
+      - only_matches (bool: '1'/'true' to filter events with matchEvent true)
+      - pretty (bool: '1'/'true' → pretty-printed response as text/json)
+      - keys_only (bool: '1'/'true' → just return union of top-level keys)
+    """
+    user = getattr(settings, "SPOND_USERNAME", "")
+    pwd  = getattr(settings, "SPOND_PASSWORD", "")
+    if not user or not pwd:
+        return JsonResponse({"error": "SPOND creds missing"}, status=400)
+
+    def _bool(param):
+        v = (request.GET.get(param) or "").strip().lower()
+        return v in {"1", "true", "yes", "y", "on"}
+
+    try:
+        days_back = int(request.GET.get("days_back", 14))
+        days_fwd  = int(request.GET.get("days_forward", 60))
+    except ValueError:
+        return JsonResponse({"error": "Invalid days_back/days_forward"}, status=400)
+
+    try:
+        limit = int(request.GET.get("limit", 100))
+    except ValueError:
+        limit = 100
+
+    only_matches = _bool("only_matches")
+    pretty       = _bool("pretty")
+    keys_only    = _bool("keys_only")
+
+    start = datetime.now() - timedelta(days=days_back)
+    end   = datetime.now() + timedelta(days=days_fwd)
+
+    async def _fetch():
+        async with SpondClient(user, pwd) as session:
+            return await fetch_events_between(session, start, end) or []
+
+    try:
+        events = run_async(_fetch())
+    except Exception as e:
+        return JsonResponse({"error": f"fetch failed: {e!r}"}, status=500)
+
+    # Optional filter: only events that look like matches
+    if only_matches:
+        events = [ev for ev in events if ev.get("matchEvent") or ev.get("matchInfo")]
+
+    # Limit results
+    events = events[:max(1, limit)]
+
+    # keys_only mode: show union of top-level keys + a quick count
+    if keys_only:
+        keyset = set()
+        for ev in events:
+            keyset |= set(ev.keys())
+        payload = {
+            "count": len(events),
+            "top_level_keys": sorted(keyset),
+            "sample_first_event_keys": sorted(events[0].keys()) if events else [],
+        }
+    else:
+        # Provide some helpful metadata + sample
+        payload = {
+            "count": len(events),
+            "meta": {
+                "start": start.isoformat(),
+                "end": end.isoformat(),
+                "only_matches": only_matches,
+            },
+            "items": events,
+        }
+
+    if pretty:
+        # Pretty text response to make it easy to eyeball in browser
+        return HttpResponse(
+            json.dumps(payload, indent=2, ensure_ascii=False),
+            content_type="application/json; charset=utf-8",
+        )
+    return JsonResponse(payload, safe=False)
+
+def debug_spond_methods(request):
+    """
+    Introspect the underlying Spond client: list public callables and probe a few.
+    """
+    user = getattr(settings, "SPOND_USERNAME", "")
+    pwd  = getattr(settings, "SPOND_PASSWORD", "")
+    if not user or not pwd:
+        return JsonResponse({"error": "SPOND creds missing"}, status=400)
+
+    async def _probe():
+        async with SpondClient(user, pwd) as session:
+            # Underlying raw client object:
+            raw = session._session  # OK in debug
+            # List public methods
+            methods = []
+            for name in sorted(dir(raw)):
+                if name.startswith("_"):
+                    continue
+                attr = getattr(raw, name, None)
+                if callable(attr):
+                    methods.append(name)
+
+            # Try a few likely event/match methods without arguments
+            tried = {}
+            for cand in (
+                "get_events", "list_events", "fetch_events", "get_calendar",
+                "get_matches", "list_matches", "fetch_matches", "fixtures", "get_fixtures",
+            ):
+                fn = getattr(raw, cand, None)
+                if callable(fn):
+                    try:
+                        res = await fn()
+                        count = len(res) if isinstance(res, (list, tuple)) else (len(res or {}) if isinstance(res, dict) else 1)
+                        tried[cand] = {"ok": True, "count": count, "type": type(res).__name__}
+                    except TypeError as e:
+                        tried[cand] = {"ok": False, "error": f"TypeError: {e}"}
+                    except Exception as e:
+                        tried[cand] = {"ok": False, "error": repr(e)}
+
+            return {"methods": methods, "probe": tried}
+
+    out = run_async(_probe())
+    pretty = _bool(request, "pretty")
+    if pretty:
+        return HttpResponse(json.dumps(out, indent=2, ensure_ascii=False), content_type="application/json; charset=utf-8")
+    return JsonResponse(out)
+
+
+@require_GET
+@permission_required(PERM, raise_exception=True)
+def debug_spond_call(request):
+    """
+    Generic passthrough GET: call SpondClient.get_json(path, params)
+    Example:
+      /spond/debug/call.json?path=/events&pretty=1
+      /spond/debug/call.json?path=/calendar&start=...&end=...
+    All query params except 'path' and 'pretty' are forwarded as ?params.
+    """
+    user = getattr(settings, "SPOND_USERNAME", "")
+    pwd  = getattr(settings, "SPOND_PASSWORD", "")
+    if not user or not pwd:
+        return JsonResponse({"error": "SPOND creds missing"}, status=400)
+
+    path = (request.GET.get("path") or "").strip()
+    if not path:
+        return HttpResponseBadRequest("Missing ?path=/some/endpoint")
+    pretty = _bool(request, "pretty")
+
+    # Forward all other query params
+    forward = {k: v for k, v in request.GET.items() if k not in {"path", "pretty"}}
+
+    async def _fetch():
+        async with SpondClient(user, pwd) as session:
+            return await session.get_json(path, params=forward)
+
+    try:
+        data = run_async(_fetch())
+    except Exception as e:
+        return JsonResponse({"error": f"fetch failed: {e!r}", "path": path, "params": forward}, status=500)
+
+    payload = {"path": path, "params": forward, "type": type(data).__name__, "data": data}
+    if pretty:
+        return HttpResponse(json.dumps(payload, indent=2, ensure_ascii=False), content_type="application/json; charset=utf-8")
+    return JsonResponse(payload, safe=False)

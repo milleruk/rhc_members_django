@@ -101,6 +101,7 @@ def _int_minor(amount):
     return int(round(float(amount) * 100))
 
 @shared_task
+@shared_task
 def sync_spond_events(days_back=14, days_forward=120):
     user = getattr(settings, "SPOND_USERNAME", "")
     pwd  = getattr(settings, "SPOND_PASSWORD", "")
@@ -115,7 +116,7 @@ def sync_spond_events(days_back=14, days_forward=120):
             return await fetch_events_between(session, start, end) or []
 
     raw_events = run_async(_fetch())
-    now = timezone.now()
+    now_dt = timezone.now()
 
     created_or_updated = 0
     attendance_upserts = 0
@@ -139,13 +140,43 @@ def sync_spond_events(days_back=14, days_forward=120):
             loc = ev.get("location") or {}
             location_name = loc.get("feature") or ""
             location_addr = loc.get("address") or ""
-            lat = loc.get("latitude"); lng = loc.get("longitude")
+            lat = loc.get("latitude")
+            lng = loc.get("longitude")
+
+            # --- match parsing (NEW) ---
+            is_match = bool(ev.get("matchEvent") or (ev.get("matchInfo") is not None))
+            mi = ev.get("matchInfo") or {}
+
+            def _ha(x):
+                v = (x or "").upper()
+                # keep raw if Spond introduces new values
+                return v if v in {"HOME", "AWAY", "NEUTRAL"} else v
+
+            def _to_int(x):
+                try:
+                    return int(x) if x is not None else None
+                except (TypeError, ValueError):
+                    return None
+
+            match_home_away = _ha(mi.get("type"))
+            team_name       = (mi.get("teamName") or "").strip()
+            opponent_name   = (mi.get("opponentName") or "").strip()
+            team_score      = _to_int(mi.get("teamScore"))
+            opponent_score  = _to_int(mi.get("opponentScore"))
+
+            scores_final    = bool(mi.get("scoresFinal"))
+            scores_public   = bool(mi.get("scoresPublic"))
+            scores_set      = bool(mi.get("scoresSet"))
+            scores_set_ever = bool(mi.get("scoresSetEver"))
+
+            kind = "MATCH" if is_match else "EVENT"
 
             # Primary group
             group_id = (ev.get("group") or {}).get("id") \
                        or ((ev.get("recipients") or {}).get("group") or {}).get("id")
             group_obj = group_by_id.get(group_id) if group_id else None
 
+            # Upsert event (includes NEW match fields)
             evt, _ = SpondEvent.objects.update_or_create(
                 spond_event_id=ev_id,
                 defaults={
@@ -160,7 +191,20 @@ def sync_spond_events(days_back=14, days_forward=120):
                     "location_lng": lng,
                     "group": group_obj,
                     "data": ev,
-                    "last_synced_at": now,
+                    "last_synced_at": now_dt,
+
+                    # NEW: match fields
+                    "kind": kind,
+                    "is_match": is_match,
+                    "match_home_away": match_home_away,
+                    "team_name": team_name,
+                    "opponent_name": opponent_name,
+                    "team_score": team_score,
+                    "opponent_score": opponent_score,
+                    "scores_final": scores_final,
+                    "scores_public": scores_public,
+                    "scores_set": scores_set,
+                    "scores_set_ever": scores_set_ever,
                 },
             )
             created_or_updated += 1
@@ -193,7 +237,6 @@ def sync_spond_events(days_back=14, days_forward=120):
 
                     grp = group_by_id.get(gid)
                     if not grp:
-                        # Create if missing; if we know the parent (primary group), link it
                         grp, _ = SpondGroup.objects.get_or_create(
                             spond_group_id=gid,
                             defaults={
@@ -232,7 +275,8 @@ def sync_spond_events(days_back=14, days_forward=120):
                 if ra == "ATTENDED":
                     return "attended"
                 if ra == "ABSENT":
-                    return "declined"  # or "absent" if you add that choice
+                    # optionally create a dedicated "absent" status in model choices
+                    return "declined"
                 if member_id in accepted:
                     return "going"
                 if member_id in declined:
@@ -252,13 +296,14 @@ def sync_spond_events(days_back=14, days_forward=120):
                     defaults={
                         "status": status,
                         "responded_at": None,
-                        "checked_in_at": (now if status == "attended" else None),
+                        "checked_in_at": (now_dt if status == "attended" else None),
                         "data": {"source": "responses", "memberId": mid},
                     },
                 )
                 attendance_upserts += 1
 
     return f"Events upserted: {created_or_updated}; attendance upserts: {attendance_upserts}"
+
 
 
 @shared_task

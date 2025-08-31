@@ -1,0 +1,17 @@
+{% extends "base_auth.html" %}
+{% block title %}Check your email{% endblock %}
+{% block content %}
+<div class="login-box">
+  {% include "partials/messages.html" %}
+  <div class="card card-outline card-primary">
+    <div class="card-header text-center">
+      <span class="h1"><b>Redditch</b>HC</span>
+    </div>
+    <div class="card-body">
+      <h5 class="mb-2">Almost there!</h5>
+      <p>We’ve sent a verification link to your email address. Click it to activate your account.</p>
+      <p class="mb-0">Didn’t get it? <a href="{% url 'account_email' %}">resend the verification email</a>.</p>
+    </div>
+  </div>
+</div>
+{% endblock %}

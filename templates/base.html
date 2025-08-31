@@ -33,11 +33,7 @@
 
     <ul class="navbar-nav ml-auto">
       {% if user.is_authenticated %}
-        <li class="nav-item">
-          <form method="post" action="{% url 'logout' %}">{% csrf_token %}
-            <button type="submit" class="btn btn-link nav-link">Logout</button>
-          </form>
-        </li>
+        <li class="nav-item"><a href="{% url 'account_logout' %}" class="nav-link">Logout</a> </li>
       {% else %}
         <li class="nav-item"><a class="nav-link" href="{% url 'login' %}">Login</a></li>
       {% endif %}
@@ -108,6 +104,7 @@
                 <p>Club Players</p>
               </a>
             </li>
+            {% if perms.spond_integrations.access_spond_app %}
             <li class="nav-item">
               <a href="{% url 'spond:dashboard' %}"
                  class="nav-link {% if '/spond/dashboard' in p %}active{% endif %}">
@@ -115,6 +112,7 @@
                 <p>Spond Players</p>
               </a>
             </li>
+            {% endif %}            
             <li class="nav-item">
               <a href="{% url 'spond:events_dashboard' %}"
                  class="nav-link {% if '/spond/events' in p %}active{% endif %}">

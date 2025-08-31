@@ -13,6 +13,7 @@ class SpondAccessAnchor(models.Model):
         default_permissions = ()
         permissions = (
             ("access_spond_app", "Has Access to Spond App"),
+            ("link_spond_app", "Has Access to Link player to Spond App"),
         )
 
 class SpondMember(models.Model):
@@ -63,12 +64,43 @@ class SpondEvent(models.Model):
     location_addr  = models.CharField(max_length=512, blank=True)           # from location.address
     location_lat   = models.FloatField(null=True, blank=True)
     location_lng   = models.FloatField(null=True, blank=True)
+
+    kind = models.CharField(max_length=20, default="EVENT")  # EVENT | MATCH
+    is_match = models.BooleanField(default=False)
+
+    match_home_away = models.CharField(max_length=16, blank=True)  # HOME/AWAY/NEUTRAL (or raw)
+    team_name       = models.CharField(max_length=120, blank=True)
+    opponent_name   = models.CharField(max_length=120, blank=True)
+    team_score      = models.IntegerField(null=True, blank=True)
+    opponent_score  = models.IntegerField(null=True, blank=True)
+
+    scores_final    = models.BooleanField(default=False)
+    scores_public   = models.BooleanField(default=False)
+    scores_set      = models.BooleanField(default=False)
+    scores_set_ever = models.BooleanField(default=False)
     group          = models.ForeignKey("SpondGroup", null=True, blank=True,
                                        on_delete=models.SET_NULL, related_name="events")
     subgroups = models.ManyToManyField("SpondGroup", blank=True,
                                        related_name="events_as_subgroup")
     data           = models.JSONField(default=dict, blank=True)
     last_synced_at = models.DateTimeField(null=True, blank=True)
+
+    # Optional niceties:
+    @property
+    def match_score_display(self) -> str:
+        if self.team_score is None or self.opponent_score is None:
+            return ""
+        return f"{self.team_score}-{self.opponent_score}"
+
+    @property
+    def match_result_short(self) -> str:
+        if self.team_score is None or self.opponent_score is None:
+            return ""
+        if self.team_score > self.opponent_score:
+            return "W"
+        if self.team_score < self.opponent_score:
+            return "L"
+        return "D"
 
     def __str__(self):
         return f"{self.title or self.spond_event_id} @ {self.start_at or 'TBA'}"

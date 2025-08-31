@@ -46,6 +46,7 @@ class PlayerAnswerAdmin(admin.ModelAdmin):
 class TeamAdmin(admin.ModelAdmin):
     list_display = ("name", "active")
     list_filter = ("active",)
+    filter_horizontal = ("staff",)  # nice dual-list selector
     search_fields = ("name",)
 
 @admin.register(Position)

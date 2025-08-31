@@ -1,5 +1,8 @@
 from django import forms
 from .models import Player, PlayerType, DynamicQuestion, PlayerAnswer, Team, Position, TeamMembership
+from django.db import transaction
+from django.contrib import messages
+from django.utils import timezone
 
 class PlayerForm(forms.ModelForm):
     class Meta:
@@ -8,8 +11,18 @@ class PlayerForm(forms.ModelForm):
         widgets = {
             "date_of_birth": forms.DateInput(attrs={"type": "date"})
         }
+        error_messages = {
+            "date_of_birth": {
+                "required": "Please enter a date of birth.",
+        }}
 
-
+    def clean_date_of_birth(self):
+        dob = self.cleaned_data.get("date_of_birth")
+        if dob is None:
+            return dob  # let the field’s required validator/ModelForm handle it
+        if dob >= timezone.localdate():
+            raise forms.ValidationError("You cannot be born in the Future.")
+        return dob
 
     def clean(self):
         cleaned = super().clean()
@@ -20,40 +33,33 @@ class PlayerForm(forms.ModelForm):
         return cleaned
 
 class DynamicAnswerForm(forms.Form):
-    """Dynamically generated at runtime from DynamicQuestion for a specific player."""
-
-    def __init__(self, *args, player: Player, **kwargs):
+    def __init__(self, *args, player: Player, request=None, **kwargs):
         super().__init__(*args, **kwargs)
         self.player = player
+        self.request = request
         self._question_field_map = {}
+        self._existing = {a.question_id: a for a in PlayerAnswer.objects.filter(player=player)}
+
         questions = (
             DynamicQuestion.objects.filter(active=True, applies_to=player.player_type)
             .select_related("category")
             .order_by("category__display_order", "category__name", "display_order", "id")
         )
-        existing = {a.question_id: a for a in PlayerAnswer.objects.filter(player=player)}
 
         for q in questions:
             base_name = f"q_{q.id}"
+            help_txt = (getattr(q, "description", None) or getattr(q, "help_text", "") or "").strip()
 
             if q.question_type == "text":
-                field = forms.CharField(
-                    label=q.label,
-                    help_text=q.description,  # 👈 description shows under the label
-                    required=q.required,
-                )
-                if q.id in existing and existing[q.id].text_answer:
-                    field.initial = existing[q.id].text_answer
+                field = forms.CharField(label=q.label, help_text=help_txt, required=q.required)
+                if q.id in self._existing and self._existing[q.id].text_answer:
+                    field.initial = self._existing[q.id].text_answer
                 self.fields[base_name] = field
 
             elif q.question_type == "boolean":
-                field = forms.BooleanField(
-                    help_text=q.description,
-                    label=q.label,
-                    required=False,
-                )
-                if q.id in existing and existing[q.id].boolean_answer is not None:
-                    field.initial = existing[q.id].boolean_answer
+                field = forms.BooleanField(label=q.label, help_text=help_txt, required=False)
+                if q.id in self._existing and self._existing[q.id].boolean_answer is not None:
+                    field.initial = self._existing[q.id].boolean_answer
                 self.fields[base_name] = field
 
                 if q.requires_detail_if_yes:
@@ -62,73 +68,103 @@ class DynamicAnswerForm(forms.Form):
                         required=False,
                         widget=forms.Textarea(attrs={"rows": 3}),
                     )
-                    if q.id in existing and existing[q.id].detail_text:
-                        dfield.initial = existing[q.id].detail_text
+                    if q.id in self._existing and self._existing[q.id].detail_text:
+                        dfield.initial = self._existing[q.id].detail_text
                     self.fields[f"{base_name}_detail"] = dfield
 
             elif q.question_type == "choice":
-                # Split comma-separated options
-                choices = [
-                    (opt.strip(), opt.strip())
-                    for opt in (q.choices_text or "").split(",")
-                    if opt.strip()
-                ]
+                choices = [(opt.strip(), opt.strip())
+                           for opt in (getattr(q, "choices_text", "") or "").split(",")
+                           if opt.strip()]
                 field = forms.ChoiceField(
-                    label=q.label,
-                    help_text=q.help_text,
-                    required=q.required,
-                    choices=choices,
-                    widget=forms.Select(attrs={"class": "form-control"}),
+                    label=q.label, help_text=help_txt, required=q.required,
+                    choices=choices, widget=forms.Select(attrs={"class": "form-control"}),
                 )
-                if q.id in existing and existing[q.id].text_answer:
-                    field.initial = existing[q.id].text_answer
+                if q.id in self._existing and self._existing[q.id].text_answer:
+                    field.initial = self._existing[q.id].text_answer
                 self.fields[base_name] = field
 
+            elif q.question_type == "number":
+                widget = forms.TextInput(attrs={"inputmode": "numeric", "pattern": r"[0-9]*"})
+                field = forms.CharField(label=q.label, help_text=help_txt, required=q.required, widget=widget)
+                existing = self._existing.get(q.id)
+                if existing and getattr(existing, "numeric_answer", None):
+                    field.initial = existing.numeric_answer
+                self.fields[base_name] = field
+
+            # 👇 IMPORTANT: keep this OUTSIDE the if/elif chain
             self._question_field_map[q.id] = q
-
-    def clean(self):
-        cleaned = super().clean()
-        for qid, q in self._question_field_map.items():
-            # If a boolean question is required but left unticked
-            if q.question_type == "boolean" and q.required:
-                if not cleaned.get(f"q_{qid}"):
-                    self.add_error(f"q_{qid}", "This field is required.")
-
-            # If boolean requires details
-            if q.question_type == "boolean" and q.requires_detail_if_yes:
-                v = cleaned.get(f"q_{qid}")
-                if v is True and not cleaned.get(f"q_{qid}_detail"):
-                    self.add_error(f"q_{qid}_detail", "Please provide details.")
-        return cleaned
-
 
     def save(self):
         for qid, q in self._question_field_map.items():
-            ans, _ = PlayerAnswer.objects.get_or_create(player=self.player, question=q)
+            base = f"q_{qid}"
+            ans = self._existing.get(qid) or PlayerAnswer(player=self.player, question_id=qid)
 
             if q.question_type == "text":
-                ans.text_answer = self.cleaned_data.get(f"q_{qid}", "")
+                ans.text_answer = self.cleaned_data.get(base) or ""
                 ans.boolean_answer = None
-                ans.detail_text = ""
+                ans.numeric_answer = None
 
             elif q.question_type == "boolean":
-                field = forms.BooleanField(
-                    label=q.label,
-                    required=False,
-                    help_text="",  # keep empty so Crispy doesn't print anything below
-                )
-                # store the QUESTION DESCRIPTION here (not help_text)
-                field.widget.attrs["data_description"] = q.description or ""
-                if q.id in existing and existing[q.id].boolean_answer is not None:
-                    field.initial = existing[q.id].boolean_answer
-                self.fields[base_name] = field
+                val = self.cleaned_data.get(base)
+                ans.boolean_answer = bool(val) if val is not None else None
+                ans.text_answer = ""
+                ans.numeric_answer = None
+                ans.detail_text = (self.cleaned_data.get(f"{base}_detail", "").strip()
+                                   if q.requires_detail_if_yes and val else "")
 
             elif q.question_type == "choice":
-                ans.text_answer = self.cleaned_data.get(f"q_{qid}", "")
+                ans.text_answer = self.cleaned_data.get(base) or ""
                 ans.boolean_answer = None
-                ans.detail_text = ""
+                ans.numeric_answer = None
+
+            elif q.question_type == "number":
+                val = (self.cleaned_data.get(base) or "").strip()
+                ans.numeric_answer = val or None
+                ans.text_answer = ""
+                ans.boolean_answer = None
 
             ans.save()
+
+        if self.request:
+            messages.success(self.request, "Your answers have been saved successfully.")
+
+    def save(self):
+        for qid, q in self._question_field_map.items():
+            base = f"q_{qid}"
+            ans = self._existing.get(qid) or PlayerAnswer(player=self.player, question_id=qid)
+
+            if q.question_type == "text":
+                ans.text_answer = self.cleaned_data.get(base) or ""
+                ans.boolean_answer = None
+                ans.numeric_answer = None
+
+            elif q.question_type == "boolean":
+                val = self.cleaned_data.get(base)
+                ans.boolean_answer = bool(val) if val is not None else None
+                ans.text_answer = ""
+                ans.numeric_answer = None
+                if q.requires_detail_if_yes and val:
+                    ans.detail_text = self.cleaned_data.get(f"{base}_detail", "").strip()
+                else:
+                    ans.detail_text = ""
+
+            elif q.question_type == "choice":
+                ans.text_answer = self.cleaned_data.get(base) or ""
+                ans.boolean_answer = None
+                ans.numeric_answer = None
+
+            elif q.question_type == "number":
+                val = self.cleaned_data.get(base)
+                ans.numeric_answer = val.strip() if val else None
+                ans.text_answer = ""
+                ans.boolean_answer = None
+
+            ans.save()
+
+        # 👇 Success message banner
+        if self.request:
+            messages.success(self.request, "Your answers have been saved successfully.")
 
 
 class TeamAssignmentForm(forms.ModelForm):

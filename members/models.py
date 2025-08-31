@@ -2,6 +2,8 @@ from django.conf import settings
 from django.contrib.auth.models import Group
 from django.db import models
 from django.utils import timezone
+from django.core.exceptions import ValidationError
+
 import uuid
 
 class PlayerType(models.Model):
@@ -65,12 +67,25 @@ class Player(models.Model):
     @property
     def has_active_spond_link(self):
         return self.spond_links.filter(active=True).exists()
+    
+    # 🚨 Add validation so DOB must be strictly before today
 
+    def clean(self):
+        super().clean()
+        dob = self.date_of_birth
+        if dob is None:
+            return
+
+        if dob >= timezone.localdate():
+            raise ValidationError({
+                "date_of_birth": "Date of birth cannot be today or in the future."
+            })
 
 QUESTION_TYPE_CHOICES = (
     ("text", "Text"),
     ("boolean", "Checkbox"),
     ("choice", "Dropdown"),
+    ("number", "Number"),
 )
 
 
@@ -97,7 +112,6 @@ class DynamicQuestion(models.Model):
     )
     label = models.CharField(max_length=255)
     help_text = models.CharField(max_length=255, blank=True)
-    label = models.CharField(max_length=255)
     description = models.TextField(
         blank=True,
         help_text="Optional detailed description or instructions (Markdown supported)."
@@ -123,9 +137,24 @@ class DynamicQuestion(models.Model):
     display_order = models.PositiveIntegerField(default=0)
     active = models.BooleanField(default=True)
 
+    # For choice questions
     choices_text = models.TextField(
         blank=True,
         help_text="For dropdown questions, provide options separated by commas",
+    )
+
+    # For numerical questions
+    number_min = models.DecimalField(
+        max_digits=12, decimal_places=2, null=True, blank=True,
+        help_text="Minimum allowed value (optional, numeric questions only)."
+    )
+    number_max = models.DecimalField(
+        max_digits=12, decimal_places=2, null=True, blank=True,
+        help_text="Maximum allowed value (optional, numeric questions only)."
+    )
+    number_step = models.DecimalField(
+        max_digits=12, decimal_places=2, null=True, blank=True,
+        help_text="UI step for HTML number input (optional)."
     )
 
     class Meta:
@@ -151,6 +180,10 @@ class PlayerAnswer(models.Model):
     text_answer = models.TextField(blank=True)
     boolean_answer = models.BooleanField(null=True, blank=True)
     detail_text = models.TextField(blank=True)
+    numeric_answer = models.CharField(
+        max_length=32, blank=True, null=True,
+        help_text="For numeric-style answers (mobile, ID, etc.), stored as string to preserve leading zeros."
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -166,6 +199,9 @@ class Team(models.Model):
     name = models.CharField(max_length=80, unique=True)
     description = models.CharField(max_length=255, blank=True)
     active = models.BooleanField(default=True)
+    staff = models.ManyToManyField(
+        settings.AUTH_USER_MODEL, blank=True, related_name="managed_teams"
+    )
 
     class Meta:
         ordering = ["name"]

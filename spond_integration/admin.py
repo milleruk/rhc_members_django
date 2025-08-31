@@ -22,10 +22,20 @@ class SpondGroupAdmin(admin.ModelAdmin):
 
 @admin.register(SpondEvent)
 class SpondEventAdmin(admin.ModelAdmin):
-    list_display  = ("title", "start_at", "group", "spond_event_id", "last_synced_at")
-    search_fields = ("title", "spond_event_id", "location_name", "location_addr")
-    list_filter   = ("group",)
+    list_display  = (
+        "title", "start_at", "group",
+        "kind", "is_match",
+        "team_name", "opponent_name", "score_display",
+        "spond_event_id", "last_synced_at",
+    )
+    search_fields = ("title", "spond_event_id", "location_name", "location_addr",
+                     "team_name", "opponent_name")
+    list_filter   = ("group", "kind", "is_match", "match_home_away", "scores_final")
     date_hierarchy = "start_at"
+
+    @admin.display(description="Score")
+    def score_display(self, obj):
+        return obj.match_score_display or ""
 
 @admin.register(SpondAttendance)
 class SpondAttendanceAdmin(admin.ModelAdmin):

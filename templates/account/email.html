@@ -1,0 +1,54 @@
+{% extends "base_auth.html" %}
+{% load i18n account %}
+{% block title %}Email settings{% endblock %}
+{% block content %}
+<div class="login-box">
+  {% include "partials/messages.html" %}
+  <div class="card card-outline card-primary">
+    <div class="card-header text-center">
+      <span class="h1"><b>Redditch</b>HC</span>
+    </div>
+    <div class="card-body">
+      <h5 class="mb-3">Your email addresses</h5>
+
+      {% if user.emailaddress_set.all %}
+        <form method="post" action="{% url 'account_email' %}">
+          {% csrf_token %}
+          <ul class="list-group mb-3">
+            {% for emailaddress in user.emailaddress_set.all %}
+              <li class="list-group-item d-flex justify-content-between align-items-center">
+                <label class="mb-0">
+                  <input type="radio" name="email" value="{{ emailaddress.email }}"
+                         {% if emailaddress.primary %}checked="checked"{% endif %}>
+                  {{ emailaddress.email }}
+                  {% if emailaddress.verified %}<span class="badge bg-success ms-2">Verified</span>
+                  {% else %}<span class="badge bg-warning text-dark ms-2">Unverified</span>{% endif %}
+                  {% if emailaddress.primary %}<span class="badge bg-info ms-2">Primary</span>{% endif %}
+                </label>
+                <span></span>
+              </li>
+            {% endfor %}
+          </ul>
+
+          <div class="btn-group w-100" role="group">
+            <button class="btn btn-outline-primary" name="action_send" type="submit">Resend verification</button>
+            <button class="btn btn-outline-secondary" name="action_primary" type="submit">Make primary</button>
+            <button class="btn btn-outline-danger" name="action_remove" type="submit">Remove</button>
+          </div>
+        </form>
+      {% else %}
+        <p>You currently have no email address set.</p>
+      {% endif %}
+
+      <hr class="my-4">
+
+      <h6>Add another email</h6>
+      <form method="post" action="{% url 'account_email' %}">
+        {% csrf_token %}
+        {{ add_email_form.email }}
+        <button class="btn btn-primary mt-2" name="action_add" type="submit">Add</button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -27,12 +27,12 @@ class DocumentListView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
         return qs.filter(is_active=True)
 
 
-class TaskListView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
+class TaskListView(LoginRequiredMixin, ListView):
     model = Task
     template_name = "resources/task_list.html"
     context_object_name = "tasks"
-    permission_required = "resources.view_task"
-    raise_exception = True
+    #permission_required = "resources.view_task"
+    #raise_exception = True
 
     def get_queryset(self):
         qs = super().get_queryset().select_related("assigned_to")

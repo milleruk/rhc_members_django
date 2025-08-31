@@ -3,14 +3,36 @@
 {% block title %}Player Profile{% endblock %}
 
 {% block content %}
-<div class="content-header py-2">
+<style>
+  /* Small visual refinements */
+  .card-header .card-title { font-weight: 600; }
+  .kv { display:flex; gap:.75rem; align-items:baseline; padding:.35rem 0; border-bottom:1px dashed rgba(0,0,0,.06); }
+  .kv:last-child { border-bottom:0; }
+  .kv .k { min-width: 220px; color:#6c757d; }
+  .kv .v { flex:1; }
+  .answer-badge { min-width: 40px; display:inline-block; text-align:center; }
+  .muted-small { color:#6c757d; font-size:.85rem; }
+  .avatar-xl { width:96px; height:96px; font-size:28px; }
+  .table-sm th, .table-sm td { vertical-align: middle !important; }
+  .sticky-subheader { position: sticky; top: 0; z-index: 1; background: #fff; }
+</style>
+
+<div class="content-header pb-0">
   <div class="container-fluid">
-    <div class="row mb-2">
-      <div class="col-sm-6">
-        <h1 class="m-0">Player Profile</h1>
+    <div class="row align-items-center">
+      <div class="col-md-7 d-flex align-items-center">
+        <div class="img-circle elevation-2 bg-primary d-inline-flex align-items-center justify-content-center text-white avatar-xl mr-3">
+          {{ player.first_name|default:"?"|slice:":1" }}{{ player.last_name|default:""|slice:":1" }}
+        </div>
+        <div class="py-2">
+          <h1 class="h4 mb-1">{{ player.first_name }} {{ player.last_name }}</h1>
+          <div class="muted-small">
+            {{ player.player_type }}{% if player.date_of_birth %} &middot; DOB {{ player.date_of_birth|date:"Y-m-d" }}{% endif %}
+          </div>
+        </div>
       </div>
-      <div class="col-sm-6">
-        <ol class="breadcrumb float-sm-right">
+      <div class="col-md-5">
+        <ol class="breadcrumb float-md-right mb-0">
           <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
           <li class="breadcrumb-item"><a href="{% url 'admin_player_list' %}">Players</a></li>
           <li class="breadcrumb-item active">{{ player.first_name }} {{ player.last_name }}</li>
@@ -23,47 +45,28 @@
 <section class="content">
   <div class="container-fluid">
     <div class="row">
-      <!-- LEFT COLUMN: profile summary -->
-      <div class="col-md-3">
-        <!-- Profile Image -->
+      <!-- LEFT COLUMN -->
+      <div class="col-lg-3 col-md-4">
+        <!-- Profile meta -->
         <div class="card card-primary card-outline">
-          <div class="card-body box-profile">
-            <div class="text-center">
-              <div class="img-circle elevation-2 bg-primary d-inline-flex align-items-center justify-content-center"
-                   style="width:96px;height:96px;font-size:28px;color:#fff;">
-                {{ player.first_name|default:"?"|slice:":1" }}{{ player.last_name|default:""|slice:":1" }}
-              </div>
-            </div>
-            <h3 class="profile-username text-center mt-2 mb-0">
-              {{ player.first_name }} {{ player.last_name }}
-            </h3>
-            <p class="text-muted text-center">{{ player.player_type }}</p>
-
+          <div class="card-body">
             <ul class="list-group list-group-unbordered mb-3">
-              <li class="list-group-item">
-                <b>Type</b> <span class="float-right">{{ player.player_type }}</span>
+              <li class="list-group-item d-flex justify-content-between align-items-center">
+                <span class="text-muted">Type</span><span>{{ player.player_type|default:"—" }}</span>
               </li>
-              <li class="list-group-item">
-                <b>Relation</b> <span class="float-right">{{ player.get_relation_display }}</span>
+              <li class="list-group-item d-flex justify-content-between align-items-center">
+                <span class="text-muted">Relation</span><span>{{ player.get_relation_display|default:"—" }}</span>
               </li>
-              <li class="list-group-item">
-                <b>Gender</b> <span class="float-right">{{ player.get_gender_display }}</span>
+              <li class="list-group-item d-flex justify-content-between align-items-center">
+                <span class="text-muted">Gender</span><span>{{ player.get_gender_display|default:"—" }}</span>
               </li>
               {% if player.date_of_birth %}
-              <li class="list-group-item">
-                <b>DOB</b> <span class="float-right">{{ player.date_of_birth|date:"Y-m-d" }}</span>
+              <li class="list-group-item d-flex justify-content-between align-items-center">
+                <span class="text-muted">DOB</span><span>{{ player.date_of_birth|date:"Y-m-d" }}</span>
               </li>
               {% endif %}
             </ul>
-          </div>
-        </div>
 
-        <!-- Quick Info -->
-        <div class="card">
-          <div class="card-header">
-            <h3 class="card-title">Quick Info</h3>
-          </div>
-          <div class="card-body p-2">
             <div class="row text-center">
               <div class="col-6 border-right">
                 <div class="description-block mb-0">
@@ -78,16 +81,17 @@
                 </div>
               </div>
             </div>
-            <hr class="my-2">
-            <small class="text-muted d-block">
+
+            <hr class="my-3">
+            <div class="muted-small">
               Created {{ player.created_at|date:"Y-m-d H:i" }} · Updated {{ player.updated_at|date:"Y-m-d H:i" }}
-            </small>
+            </div>
           </div>
         </div>
       </div>
 
-      <!-- RIGHT COLUMN: tabs -->
-      <div class="col-md-9">
+      <!-- RIGHT COLUMN -->
+      <div class="col-lg-9 col-md-8">
         <div class="card">
           <div class="card-header p-2">
             <ul class="nav nav-pills" id="profile-tabs">
@@ -98,19 +102,19 @@
               </li>
 
               {% if perms.members.view_team_assignment %}
-                <li class="nav-item">
-                  <a class="nav-link" href="#teams" data-toggle="tab">
-                    <i class="fas fa-users mr-1"></i> Team Memberships
-                  </a>
-                </li>
+              <li class="nav-item">
+                <a class="nav-link" href="#teams" data-toggle="tab">
+                  <i class="fas fa-users mr-1"></i> Team Memberships
+                </a>
+              </li>
               {% endif %}
 
               {% if perms.members.view_access_logs %}
-                <li class="nav-item">
-                  <a class="nav-link" href="#logs" data-toggle="tab">
-                    <i class="fas fa-clipboard-list mr-1"></i> Access Logs
-                  </a>
-                </li>
+              <li class="nav-item">
+                <a class="nav-link" href="#logs" data-toggle="tab">
+                  <i class="fas fa-clipboard-list mr-1"></i> Access Logs
+                </a>
+              </li>
               {% endif %}
 
               <li class="nav-item">
@@ -123,81 +127,97 @@
 
           <div class="card-body">
             <div class="tab-content">
-              <!-- Answers -->
+
+              <!-- ANSWERS -->
               <div class="tab-pane active" id="answers">
-                {% regroup answers by question.category as category_list %}
-                {% for group in category_list %}
-                  <div class="card card-outline card-info mb-3">
+                {% if readonly_answers %}
+                  <div id="answers-accordion">
+                    {% for gid, group in readonly_answers.items %}
+                      <div class="card card-outline card-info mb-2">
+                        <div class="card-header py-2" data-toggle="collapse" data-target="#group-{{ gid }}" style="cursor:pointer;">
+                          <h3 class="card-title mb-0">{{ group.name|default:"General" }}</h3>
+                          <div class="card-tools">
+                            <button class="btn btn-tool" type="button" aria-label="Toggle">
+                              <i class="fas fa-chevron-down"></i>
+                            </button>
+                          </div>
+                          {% if group.description %}
+                            <div class="muted-small mt-1">{{ group.description }}</div>
+                          {% endif %}
+                        </div>
+                        <div id="group-{{ gid }}" class="collapse show" data-parent="#answers-accordion">
+                          <div class="card-body pt-2">
+                            <div class="row">
+                              {% for item in group.items %}
+                                <div class="col-xl-6 col-lg-12">
+                                  <div class="kv">
+                                    <div class="k">{{ item.label }}
+                                      {% if item.description %}
+                                        <div class="muted-small">{{ item.description }}</div>
+                                      {% endif %}
+                                    </div>
+                                    <div class="v">
+                                      {% if item.type == "boolean" %}
+                                        {% if item.display == "Yes" %}
+                                          <span class="badge badge-success answer-badge">Yes</span>
+                                        {% else %}
+                                          <span class="badge badge-secondary answer-badge">No</span>
+                                        {% endif %}
+                                      {% else %}
+                                        {{ item.display|default:"—" }}
+                                      {% endif %}
+                                      {% if item.detail %}
+                                        <span class="muted-small ml-1">({{ item.detail }})</span>
+                                      {% endif %}
+                                    </div>
+                                  </div>
+                                </div>
+                              {% endfor %}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    {% endfor %}
+                  </div>
+                {% else %}
+                  <p class="text-muted mb-0">No answers recorded yet.</p>
+                {% endif %}
+              </div>
+              <!-- /ANSWERS -->
+
+              {% if perms.members.view_team_assignment %}
+              <!-- TEAMS -->
+              <div class="tab-pane" id="teams">
+                {% with show_actions=perms.members.edit_team_assignments %}
+                  <div class="card card-outline card-success mb-3">
                     <div class="card-header py-2">
-                      <h3 class="card-title mb-0">{{ group.grouper|default:"General" }}</h3>
+                      <h3 class="card-title mb-0">Current Assignments</h3>
                     </div>
                     <div class="card-body p-0">
-                      <table class="table table-sm mb-0">
-                        <tbody>
-                        {% for a in group.list %}
-                          <tr>
-                            <td class="w-35 text-muted">{{ a.question.label }}</td>
-                            <td>
-                              {% if a.question.question_type == "text" %}
-                                {{ a.text_answer|default:"—" }}
-                              {% else %}
-                                {% if a.boolean_answer %}
-                                  <span class="badge badge-success">Yes</span>
-                                {% else %}
-                                  <span class="badge badge-secondary">No</span>
-                                {% endif %}
-                                {% if a.detail_text %}
-                                  <span class="text-muted ml-1">({{ a.detail_text }})</span>
-                                {% endif %}
-                              {% endif %}
-                            </td>
-                          </tr>
-                        {% endfor %}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                {% empty %}
-                  <p class="text-muted mb-0">No answers recorded yet.</p>
-                {% endfor %}
-              </div>
-
-              <!-- Team Memberships -->
-              {% if perms.members.view_team_assignment %}
-                <div class="tab-pane" id="teams">
-                  {% with show_actions=perms.members.edit_team_assignments %}
-                    <div class="card card-outline card-success mb-3">
-                      <div class="card-header py-2">
-                        <h3 class="card-title mb-0">Current Assignments</h3>
-                      </div>
-                      <div class="card-body p-0">
-                        <table class="table table-sm">
-                          <thead>
+                      <div class="table-responsive">
+                        <table class="table table-sm mb-0">
+                          <thead class="text-muted sticky-subheader">
                             <tr>
                               <th>Team</th>
                               <th>Positions</th>
                               <th>Assigned</th>
-                              {% if show_actions %}
-                                <th class="text-right">Actions</th>
-                              {% endif %}
+                              {% if show_actions %}<th class="text-right">Actions</th>{% endif %}
                             </tr>
                           </thead>
                           <tbody>
                             {% for m in memberships %}
                               <tr>
-                                <td class="align-middle">{{ m.team.name }}</td>
-                                <td class="align-middle">
+                                <td>{{ m.team.name }}</td>
+                                <td>
                                   {% for pos in m.positions.all %}
                                     <span class="badge badge-info mr-1 mb-1">{{ pos.name }}</span>
                                   {% empty %}—{% endfor %}
                                 </td>
-                                <td class="align-middle">
-                                  <small class="text-muted">
-                                    {{ m.assigned_by }} · {{ m.assigned_at|date:"Y-m-d H:i" }}
-                                  </small>
+                                <td>
+                                  <small class="text-muted">{{ m.assigned_by }} · {{ m.assigned_at|date:"Y-m-d H:i" }}</small>
                                 </td>
                                 {% if show_actions %}
-                                  <td class="align-middle text-right">
+                                  <td class="text-right">
                                     <form method="post" action="{% url 'remove_membership' m.id %}" class="d-inline">
                                       {% csrf_token %}
                                       <button type="submit" class="btn btn-outline-danger btn-xs">
@@ -209,46 +229,47 @@
                               </tr>
                             {% empty %}
                               <tr>
-                                <td colspan="{% if show_actions %}4{% else %}3{% endif %}" class="text-muted">
-                                  No memberships yet.
-                                </td>
+                                <td colspan="{% if show_actions %}4{% else %}3{% endif %}" class="text-muted">No memberships yet.</td>
                               </tr>
                             {% endfor %}
                           </tbody>
                         </table>
                       </div>
                     </div>
+                  </div>
 
-                    {% if show_actions %}
-                      <div class="card card-outline card-success">
-                        <div class="card-header py-2">
-                          <h3 class="card-title mb-0">Add Assignment</h3>
-                        </div>
-                        <div class="card-body">
-                          <form method="post">
-                            {% csrf_token %}
-                            {{ team_form|crispy }}
-                            <button type="submit" class="btn btn-success btn-sm">
-                              <i class="fas fa-plus mr-1"></i>Assign
-                            </button>
-                          </form>
-                        </div>
+                  {% if show_actions %}
+                    <div class="card card-outline card-success">
+                      <div class="card-header py-2">
+                        <h3 class="card-title mb-0">Add Assignment</h3>
                       </div>
-                    {% endif %}
-                  {% endwith %}
-                </div>
+                      <div class="card-body">
+                        <form method="post">
+                          {% csrf_token %}
+                          {{ team_form|crispy }}
+                          <button type="submit" class="btn btn-success btn-sm">
+                            <i class="fas fa-plus mr-1"></i>Assign
+                          </button>
+                        </form>
+                      </div>
+                    </div>
+                  {% endif %}
+                {% endwith %}
+              </div>
+              <!-- /TEAMS -->
               {% endif %}
 
-              <!-- Access Logs -->
               {% if perms.members.view_access_logs %}
-                <div class="tab-pane" id="logs">
-                  <div class="card card-outline card-warning">
-                    <div class="card-header py-2">
-                      <h3 class="card-title mb-0">Access Logs</h3>
-                    </div>
-                    <div class="card-body p-0">
+              <!-- LOGS -->
+              <div class="tab-pane" id="logs">
+                <div class="card card-outline card-warning">
+                  <div class="card-header py-2">
+                    <h3 class="card-title mb-0">Access Logs</h3>
+                  </div>
+                  <div class="card-body p-0">
+                    <div class="table-responsive">
                       <table class="table table-sm mb-0">
-                        <thead>
+                        <thead class="text-muted sticky-subheader">
                           <tr><th>User</th><th>When</th></tr>
                         </thead>
                         <tbody>
@@ -263,29 +284,31 @@
                         </tbody>
                       </table>
                     </div>
-
-                    {% if log_page.has_other_pages %}
-                      <div class="card-footer bg-white d-flex justify-content-between align-items-center py-2">
-                        <div>Page {{ log_page.number }} of {{ log_page.paginator.num_pages }}</div>
-                        <div>
-                          {% if log_page.has_previous %}
-                            <a class="btn btn-outline-secondary btn-sm" href="?page={{ log_page.previous_page_number }}#logs">
-                              <i class="fas fa-chevron-left mr-1"></i>Previous
-                            </a>
-                          {% endif %}
-                          {% if log_page.has_next %}
-                            <a class="btn btn-outline-secondary btn-sm ml-1" href="?page={{ log_page.next_page_number }}#logs">
-                              Next<i class="fas fa-chevron-right ml-1"></i>
-                            </a>
-                          {% endif %}
-                        </div>
-                      </div>
-                    {% endif %}
                   </div>
+
+                  {% if log_page.has_other_pages %}
+                    <div class="card-footer bg-white d-flex justify-content-between align-items-center py-2">
+                      <div>Page {{ log_page.number }} of {{ log_page.paginator.num_pages }}</div>
+                      <div>
+                        {% if log_page.has_previous %}
+                          <a class="btn btn-outline-secondary btn-sm" href="?page={{ log_page.previous_page_number }}#logs">
+                            <i class="fas fa-chevron-left mr-1"></i>Previous
+                          </a>
+                        {% endif %}
+                        {% if log_page.has_next %}
+                          <a class="btn btn-outline-secondary btn-sm ml-1" href="?page={{ log_page.next_page_number }}#logs">
+                            Next<i class="fas fa-chevron-right ml-1"></i>
+                          </a>
+                        {% endif %}
+                      </div>
+                    </div>
+                  {% endif %}
                 </div>
+              </div>
+              <!-- /LOGS -->
               {% endif %}
 
-              <!-- Spond -->
+              <!-- SPOND -->
               <div class="tab-pane" id="spond">
                 <a id="spond-events"></a>
                 <div class="card card-outline card-warning">
@@ -305,7 +328,7 @@
                       {% if spond_attendances_page and spond_attendances_page.object_list %}
                         <div class="table-responsive">
                           <table class="table table-sm table-striped mb-0">
-                            <thead class="text-muted">
+                            <thead class="text-muted sticky-subheader">
                               <tr>
                                 <th style="width:45%;">Event</th>
                                 <th style="width:25%;">Start</th>
@@ -369,7 +392,7 @@
                   {% endif %}
                 </div>
               </div>
-              <!-- /Spond -->
+              <!-- /SPOND -->
 
             </div><!-- /.tab-content -->
           </div><!-- /.card-body -->

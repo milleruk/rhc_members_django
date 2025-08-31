@@ -1,0 +1,6 @@
+Hi {{ user.get_full_name|default:user.email }},
+
+Please confirm your email for Redditch Hockey Club:
+{{ activate_url }}
+
+If you didn’t create this account, ignore this email.
