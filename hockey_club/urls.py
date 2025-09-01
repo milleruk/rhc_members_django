@@ -2,7 +2,7 @@
 from django.contrib import admin
 from django.urls import path, include
 from django.views.generic import RedirectView
-from django.conf.urls import handler403
+from django.conf.urls import handler403, handler404
 from members.views import TermsView, PrivacyView
 from . import views
 
@@ -38,7 +38,13 @@ def permission_denied_view(request, exception=None):
     from django.shortcuts import render
     return render(request, "403.html", status=403)
 
+# ---- 403 handler ----
+def page_not_found_view(request, exception=None):
+    from django.shortcuts import render
+    return render(request, "404.html", status=403)
+
 handler403 = permission_denied_view
+handler404 = page_not_found_view
 
 # ---- Admin branding ----
 admin.site.site_title = "Redditch Hockey Club Portal (DEV)"

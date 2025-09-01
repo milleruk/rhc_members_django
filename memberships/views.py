@@ -1,90 +1,117 @@
+# memberships/views.py
+from __future__ import annotations
+
+from typing import Optional
+
 from django.contrib import messages
-from django.http import Http404
+from django.contrib.auth.decorators import login_required
+from django.db import IntegrityError, transaction
+from django.db.models import Q
+from django.http import Http404, HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
-from django.db import IntegrityError, transaction
-
 from django.views.decorators.http import require_POST
-from django.utils.timezone import now
 
 from members.models import Player
+from .forms import ConfirmSubscriptionForm
 from .models import (
     Season,
     MembershipProduct,
     PaymentPlan,
     Subscription,
     resolve_match_fee_for,
-    MatchFeeTariff,
 )
-from tasks.events import emit
-from .forms import ConfirmSubscriptionForm
 from .permissions import can_manage_player
+from tasks.events import emit
 
 
+# ---------------------------
+# Helpers / guards
+# ---------------------------
 
-def _get_active_season():
+def _get_active_season() -> Season:
     season = Season.objects.filter(is_active=True).order_by("-start").first()
     if not season:
         raise Http404("No active season configured.")
     return season
 
+
+def _is_admin(user) -> bool:
+    """True if user is superuser or in elevated groups."""
+    if not user.is_authenticated:
+        return False
+    return user.is_superuser or user.groups.filter(
+        name__in=["Coach", "Captain", "Club Admin"]
+    ).exists()
+
+
 def _can_manage_subscription(user, sub: Subscription) -> bool:
+    """
+    Owning creator can manage; elevated roles can manage any.
+    NOTE: additional ACTIVE protection is enforced in the cancel/delete views.
+    """
     if not user.is_authenticated:
         return False
     if sub.player and getattr(sub.player, "created_by_id", None) == user.id:
         return True
-    return user.is_superuser or user.groups.filter(name__in=["Coach", "Captain", "Club Admin"]).exists()
+    return _is_admin(user)
 
-def choose_product(request, player_id):
+
+def _existing_membership(player: Player, season: Season) -> Optional[Subscription]:
+    return (
+        Subscription.objects.filter(
+            player=player, season=season, status__in=["pending", "active"]
+        )
+        .select_related("product", "plan")
+        .first()
+    )
+
+
+# ---------------------------
+# Choose product / plan / confirm
+# ---------------------------
+
+@login_required
+def choose_product(request: HttpRequest, player_id: int) -> HttpResponse:
     player = get_object_or_404(Player, pk=player_id)
     if not can_manage_player(request.user, player):
         raise Http404()
 
     season = _get_active_season()
+    existing = _existing_membership(player, season)
 
-    # 🔒 If the player already has a membership this season, don't show products.
-    existing = (
-        Subscription.objects
-        .filter(player=player, season=season, status__in=["pending", "active"])
-        .select_related("product", "plan")
-        .first()
-    )
-    has_active = existing is not None
-
-    products = []
-    #if has_active:
-    #    messages.info(
-    #        request,
-    #        f"Membership already in place for {season.name}: "
-    #        f"{existing.product.name} ({existing.get_status_display()})."
-    #    )
-    #else:
-    products = (
+    products_qs = (
         MembershipProduct.objects.filter(season=season, active=True)
         .select_related("category", "season")
         .prefetch_related("plans")
+        .filter(
+            Q(category__isnull=True)
+            | Q(category__applies_to__isnull=True)
+            | Q(category__applies_to=player.player_type)
+        )
         .distinct()
+        .order_by("category__label", "name", "id")  # <-- use label instead of name
     )
-    # Optional filter by player type (via category.applies_to)
-    products = [
-        p for p in products
-        if not p.category.applies_to.exists() or player.player_type in p.category.applies_to.all()
-    ]
-    # Attach resolved match fee for template display
+
+    products = list(products_qs)
     for p in products:
         p.match_fee = resolve_match_fee_for(p)
 
-    context = {
-        "player": player,
-        "season": season,
-        "products": products,        # [] if has_active
-        "has_active": has_active,
-        "existing_sub": existing,    # for banner details
-    }
-    return render(request, "memberships/choose_product.html", context)
+    return render(
+        request,
+        "memberships/choose_product.html",
+        {
+            "player": player,
+            "season": season,
+            "products": products,
+            "has_active": existing is not None,
+            "existing_sub": existing,
+        },
+    )
 
 
-def choose_plan(request, player_id, product_id):
+@login_required
+def choose_plan(request: HttpRequest, player_id: int, product_id: int) -> HttpResponse:
     player = get_object_or_404(Player, pk=player_id)
     if not can_manage_player(request.user, player):
         raise Http404()
@@ -97,42 +124,43 @@ def choose_plan(request, player_id, product_id):
     if not product.season.is_active:
         raise Http404("Product is not in active season.")
 
-    # If player already has a membership for this season, bounce
     season = product.season
-    existing = Subscription.objects.filter(
-        player=player, season=season, status__in=["pending", "active"]
-    ).first()
-    #if existing:
-    #    messages.info(
-    #        request,
-    #        f"This player already has a membership for {season.name}."
-    #    )
-    #    return redirect("memberships:mine")
+    existing = _existing_membership(player, season)
 
-    plans = product.plans.filter(active=True)
+    # ✅ Use fields that actually exist on PaymentPlan
+    plans = product.plans.filter(active=True).order_by("display_order", "label", "id")
 
-    # Only skip to confirm when no plan is required and there are no plans
     if (not product.requires_plan) and (not plans.exists()):
-        return redirect(f"{reverse('memberships:confirm', args=[player.id, 0])}?product={product.id}")
+        confirm_url = f"{reverse('memberships:confirm', args=[player.id, 0])}?product={product.id}"
+        return redirect(confirm_url)
 
     if not plans.exists():
-        messages.warning(request, "No payment plans available for this product.")
+        messages.warning(request, "No payment plans are available for this product.")
         return redirect("memberships:choose", player_id=player.id)
 
-    context = {
-        "player": player,
-        "product": product,
-        "plans": plans,
-        "match_fee": resolve_match_fee_for(product),
-    }
-    return render(request, "memberships/choose_plan.html", context)
+    return render(
+        request,
+        "memberships/choose_plan.html",
+        {
+            "player": player,
+            "product": product,
+            "plans": plans,
+            "match_fee": resolve_match_fee_for(product),
+            "existing_sub": existing,
+        },
+    )
 
 
-def confirm(request, player_id, plan_id):
+@login_required
+def confirm(request: HttpRequest, player_id: int, plan_id: int) -> HttpResponse:
+    """
+    Confirm and create a pending subscription for the selected product/plan.
+    """
     player = get_object_or_404(Player, pk=player_id)
     if not can_manage_player(request.user, player):
         raise Http404()
 
+    # Resolve product + optional plan
     if int(plan_id) == 0:
         product_id = request.GET.get("product")
         if not product_id:
@@ -140,14 +168,14 @@ def confirm(request, player_id, plan_id):
             return redirect("memberships:choose", player_id=player.id)
         product = get_object_or_404(
             MembershipProduct.objects.select_related("season", "category"),
-            pk=product_id
+            pk=product_id,
         )
         plan = None
     else:
         plan = get_object_or_404(
             PaymentPlan.objects.select_related("product", "product__season"),
             pk=plan_id,
-            active=True
+            active=True,
         )
         product = plan.product
 
@@ -155,16 +183,12 @@ def confirm(request, player_id, plan_id):
         raise Http404("Not in active season.")
 
     season = product.season
-    existing = Subscription.objects.filter(
-        player=player,
-        season=season,
-        status__in=["pending", "active"],
-    ).select_related("product", "plan").first()
+    existing = _existing_membership(player, season)
     if existing:
         messages.info(
             request,
             f"This player already has a {existing.get_status_display().lower()} membership "
-            f"for {season.name} ({existing.product.name})."
+            f"for {season.name} ({existing.product.name}).",
         )
         return redirect("memberships:mine")
 
@@ -180,10 +204,10 @@ def confirm(request, player_id, plan_id):
                         status="pending",
                         created_by=request.user if request.user.is_authenticated else None,
                     )
-                    sub.full_clean()  # enforces requires_plan and season alignment
-                    sub.save()        # season is set in model.save()
+                    sub.full_clean()  # validates requires_plan + season alignment
+                    sub.save()        # model.save() sets season from product
 
-                    # ✅ fire event only after the transaction commits successfully
+                    # Emit event after commit only
                     transaction.on_commit(
                         lambda: emit("membership.confirmed", subject=player, actor=request.user)
                     )
@@ -191,7 +215,7 @@ def confirm(request, player_id, plan_id):
             except IntegrityError:
                 messages.warning(
                     request,
-                    f"A membership already exists for {season.name}. We didn't create a duplicate."
+                    f"A membership already exists for {season.name}. We didn't create a duplicate.",
                 )
                 return redirect("memberships:mine")
             else:
@@ -200,7 +224,7 @@ def confirm(request, player_id, plan_id):
     else:
         form = ConfirmSubscriptionForm()
 
-    match_fee = resolve_match_fee_for(product) if product.pay_per_match else None
+    match_fee = resolve_match_fee_for(product) if getattr(product, "pay_per_match", False) else None
 
     context = {
         "player": player,
@@ -212,38 +236,49 @@ def confirm(request, player_id, plan_id):
     return render(request, "memberships/confirm.html", context)
 
 
-def my_memberships(request):
-    if not request.user.is_authenticated:
-        raise Http404()
+# ---------------------------
+# My memberships
+# ---------------------------
 
-    # All players this user can manage (adjust if you have a different ownership rule)
+@login_required
+def my_memberships(request: HttpRequest) -> HttpResponse:
+    """
+    List all players managed by the current user and their subscriptions,
+    split into active/pending and historical.
+    """
     players = Player.objects.filter(created_by=request.user).order_by("first_name", "last_name")
 
-    # Split active/pending vs everything else
     active_statuses = ["pending", "active"]
+
     active_subs = (
-        Subscription.objects
-        .filter(player__created_by=request.user, status__in=active_statuses)
-        .select_related("player", "product", "product__season", "plan")
+        Subscription.objects.filter(player__created_by=request.user, status__in=active_statuses)
+        .select_related("player", "product", "product__season", "plan", "season")
         .order_by("player__last_name", "player__first_name", "-started_at")
     )
     old_subs = (
-        Subscription.objects
-        .filter(player__created_by=request.user)
+        Subscription.objects.filter(player__created_by=request.user)
         .exclude(status__in=active_statuses)
-        .select_related("player", "product", "product__season", "plan")
+        .select_related("player", "product", "product__season", "plan", "season")
         .order_by("-started_at")
     )
 
-    return render(request, "memberships/mine.html", {
-        "players": players,
-        "active_subs": active_subs,
-        "old_subs": old_subs,
-    })
+    return render(
+        request,
+        "memberships/mine.html",
+        {"players": players, "active_subs": active_subs, "old_subs": old_subs},
+    )
 
 
+# ---------------------------
+# Cancel / delete (state changes)
+# ---------------------------
+
+@login_required
 @require_POST
-def subscription_cancel(request, sub_id: int):
+def subscription_cancel(request: HttpRequest, sub_id: int) -> HttpResponse:
+    """
+    Cancel a subscription. Non-admins are blocked from cancelling ACTIVE subscriptions.
+    """
     sub = get_object_or_404(
         Subscription.objects.select_related("player", "season", "product"),
         pk=sub_id,
@@ -251,24 +286,30 @@ def subscription_cancel(request, sub_id: int):
     if not _can_manage_subscription(request.user, sub):
         raise Http404()
 
+    # Server-side safety: creators can cancel pending, but only admins can cancel ACTIVE.
+    if sub.status == "active" and not _is_admin(request.user):
+        messages.error(request, "Active subscriptions can only be cancelled by a club admin.")
+        return redirect("memberships:mine")
+
     if sub.status in ["cancelled", "paused"]:
         messages.info(request, "This subscription is already not active.")
         return redirect("memberships:mine")
 
     sub.status = "cancelled"
-    # optional: track when cancelled in external_ref notes or add a field later
     sub.save(update_fields=["status"])
     messages.success(
         request,
-        f"Subscription for {sub.player} • {sub.product.name} ({sub.season.name}) has been cancelled."
+        f"Subscription for {sub.player} • {sub.product.name} ({sub.season.name}) has been cancelled.",
     )
     return redirect("memberships:mine")
 
 
-def subscription_delete(request, sub_id: int):
+@login_required
+def subscription_delete(request: HttpRequest, sub_id: int) -> HttpResponse:
     """
     GET -> render a small confirm page.
     POST -> hard delete the record.
+    Non-admins may not delete ACTIVE subscriptions.
     """
     sub = get_object_or_404(
         Subscription.objects.select_related("player", "season", "product"),
@@ -278,10 +319,12 @@ def subscription_delete(request, sub_id: int):
         raise Http404()
 
     if request.method == "POST":
-        # Hard-delete
+        if sub.status == "active" and not _is_admin(request.user):
+            messages.error(request, "Active subscriptions can only be deleted by a club admin.")
+            return redirect("memberships:mine")
+
         sub.delete()
         messages.success(request, "Subscription deleted.")
         return redirect("memberships:mine")
 
-    # Render confirm page
     return render(request, "memberships/subscription_delete_confirm.html", {"sub": sub})

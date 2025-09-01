@@ -103,17 +103,31 @@
 
           <hr>
 
-          {# Add new email #}
-          <h5 class="mb-3"><i class="fas fa-plus-circle mr-2"></i>{% trans "Add another email" %}</h5>
-          <form method="post" action="{% url 'account_email' %}" class="form-inline">
-            {% csrf_token %}
-            <div class="form-group mb-2 mr-2 flex-grow-1" style="min-width:260px;">
-              {{ form.email|add_class:"form-control w-100" }}
-            </div>
-            <button class="btn btn-primary mb-2" name="action" value="add" type="submit">
-              {% trans "Add" %}
-            </button>
-          </form>
+            <h5 class="mb-3"><i class="fas fa-plus-circle mr-2"></i>{% trans "Add another email" %}</h5>
+            <form method="post" action="{% url 'account_email' %}" class="form-inline">
+              {% csrf_token %}
+              <div class="form-group mb-2 mr-2 flex-grow-1" style="min-width:260px;">
+                <label for="{{ form.email.id_for_label }}" class="sr-only">{% trans "Email address" %}</label>
+                <input
+                  type="email"
+                  name="{{ form.email.html_name }}"
+                  id="{{ form.email.id_for_label }}"
+                  value="{{ form.email.value|default_if_none:'' }}"
+                  class="form-control w-100"
+                  placeholder="{% trans 'Add new email' %}"
+                  required
+                >
+                {# show field errors inline #}
+                {% if form.email.errors %}
+                  <div class="invalid-feedback d-block">
+                    {{ form.email.errors|striptags }}
+                  </div>
+                {% endif %}
+              </div>
+              <button class="btn btn-primary mb-2" name="action" value="add" type="submit">
+                {% trans "Add" %}
+              </button>
+            </form>
 
           <p class="text-muted small mt-3 mb-0">
             <i class="fas fa-shield-alt mr-1"></i>

@@ -73,17 +73,20 @@ class Player(models.Model):
     
     # Optional centralised permission helper:
     def can_edit(self, user):
-        if not user.is_authenticated:
+        if not getattr(user, "is_authenticated", False):
             return False
-        if user.has_perm("members.change_player") or user.is_superuser:
+        if user.is_superuser or user.is_staff or user.has_perm("members.change_player"):
             return True
-        # Adjust this logic to match your schema:
-        #  - If you use guardians M2M:
-        try:
-            return self.guardians.filter(pk=user.pk).exists()
-        except Exception:
-            # fallback if your relation is named differently (e.g., owner/managed_by)
-            return False
+        if getattr(self, "created_by_id", None) == user.id:
+            return True
+        # If you have a guardians M2M, allow them too
+        if hasattr(self, "guardians"):
+            try:
+                if self.guardians.filter(pk=user.pk).exists():
+                    return True
+            except Exception:
+                pass
+        return False
 
     @property
     def age(self) -> int:
