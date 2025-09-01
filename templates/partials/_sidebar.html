@@ -40,17 +40,30 @@
           <a href="{% url 'memberships:mine' %}" class="nav-link {% if '/memberships/mine' in p %}active{% endif %}">
             <i class="nav-icon fas fa-users"></i>
             <p>Your Subscriptions</p>
+          </a>
+        </li>
+
+        <li class="nav-item">
+          <a href="{% url 'tasks:my_list' %}" class="nav-link {% if '/tasks' in p %}active{% endif %}">
+            <i class="nav-icon fas fa-check-square"></i><p>My Tasks</p>
             {% if open_task_count %}
               <span class="badge badge-danger navbar-badge">{{ open_task_count }}</span>
             {% endif %}
           </a>
         </li>
 
+        {% if perms.tasks.add_task %}
         <li class="nav-item">
-          <a href="{% url 'tasks:my_list' %}" class="nav-link {% if p|slice:':6' == '/tasks' %}active{% endif %}">
-            <i class="nav-icon fas fa-check-square"></i><p>My Tasks</p>
+          <a href="{% url 'tasks:create' %}" class="nav-link {% if '/tasks/new' in p %}active{% endif %}">
+            <i class="nav-icon fas fa-check-square"></i><p>Create Task</p>
           </a>
         </li>
+        <li class="nav-item">
+          <a href="{% url 'tasks:bulk_generate' %}" class="nav-link {% if '/tasks/generate' in p %}active{% endif %}">
+            <i class="nav-icon fas fa-check-square"></i><p>Create Bulk Tasks</p>
+          </a>
+        </li>
+        {% endif %}
 
         {% if perms.members.view_staff_area %}
           <li class="nav-header">DETAILS</li>

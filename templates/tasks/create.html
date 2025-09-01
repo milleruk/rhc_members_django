@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% load widget_tweaks %}
+{% block title %}Create Task{% endblock %}
+
+{% block content %}
+<div class="content-header pb-0">
+  <div class="container-fluid">
+    <div class="row mb-2">
+      <div class="col-sm-6"><h1 class="m-0">Create Task</h1></div>
+      <div class="col-sm-6">
+        <ol class="breadcrumb float-sm-right">
+          <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
+          <li class="breadcrumb-item"><a href="{% url 'tasks:my_list' %}">Tasks</a></li>
+          <li class="breadcrumb-item active">Create</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+</div>
+
+<section class="content">
+  <div class="container-fluid">
+
+    <div class="card card-primary card-outline">
+      <div class="card-header d-flex align-items-center">
+        <h3 class="card-title"><i class="fas fa-plus-circle mr-2"></i>New Task</h3>
+      </div>
+
+      <form method="post">
+        {% csrf_token %}
+        <div class="card-body">
+          <div class="row">
+            <div class="col-lg-8">
+              {% include "partials/_field.html" with field=form.title %}
+              {% include "partials/_field.html" with field=form.description %}
+
+              <div class="card card-light mb-3">
+                <div class="card-header">
+                  <h3 class="card-title"><i class="fas fa-link mr-2"></i>Subject (what this task is about)</h3>
+                  <div class="card-tools">
+                    <button type="button" class="btn btn-tool" data-card-widget="collapse"><i class="fas fa-minus"></i></button>
+                  </div>
+                </div>
+                <div class="card-body">
+                  <div class="form-row">
+                    <div class="col-md-6">{% include "partials/_field.html" with field=form.subject_ct %}</div>
+                    <div class="col-md-6">{% include "partials/_field.html" with field=form.subject_id %}</div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+            <div class="col-lg-4">
+              <div class="card card-light mb-3">
+                <div class="card-header"><h3 class="card-title"><i class="far fa-user mr-2"></i>Assignment</h3></div>
+                <div class="card-body">
+                  {% include "partials/_field.html" with field=form.assigned_to %}
+                  {% include "partials/_field.html" with field=form.due_at %}
+                </div>
+              </div>
+
+              <div class="card card-light">
+                <div class="card-header"><h3 class="card-title"><i class="fas fa-robot mr-2"></i>Automation</h3></div>
+                    <div class="card-body">
+                    {% include "partials/_field.html" with field=form.complete_on %}
+                    </div>
+              </div>
+            </div>
+          </div><!-- row -->
+        </div><!-- /.card-body -->
+
+        <div class="card-footer d-flex">
+          <button class="btn btn-primary"><i class="fas fa-check mr-1"></i>Create</button>
+          <a href="{% url 'tasks:my_list' %}" class="btn btn-outline-secondary ml-2">Cancel</a>
+        </div>
+      </form>
+    </div>
+
+  </div>
+</section>
+{% endblock %}

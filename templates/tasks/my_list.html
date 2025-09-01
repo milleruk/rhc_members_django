@@ -20,7 +20,14 @@
 
 <section class="content">
   <div class="container-fluid">
-
+{% if perms.tasks.add_task %}
+  <a class="btn btn-sm btn-primary" href="{% url 'tasks:create' %}">
+    <i class="fas fa-plus-circle mr-1"></i> New Task
+  </a>
+  <a class="btn btn-sm btn-outline-primary" href="{% url 'tasks:bulk_generate' %}">
+    <i class="fas fa-bolt mr-1"></i> Generate
+  </a>
+{% endif %}
     <!-- Filters / Actions -->
     <div class="card card-outline card-primary mb-3">
       <div class="card-body p-2 p-md-3">

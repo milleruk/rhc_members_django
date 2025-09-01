@@ -1,0 +1,12 @@
+Hi {{ user.get_full_name|default:user.get_username }},
+
+You have {{ tasks|length }} open task{{ tasks|length|pluralize }}:
+
+{% for t in tasks %}
+- {{ t.title }}{% if t.due_at %} (Due {{ t.due_at|date:"D, j M Y H:i" }}){% endif %}
+  {% if t.subject %}About: {{ t.subject }}{% endif %}
+{% endfor %}
+
+View your tasks: {{ base_list_url }}
+
+— {{ site_name }}
