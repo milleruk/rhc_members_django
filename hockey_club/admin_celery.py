@@ -6,7 +6,7 @@ from django.contrib import admin, messages
 from django.urls import path
 from django.shortcuts import redirect
 from django.core.management import call_command
-from celery import current_app
+from hockey_club.celery import app as celery_app
 from django.utils.html import format_html
 
 from .models_celery import (
@@ -84,7 +84,14 @@ class BeatPeriodicTaskAdmin(SyncFromSettingsMixin, admin.ModelAdmin):
                 send_kwargs = {}
                 if pt.queue:
                     send_kwargs["queue"] = pt.queue
-                current_app.send_task(pt.task, args=args, kwargs=kwargs, **send_kwargs)
+
+                # ✅ enqueue with your project's Celery app,
+                # and show the task id + queue in an admin message
+                result = celery_app.send_task(pt.task, args=args, kwargs=kwargs, **send_kwargs)
+                messages.info(
+                    request,
+                    f"Enqueued '{pt.name}' as task_id={result.id} queue={send_kwargs.get('queue') or 'default'}",
+                )
                 sent += 1
             except Exception as e:
                 messages.error(request, f"Failed to enqueue '{pt.name}': {e}")

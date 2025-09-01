@@ -109,13 +109,7 @@
 
                   {% if t.subject %}
                           {% with admin_url=t.subject_admin_url %}
-                            {% if admin_url %}
-                              <a href="{{ admin_url }}" class="text-body">
-                                {{ t.subject_ct }} • {{ t.subject }}
-                              </a>
-                            {% else %}
                               • {{ t.subject }}
-                            {% endif %}
                           {% endwith %}
                         {% else %}
                           <span class="text-muted">No subject</span>

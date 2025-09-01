@@ -1,0 +1,52 @@
+{# templates/members/player_edit.html #}
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+
+{% block title %}Edit Player{% endblock %}
+
+{% block content %}
+<div class="content-header py-2">
+  <div class="container-fluid">
+    <div class="row mb-2">
+      <div class="col-sm-6">
+        <h1 class="m-0">Edit Player</h1>
+        <p class="text-muted small mb-0">Update name, date of birth, gender, relation, and player type.</p>
+      </div>
+      <div class="col-sm-6">
+        <ol class="breadcrumb float-sm-right">
+          <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
+          <li class="breadcrumb-item active">Edit Player</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+</div>
+
+<section class="content">
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-lg-8 col-md-10">
+        <div class="card card-primary card-outline">
+          <div class="card-body">
+            <form method="post" novalidate>
+              {% csrf_token %}
+              {{ form|crispy }}
+              <div class="d-flex justify-content-between mt-3">
+                <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary">Cancel</a>
+                <button type="submit" class="btn btn-primary">
+                  <i class="fas fa-save mr-1"></i> Save changes
+                </button>
+              </div>
+            </form>
+          </div>
+          {% if player.updated_at %}
+          <div class="card-footer text-muted small">
+            Last updated {{ player.updated_at|date:"Y-m-d H:i" }}{% if player.updated_by %} by {{ player.updated_by.get_full_name|default:player.updated_by.username }}{% endif %}.
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

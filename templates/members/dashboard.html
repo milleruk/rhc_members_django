@@ -121,6 +121,7 @@
                 <div class="card-footer bg-white">
                   <div class="btn-group btn-group-sm d-none d-md-inline-flex">
                     <a href="{% url 'answer' p.public_id %}" class="btn btn-primary"><i class="fas fa-edit"></i> <span class="d-none d-lg-inline">Update Profile</span></a>
+                    <a href="{% url 'player_edit' public_id=p.public_id %}" class="btn btn-outline-primary"><i class="fas fa-user-cog"></i> <span class="d-none d-lg-inline">Edit Details</span></a>
                     <a href="{% url 'memberships:choose' p.id %}" class="btn btn-info"><i class="fas fa-id-badge"></i> <span class="d-none d-lg-inline">Membership</span></a>
                     <button type="button" class="btn btn-danger"
                             onclick="confirmDelete('{{ p.public_id }}', '{{ p.full_name|default:p|escapejs }}')">
@@ -135,7 +136,10 @@
                     </button>
                     <div class="dropdown-menu dropdown-menu-right">
                       <a class="dropdown-item" href="{% url 'answer' p.public_id %}">
-                        <i class="fas fa-edit mr-2"></i>Update
+                        <i class="fas fa-edit mr-2"></i>Update Profile
+                      </a>
+                      <a class="dropdown-item" href="{% url 'player_edit' public_id=p.public_id %}">
+                        <i class="fas fa-user-cog mr-2"></i>Edit Player Details
                       </a>
                       <a class="dropdown-item" href="{% url 'memberships:choose' p.id %}">
                         <i class="fas fa-id-badge mr-2"></i>Membership

@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% trans "Sign Out" %}{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-md-6 col-lg-5">
+      <div class="card shadow-sm">
+        <div class="card-header bg-danger text-white text-center">
+          <h4 class="mb-0"><i class="fas fa-sign-out-alt mr-2"></i>{% trans "Sign Out" %}</h4>
+        </div>
+        <div class="card-body text-center">
+          <p class="lead">{% trans "Are you sure you want to sign out?" %}</p>
+          <form method="post" action="{% url 'account_logout' %}">
+            {% csrf_token %}
+            <div class="d-flex justify-content-center gap-2">
+              <button type="submit" class="btn btn-danger btn-lg mr-2">
+                <i class="fas fa-check mr-1"></i> {% trans "Sign Out" %}
+              </button>
+              <a href="{% url 'dashboard' %}" class="btn btn-secondary btn-lg">
+                <i class="fas fa-times mr-1"></i> {% trans "Cancel" %}
+              </a>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

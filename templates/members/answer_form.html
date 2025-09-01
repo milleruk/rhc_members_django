@@ -9,9 +9,9 @@
     <div class="row mb-2 align-items-center">
       <div class="col-sm-7 d-flex align-items-center">
         <!-- Avatar -->
-        <div class="rounded-circle bg-light border text-center me-3"
+        <div class="rounded-circle bg-light border text-center mr-3"
              style="width:56px;height:56px;line-height:56px;">
-          <span class="text-muted fw-bold">
+          <span class="text-muted font-weight-bold">
             {% with fn=player.first_name|default_if_none:"" ln=player.last_name|default_if_none:"" %}
               {{ fn|default:"?"|slice:":1" }}{{ ln|default:""|slice:":1" }}
             {% endwith %}
@@ -23,22 +23,25 @@
           </h1>
           <div class="small text-muted">
             {% if player.player_type %}
-              <span class="badge bg-secondary me-1"><i class="fas fa-user me-1"></i>{{ player.player_type }}</span>
+              <span class="badge badge-secondary mr-1"><i class="fas fa-user mr-1"></i>{{ player.player_type }}</span>
             {% endif %}
             {% if player.get_relation_display %}
-              <span class="badge bg-light text-dark border"><i class="far fa-heart me-1"></i>{{ player.get_relation_display }}</span>
+              <span class="badge badge-light border text-dark"><i class="far fa-heart mr-1"></i>{{ player.get_relation_display }}</span>
             {% endif %}
           </div>
         </div>
       </div>
-      <div class="col-sm-5 text-sm-end mt-2 mt-sm-0">
+      <div class="col-sm-5 text-sm-right mt-2 mt-sm-0">
         {% if player %}
-          <a href="{% url 'memberships:choose' player.id %}" class="btn btn-outline-info me-1">
-            <i class="fas fa-id-card-alt me-1"></i> Membership
+          <a href="{% url 'player_edit' public_id=player.public_id %}" class="btn btn-outline-primary mr-1">
+            <i class="fas fa-user-cog mr-1"></i> Edit Details
+          </a>
+          <a href="{% url 'memberships:choose' player.id %}" class="btn btn-outline-info mr-1">
+            <i class="fas fa-id-card-alt mr-1"></i> Membership
           </a>
         {% endif %}
         <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary">
-          <i class="fas fa-arrow-left me-1"></i> Back to Dashboard
+          <i class="fas fa-arrow-left mr-1"></i> Back
         </a>
       </div>
     </div>
@@ -47,127 +50,154 @@
 
 <div class="content">
   <div class="container-fluid">
-
     <div class="row">
-  <!-- LEFT: one column that contains BOTH cards -->
-  <div class="col-12 col-lg-4">
-    <!-- Profile widget -->
-    <div class="card card-widget widget-user mb-3">
-      <div class="widget-user-header bg-primary text-white">
-        <h3 class="widget-user-username mb-0">
-          {{ player.first_name|default:"Player" }} {{ player.last_name }}
-        </h3>
-        <h5 class="widget-user-desc mb-0">
-          {% if player.player_type %}{{ player.player_type }}{% endif %}
-          {% if player.get_relation_display %} • {{ player.get_relation_display }}{% endif %}
-        </h5>
-      </div>
-      <div class="widget-user-image">
-        <img class="img-circle elevation-2"
-             src="https://ui-avatars.com/api/?name={{ player.first_name }}+{{ player.last_name }}&background=0D8ABC&color=fff"
-             alt="Player Avatar">
-      </div>
-      <div class="card-footer">
-        <div class="row text-center">
-          <div class="col-12">
-            <dl class="row small mb-0">
-              {% if player.email %}
-                <dt class="col-4">Email</dt>
-                <dd class="col-8">{{ player.email }}</dd>
-              {% endif %}
+      <!-- LEFT: Profile summary + teams -->
+      <div class="col-12 col-lg-4">
+        <!-- Profile widget -->
+        <div class="card card-widget widget-user mb-3">
+          <div class="widget-user-header bg-primary text-white">
+            <h3 class="widget-user-username mb-0">
+              {{ player.first_name|default:"Player" }} {{ player.last_name }}
+            </h3>
+            <h5 class="widget-user-desc mb-0">
+              {% if player.player_type %}{{ player.player_type }}{% endif %}
+              {% if player.get_relation_display %} • {{ player.get_relation_display }}{% endif %}
+            </h5>
+          </div>
+          <div class="widget-user-image">
+            <img class="img-circle elevation-2"
+                 src="https://ui-avatars.com/api/?name={{ player.first_name|urlencode }}+{{ player.last_name|urlencode }}&background=0D8ABC&color=fff"
+                 alt="Player Avatar">
+          </div>
+          <div class="card-body pt-4">
+            <div class="d-flex flex-wrap gap-1">
               {% if player.date_of_birth %}
-                <dt class="col-4">DOB</dt>
-                <dd class="col-8">{{ player.date_of_birth }}</dd>
+                <span class="badge badge-light border mr-1 mb-1">
+                  <i class="far fa-calendar-alt mr-1"></i> {{ player.date_of_birth|date:"j M Y" }}
+                </span>
               {% endif %}
-            </dl>
+              {% if player.gender %}
+                <span class="badge badge-light border mr-1 mb-1">
+                  <i class="fas fa-venus-mars mr-1"></i> {{ player.get_gender_display|default:player.gender }}
+                </span>
+              {% endif %}
+              {% if player.email %}
+                <span class="badge badge-light border mr-1 mb-1">
+                  <i class="far fa-envelope mr-1"></i> {{ player.email }}
+                </span>
+              {% endif %}
+            </div>
+
+            {% if player.answers_pct is not None %}
+              <div class="mt-3">
+                <div class="d-flex justify-content-between small mb-1">
+                  <span class="text-muted">Profile completeness</span>
+                  <span class="text-muted">{{ player.answers_pct }}%</span>
+                </div>
+                <div class="progress" style="height:8px;">
+                  <div class="progress-bar
+                              {% if player.answers_pct >= 80 %}bg-success
+                              {% elif player.answers_pct >= 40 %}bg-warning
+                              {% else %}bg-danger{% endif %}"
+                       role="progressbar"
+                       style="width: {{ player.answers_pct }}%;"
+                       aria-valuenow="{{ player.answers_pct }}" aria-valuemin="0" aria-valuemax="100"></div>
+                </div>
+              </div>
+            {% endif %}
+          </div>
+          <div class="card-footer d-flex justify-content-end">
+            <a href="{% url 'answer' player.public_id %}" class="btn btn-sm btn-primary mr-2">
+              <i class="fas fa-edit mr-1"></i> Update Profile
+            </a>
+            <a href="{% url 'player_edit' public_id=player.public_id %}" class="btn btn-sm btn-outline-primary">
+              <i class="fas fa-user-cog mr-1"></i> Edit Details
+            </a>
+          </div>
+        </div>
+
+        <!-- Teams card -->
+        <div class="card card-outline card-info mb-3">
+          <div class="card-header py-2 d-flex align-items-center">
+            <h3 class="card-title mb-0"><i class="fas fa-users mr-1"></i> Teams</h3>
+          </div>
+          <div class="card-body p-0">
+            {% if team_memberships %}
+              <ul class="list-group list-group-flush">
+                {% for m in team_memberships %}
+                  <li class="list-group-item d-flex justify-content-between align-items-start">
+                    <div class="mr-2">
+                      <div class="font-weight-semibold">{{ m.team.name }}</div>
+                      <div class="small text-muted">
+                        Assigned {{ m.assigned_at|date:"M j, Y" }}
+                        {% if m.assigned_by %} • by {{ m.assigned_by.get_full_name|default:m.assigned_by }}{% endif %}
+                      </div>
+                      {% if m.positions.all %}
+                        <div class="mt-1">
+                          {% for pos in m.positions.all %}
+                            <span class="badge badge-light border mr-1 mb-1">{{ pos }}</span>
+                          {% endfor %}
+                        </div>
+                      {% endif %}
+                    </div>
+                  </li>
+                {% endfor %}
+              </ul>
+            {% else %}
+              <div class="p-3 text-muted small">Not assigned to any teams yet.</div>
+            {% endif %}
           </div>
         </div>
       </div>
-    </div>
 
-    <!-- Teams card -->
-    <div class="card card-outline card-info mb-3">
-      <div class="card-header py-2">
-        <h3 class="card-title mb-0">
-          <i class="fas fa-users me-1"></i> Teams
-        </h3>
-      </div>
-      <div class="card-body p-0">
-        {% if team_memberships %}
-          <ul class="list-group list-group-flush">
-            {% for m in team_memberships %}
-              <li class="list-group-item d-flex justify-content-between align-items-start">
-                <div class="me-2">
-                  <div class="fw-semibold">{{ m.team.name }}</div>
-                  <div class="small text-muted">
-                    Assigned {{ m.assigned_at|date:"M j, Y" }}
-                    {% if m.assigned_by %} • by {{ m.assigned_by.get_full_name|default:m.assigned_by }}{% endif %}
-                  </div>
-                  {% if m.positions.all %}
-                    <div class="mt-1">
-                      {% for pos in m.positions.all %}
-                        <span class="badge bg-light text-dark border me-1 mb-1">{{ pos }}</span>
-                      {% endfor %}
-                    </div>
-                  {% endif %}
-                </div>
-              </li>
-            {% endfor %}
-          </ul>
-        {% else %}
-          <div class="p-3 text-muted small">Not assigned to any teams yet.</div>
-        {% endif %}
-      </div>
-    </div>
-  </div>
-
-      <!-- Right: Form sections -->
+      <!-- RIGHT: Dynamic sections form -->
       <div class="col-12 col-lg-8">
         <form method="post" novalidate>
           {% csrf_token %}
 
           {% for cat in grouped_fields.values %}
-              <div class="card card-outline card-primary mb-3">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                  <h3 class="card-title mb-0">
-                    {{ cat.name }}<br>
-                    {% if cat.description %}
-                      <small class="text-muted">{{ cat.description }}</small>
-                    {% endif %}
-                  </h3>
-                  <button class="btn btn-tool" type="button"
-                          data-bs-toggle="collapse"
-                          data-bs-target="#section-{{ forloop.counter }}"
-                          aria-expanded="true"
-                          aria-controls="section-{{ forloop.counter }}">
-                    <i class="fas fa-minus"></i>
-                  </button>
+            <div class="card card-outline card-primary mb-3">
+              <div class="card-header d-flex justify-content-between align-items-center">
+                <div>
+                  <div class="h6 mb-0">{{ cat.name }}</div>
+                  {% if cat.description %}
+                    <small class="text-muted">{{ cat.description }}</small>
+                  {% endif %}
                 </div>
-
-                <div id="section-{{ forloop.counter }}" class="card-body collapse show">
-                  {% for item in cat.items %}
-                    {% if item.main %}
-                      <div class="form-group mb-3" id="group-{{ item.main.name }}">
-                        {{ item.main|as_crispy_field }}
-                      </div>
-                    {% endif %}
-                    {% if item.detail %}
-                      <div class="form-group mb-3 detail-field d-none" id="group-{{ item.detail.name }}">
-                        {{ item.detail|as_crispy_field }}
-                      </div>
-                    {% endif %}
-                  {% endfor %}
-                </div>
+                <button class="btn btn-tool" type="button"
+                        data-bs-toggle="collapse"
+                        data-bs-target="#section-{{ forloop.counter }}"
+                        aria-expanded="true"
+                        aria-controls="section-{{ forloop.counter }}">
+                  <i class="fas fa-minus"></i>
+                </button>
               </div>
-          {% endfor %}
 
+              <div id="section-{{ forloop.counter }}" class="card-body collapse show">
+                {% for item in cat.items %}
+                  {% if item.main %}
+                    <div class="form-group mb-3" id="group-{{ item.main.name }}">
+                      {{ item.main|as_crispy_field }}
+                    </div>
+                  {% endif %}
+                  {% if item.detail %}
+                    <div class="form-group mb-3 detail-field d-none" id="group-{{ item.detail.name }}">
+                      {{ item.detail|as_crispy_field }}
+                    </div>
+                  {% endif %}
+                {% endfor %}
+              </div>
+            </div>
+          {% endfor %}
 
           <!-- Sticky action bar -->
           <div class="card mb-5">
-            <div class="card-body d-flex justify-content-between flex-wrap gap-2">
-              <div class="text-muted small"><i class="far fa-save me-1"></i> Make sure details are accurate before saving.</div>
-              <div class="ms-auto">
-                <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary me-1">
+            <div class="card-body d-flex justify-content-between flex-wrap">
+              <div class="text-muted small mb-2 mb-sm-0">
+                <i class="far fa-save mr-1"></i> Make sure details are accurate before saving.
+              </div>
+              <div class="ml-sm-auto">
+                <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary mr-1">
                   <i class="fas fa-times"></i> Cancel
                 </a>
                 <button type="submit" class="btn btn-primary">
@@ -180,15 +210,13 @@
         </form>
       </div>
     </div>
-
   </div>
 </div>
 
-<!-- Enhancements: detail-field toggling & optional collapse icons -->
+<!-- Behaviour: detail-field toggling & collapse icon sync -->
 <script>
 document.addEventListener("DOMContentLoaded", function() {
-  // Toggle "detail" fields when their main checkbox/radio is on.
-  // Convention: detail.name == main.name + "_detail"
+  // Toggle "detail" fields when their main checkbox/radio is on (convention: _detail suffix)
   function initDetailToggles(root) {
     const inputs = root.querySelectorAll("input[type=checkbox], input[type=radio]");
     inputs.forEach(function(input) {
@@ -198,7 +226,7 @@ document.addEventListener("DOMContentLoaded", function() {
       function apply() {
         const on = (input.type === "checkbox")
           ? input.checked
-          : !!root.querySelector(`input[name="${input.name}"]:checked`);
+          : !!root.querySelector('input[name="' + input.name + '"]:checked');
         detailGroup.classList.toggle("d-none", !on);
 
         if (!on) {
@@ -209,15 +237,13 @@ document.addEventListener("DOMContentLoaded", function() {
           }
         }
       }
-      // init + events
       apply();
       input.addEventListener("change", apply);
     });
   }
-
   initDetailToggles(document);
 
-  // Optional: switch minus/plus icon on collapse buttons (requires Bootstrap JS)
+  // Swap plus/minus icons on collapses (Bootstrap)
   document.querySelectorAll('[data-bs-toggle="collapse"]').forEach(btn => {
     const icon = btn.querySelector("i");
     const target = document.querySelector(btn.getAttribute("data-bs-target"));
@@ -234,4 +260,15 @@ document.addEventListener("DOMContentLoaded", function() {
   });
 });
 </script>
+
+<style>
+/* Small, scoped polish */
+.widget-user-username { font-size: 1.05rem; }
+.card-widget .badge { vertical-align: middle; }
+.badge + .badge { margin-left: .25rem; }
+.font-weight-semibold { font-weight: 600; }
+@media (min-width: 992px) {
+  .content .container-fluid .col-lg-8 form .card:last-child { position: sticky; bottom: 0; z-index: 5; }
+}
+</style>
 {% endblock %}

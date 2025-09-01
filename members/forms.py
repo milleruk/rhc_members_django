@@ -3,6 +3,7 @@ from .models import Player, PlayerType, DynamicQuestion, PlayerAnswer, Team, Pos
 from django.db import transaction
 from django.contrib import messages
 from django.utils import timezone
+from datetime import date
 
 class PlayerForm(forms.ModelForm):
     class Meta:
@@ -200,3 +201,38 @@ class TeamAssignmentForm(forms.ModelForm):
             self.save_m2m()
         return obj
 
+
+
+class PlayerEditForm(forms.ModelForm):
+    class Meta:
+        model = Player
+        fields = [
+            "first_name",
+            "last_name",
+            "date_of_birth",
+            "gender",
+            "relation",
+            "player_type",
+        ]
+        widgets = {
+            "date_of_birth": forms.DateInput(
+                attrs={"type": "date", "class": "form-control"}
+            ),
+            "first_name": forms.TextInput(attrs={"class": "form-control"}),
+            "last_name": forms.TextInput(attrs={"class": "form-control"}),
+            "gender": forms.Select(attrs={"class": "form-control"}),
+            "relation": forms.Select(attrs={"class": "form-control"}),
+            "player_type": forms.Select(attrs={"class": "form-control"}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # ensure the widget outputs YYYY-MM-DD
+        self.fields["date_of_birth"].widget.format = "%Y-%m-%d"
+        self.fields["date_of_birth"].input_formats = ["%Y-%m-%d"]
+
+    def clean_date_of_birth(self):
+        dob = self.cleaned_data.get("date_of_birth")
+        if dob and dob > date.today():
+            raise ValidationError("Date of birth cannot be in the future.")
+        return dob

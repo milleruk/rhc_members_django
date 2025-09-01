@@ -8,16 +8,16 @@ from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.db.models import Count, OuterRef, Subquery, Prefetch, Q, Exists
 from django.http import HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect, render
-from django.urls import reverse
+from django.urls import reverse, reverse_lazy
 from django.utils.timezone import now
 from django.views.decorators.http import require_POST
-from django.views.generic import CreateView, DetailView, ListView, TemplateView
+from django.views.generic import CreateView, DetailView, ListView, TemplateView, UpdateView
 from django.core.exceptions import PermissionDenied
 from django.utils import timezone
 from django.apps import apps
 from django.db import transaction
 
-from .forms import DynamicAnswerForm, PlayerForm, TeamAssignmentForm
+from .forms import DynamicAnswerForm, PlayerForm, TeamAssignmentForm, PlayerEditForm
 from .models import (
     DynamicQuestion,
     Player,
@@ -36,7 +36,6 @@ from tasks.models import Task
 from memberships.models import Subscription
 from spond_integration.models import PlayerSpondLink
 from tasks.events import emit
-
 
 
 # ------------------------------------------------------
@@ -231,6 +230,34 @@ class PlayerCreateView(LoginRequiredMixin, CreateView):
     def get_success_url(self):
         return reverse("answer", kwargs={"public_id": self.object.public_id})
 
+
+class PlayerUpdateView(LoginRequiredMixin, UpdateView):
+    model = Player
+    form_class = PlayerEditForm
+    template_name = "members/player_edit.html"
+    context_object_name = "player"
+    slug_field = "public_id"
+    slug_url_kwarg = "public_id"
+
+    def dispatch(self, request, *args, **kwargs):
+        obj = self.get_object()
+        allowed = obj.can_edit(request.user) if hasattr(obj, "can_edit") else (
+            request.user.is_staff or request.user.has_perm("members.change_player")
+        )
+        if not allowed:
+            messages.error(request, "You don’t have permission to edit this player.")
+            return reverse_lazy("dashboard")
+        return super().dispatch(request, *args, **kwargs)
+
+    def form_valid(self, form):
+        if hasattr(form.instance, "updated_by_id"):
+            form.instance.updated_by = self.request.user
+        messages.success(self.request, "Player details updated.")
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        # ✅ Redirect to the player dashboard (no kwargs)
+        return reverse_lazy("answer", kwargs={"public_id": self.object.public_id})
 
 @login_required
 def answer_view(request, public_id):
@@ -796,3 +823,4 @@ class PrivacyView(TemplateView):
         ctx = super().get_context_data(**kwargs)
         ctx["last_updated"] = timezone.now().date()
         return ctx
+

@@ -45,6 +45,12 @@ class Player(models.Model):
     player_type = models.ForeignKey("PlayerType", on_delete=models.PROTECT)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    updated_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True, blank=True,
+        on_delete=models.SET_NULL,
+        related_name="player_updates"
+    )
 
     tasks = GenericRelation(
         "tasks.Task",
@@ -52,6 +58,7 @@ class Player(models.Model):
         object_id_field="subject_id",
         related_query_name="player_subject",
     )
+
 
     class Meta:
         permissions = (
@@ -63,6 +70,20 @@ class Player(models.Model):
 
     def __str__(self) -> str:
         return f"{self.first_name} {self.last_name} ({self.player_type})"
+    
+    # Optional centralised permission helper:
+    def can_edit(self, user):
+        if not user.is_authenticated:
+            return False
+        if user.has_perm("members.change_player") or user.is_superuser:
+            return True
+        # Adjust this logic to match your schema:
+        #  - If you use guardians M2M:
+        try:
+            return self.guardians.filter(pk=user.pk).exists()
+        except Exception:
+            # fallback if your relation is named differently (e.g., owner/managed_by)
+            return False
 
     @property
     def age(self) -> int:

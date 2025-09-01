@@ -101,7 +101,6 @@ def _int_minor(amount):
     return int(round(float(amount) * 100))
 
 @shared_task
-@shared_task
 def sync_spond_events(days_back=14, days_forward=120):
     user = getattr(settings, "SPOND_USERNAME", "")
     pwd  = getattr(settings, "SPOND_PASSWORD", "")
