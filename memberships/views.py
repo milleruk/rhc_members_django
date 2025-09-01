@@ -16,8 +16,10 @@ from .models import (
     resolve_match_fee_for,
     MatchFeeTariff,
 )
+from tasks.events import emit
 from .forms import ConfirmSubscriptionForm
 from .permissions import can_manage_player
+
 
 
 def _get_active_season():
@@ -180,6 +182,12 @@ def confirm(request, player_id, plan_id):
                     )
                     sub.full_clean()  # enforces requires_plan and season alignment
                     sub.save()        # season is set in model.save()
+
+                    # ✅ fire event only after the transaction commits successfully
+                    transaction.on_commit(
+                        lambda: emit("membership.confirmed", subject=player, actor=request.user)
+                    )
+
             except IntegrityError:
                 messages.warning(
                     request,

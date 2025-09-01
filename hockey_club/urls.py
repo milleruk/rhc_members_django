@@ -12,6 +12,7 @@ path("admin/", admin.site.urls),
 path('hijack/', include('hijack.urls')),
 #path("accounts/", include("accounts.urls")),
 path("accounts/", include("allauth.urls")),   # ⚠️ adds login/signup/confirm/resend etc.
+path("tasks/", include("tasks.urls")),
 
 
 path("resources/", include(("resources.urls", "resources"), namespace="resources")),
@@ -30,6 +31,7 @@ path("spond/", include("spond_integration.urls", namespace="spond")),
 
 path("terms/", TermsView.as_view(), name="terms"),
 path("privacy/", PrivacyView.as_view(), name="privacy_policy"),
+
 
 ]
 

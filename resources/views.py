@@ -1,6 +1,6 @@
 from django.contrib.auth.mixins import PermissionRequiredMixin, LoginRequiredMixin
 from django.views.generic import ListView
-from .models import Policy, Document, Task
+from .models import Policy, Document
 
 
 class PolicyListView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
@@ -25,18 +25,3 @@ class DocumentListView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
     def get_queryset(self):
         qs = super().get_queryset()
         return qs.filter(is_active=True)
-
-
-class TaskListView(LoginRequiredMixin, ListView):
-    model = Task
-    template_name = "resources/task_list.html"
-    context_object_name = "tasks"
-    #permission_required = "resources.view_task"
-    #raise_exception = True
-
-    def get_queryset(self):
-        qs = super().get_queryset().select_related("assigned_to")
-        # Example: show all tasks to staff; otherwise show user’s tasks
-        if self.request.user.is_staff or self.request.user.is_superuser:
-            return qs
-        return qs.filter(assigned_to=self.request.user)

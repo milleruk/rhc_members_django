@@ -3,6 +3,7 @@ from django.contrib.auth.models import Group
 from django.db import models
 from django.utils import timezone
 from django.core.exceptions import ValidationError
+from django.contrib.contenttypes.fields import GenericRelation
 
 import uuid
 
@@ -44,6 +45,13 @@ class Player(models.Model):
     player_type = models.ForeignKey("PlayerType", on_delete=models.PROTECT)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    tasks = GenericRelation(
+        "tasks.Task",
+        content_type_field="subject_ct",
+        object_id_field="subject_id",
+        related_query_name="player_subject",
+    )
 
     class Meta:
         permissions = (

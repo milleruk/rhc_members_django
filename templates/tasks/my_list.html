@@ -1,0 +1,215 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}My Tasks{% endblock %}
+
+{% block content %}
+<div class="content-header py-2">
+  <div class="container-fluid">
+    <div class="row mb-2">
+      <div class="col-sm-6"><h1 class="m-0">My Tasks</h1></div>
+      <div class="col-sm-6">
+        <ol class="breadcrumb float-sm-right">
+          <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
+          <li class="breadcrumb-item active">Tasks</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+</div>
+
+<section class="content">
+  <div class="container-fluid">
+
+    <!-- Filters / Actions -->
+    <div class="card card-outline card-primary mb-3">
+      <div class="card-body p-2 p-md-3">
+        <form class="form-inline gap-2">
+          <div class="input-group input-group-sm mr-2 mb-2 mb-sm-0">
+            <input type="text" name="q" class="form-control" placeholder="Search tasks..."
+                   value="{{ request.GET.q|default_if_none:'' }}">
+            <div class="input-group-append">
+              <button class="btn btn-primary" type="submit"><i class="fas fa-search"></i></button>
+            </div>
+          </div>
+
+          <div class="form-group mx-sm-2 mb-2 mb-sm-0">
+            <select name="status" class="form-control form-control-sm">
+              <option value="">Status: Any</option>
+              {% for code, label in status_choices %}
+                <option value="{{ code }}" {% if request.GET.status == code %}selected{% endif %}>
+                  {{ label }}
+                </option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="form-group mx-sm-2 mb-2 mb-sm-0">
+            <select name="due" class="form-control form-control-sm">
+              <option value="">Due: Any</option>
+              <option value="overdue" {% if request.GET.due == 'overdue' %}selected{% endif %}>Overdue</option>
+              <option value="week" {% if request.GET.due == 'week' %}selected{% endif %}>This week</option>
+              <option value="future" {% if request.GET.due == 'future' %}selected{% endif %}>Future</option>
+              <option value="none" {% if request.GET.due == 'none' %}selected{% endif %}>No due date</option>
+            </select>
+          </div>
+
+          <a href="{% url 'tasks:my_list' %}" class="btn btn-sm btn-outline-secondary ml-auto">
+            <i class="fas fa-redo"></i> Reset
+          </a>
+        </form>
+      </div>
+    </div>
+
+    <!-- Projects grid -->
+    <div class="row">
+      {% if tasks %}
+        {% for t in tasks %}
+          <div class="col-12 col-md-6 col-xl-4 d-flex">
+            <div id="task-{{ t.id }}" class="card flex-fill project-card {{ t.is_overdue|yesno:'border-danger,' }}">
+              <div class="card-header border-0">
+                <div class="d-flex align-items-start">
+                  <div class="project-badge mr-2">
+                    {% if t.status == 'open' %}
+                      <span class="badge badge-warning"><i class="fas fa-clock mr-1"></i> Open</span>
+                    {% elif t.status == 'done' %}
+                      <span class="badge badge-success"><i class="fas fa-check mr-1"></i> Done</span>
+                    {% else %}
+                      <span class="badge badge-secondary"><i class="fas fa-eye-slash mr-1"></i> Dismissed</span>
+                    {% endif %}
+                  </div>
+                  <h5 class="card-title mb-0 text-wrap">{{ t.title }}</h5>
+                  <div class="ml-auto">
+                    {% if t.due_at %}
+                      <span class="badge {% if t.is_overdue %}badge-danger{% else %}badge-info{% endif %}">
+                        <i class="far fa-calendar-alt mr-1"></i>
+                        {{ t.due_at|date:"D j M, H:i" }}
+                      </span>
+                    {% else %}
+                      <span class="badge badge-light"><i class="far fa-calendar-alt mr-1"></i> No due</span>
+                    {% endif %}
+                  </div>
+                </div>
+              </div>
+
+              <div class="card-body pt-0">
+                {% if t.description %}
+                  <p class="text-muted small mb-2">{{ t.description }}</p>
+                {% endif %}
+                <!-- Subject row -->
+                <div class="mb-3 small">
+                  <i class="fas fa-link mr-1 text-muted"></i>
+
+                  {% if t.subject %}
+                          {% with admin_url=t.subject_admin_url %}
+                            {% if admin_url %}
+                              <a href="{{ admin_url }}" class="text-body">
+                                {{ t.subject_ct }} • {{ t.subject }}
+                              </a>
+                            {% else %}
+                              • {{ t.subject }}
+                            {% endif %}
+                          {% endwith %}
+                        {% else %}
+                          <span class="text-muted">No subject</span>
+                        {% endif %}
+
+                </div>
+
+                <!-- Progress (fake: just reflects status visually like AdminLTE projects) -->
+                <div class="clearfix mb-2">
+                  <span class="float-left text-muted small">Progress</span>
+                  <span class="float-right text-muted small">
+                    {% if t.status == 'done' %}100%{% elif t.status == 'dismissed' %}—{% else %}0%{% endif %}
+                  </span>
+                </div>
+                <div class="progress" style="height:6px;">
+                  <div class="progress-bar
+                    {% if t.status == 'done' %}bg-success
+                    {% elif t.status == 'dismissed' %}bg-secondary
+                    {% elif t.is_overdue %}bg-danger
+                    {% else %}bg-warning{% endif %}"
+                    role="progressbar"
+                    style="width:{% if t.status == 'done' %}100{% elif t.status == 'dismissed' %}0{% else %}0{% endif %}%">
+                  </div>
+                </div>
+              </div>
+
+              <div class="card-footer bg-white">
+                <div class="d-flex align-items-center">
+                  <!-- People -->
+                  <div class="user-block d-flex align-items-center">
+                    <span class="user-block-img mr-2">
+                      <i class="fas fa-user-circle fa-2x text-muted"></i>
+                    </span>
+                    <span class="user-block-info small">
+                      <span class="text-muted">Assigned to</span><br>
+                      {{ t.assigned_to|default:"Unassigned" }}
+                    </span>
+                  </div>
+
+                  <div class="ml-auto btn-group">
+                      {% if t.status == 'open' %}
+                        {% if not t.allow_manual_complete %}
+                          {# System/auto task: always show Auto badge in the list view #}
+                          <span class="btn btn-sm btn-outline-light text-muted" title="This task auto-completes when its event triggers">
+                            <i class="fas fa-robot mr-1"></i> Auto
+                          </span>
+                        {% elif t.can_complete %}
+                          <a class="btn btn-sm btn-success"
+                            href="{% url 'tasks:complete' t.pk %}?next={{ request.get_full_path|urlencode }}">
+                            <i class="fas fa-check mr-1"></i> Complete
+                          </a>
+                          <a class="btn btn-sm btn-outline-secondary"
+                            href="{% url 'tasks:dismiss' t.pk %}?next={{ request.get_full_path|urlencode }}">
+                            <i class="fas fa-eye-slash mr-1"></i> Dismiss
+                          </a>
+                        {% else %}
+                          <span class="btn btn-sm btn-outline-light text-muted" title="Assigned to another user">
+                            <i class="far fa-hourglass mr-1"></i> Waiting
+                          </span>
+                        {% endif %}
+                      {% else %}
+                        <span class="btn btn-sm btn-outline-light text-muted" disabled>
+                          <i class="far fa-check-circle mr-1"></i> Completed
+                        </span>
+                      {% endif %}
+                    </div>
+
+                </div>
+              </div>
+
+            </div>
+          </div>
+        {% endfor %}
+      {% else %}
+        <div class="col-12">
+          <div class="empty-state text-center py-5">
+            <i class="far fa-smile fa-3x text-muted mb-3 d-block"></i>
+            <p class="lead mb-1">No open tasks — nice!</p>
+            <p class="text-muted">You’ll see tasks here when they’re assigned to you.</p>
+          </div>
+        </div>
+      {% endif %}
+    </div>
+
+  </div>
+</section>
+
+<script>
+(function () {
+  const params = new URLSearchParams(window.location.search);
+  const focus = params.get('focus');
+  if (!focus) return;
+  const el = document.getElementById('task-' + focus);
+  if (!el) return;
+  el.classList.add('ring-focus');
+  el.scrollIntoView({behavior: 'smooth', block: 'center'});
+  setTimeout(() => el.classList.remove('ring-focus'), 2500);
+})();
+</script>
+<style>
+  .ring-focus { box-shadow: 0 0 0 3px rgba(59,130,246,.6) !important; }
+</style>
+
+{% endblock %}

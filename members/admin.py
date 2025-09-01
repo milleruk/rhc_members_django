@@ -66,4 +66,3 @@ class PlayerAccessLogAdmin(admin.ModelAdmin):
     list_display = ("player", "accessed_by", "accessed_at")
     list_filter = ("accessed_at", "accessed_by")
     search_fields = ("player__first_name", "player__last_name", "accessed_by__username")
-

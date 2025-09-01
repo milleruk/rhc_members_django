@@ -15,6 +15,7 @@ from django.views.generic import CreateView, DetailView, ListView, TemplateView
 from django.core.exceptions import PermissionDenied
 from django.utils import timezone
 from django.apps import apps
+from django.db import transaction
 
 from .forms import DynamicAnswerForm, PlayerForm, TeamAssignmentForm
 from .models import (
@@ -22,13 +23,19 @@ from .models import (
     Player,
     PlayerAnswer,
     PlayerType as PT,
+    PlayerType,
     TeamMembership,
     PlayerAccessLog,
-    Team
-    
+    Team,
+
 )
+
+from club.models import ClubNotice, QuickLink
+
+from tasks.models import Task
 from memberships.models import Subscription
 from spond_integration.models import PlayerSpondLink
+from tasks.events import emit
 
 
 
@@ -38,6 +45,21 @@ from spond_integration.models import PlayerSpondLink
 ALLOWED_GROUPS = ["Full Access", "Committee", "Captain", "Coach", "Helper"]
 COACH_GROUPS = ["Full Access", "Committee", "Coach"]
 
+
+def _profile_is_complete(player) -> bool:
+    req_q_ids = list(
+        DynamicQuestion.objects.filter(
+            active=True, required=True, applies_to=player.player_type
+        ).values_list("id", flat=True)
+    )
+    if not req_q_ids:
+        return True
+    answered_ids = set(
+        PlayerAnswer.objects.filter(
+            player=player, question_id__in=req_q_ids
+        ).values_list("question_id", flat=True)
+    )
+    return set(req_q_ids).issubset(answered_ids)
 
 class InGroupsRequiredMixin(UserPassesTestMixin):
     """Require authenticated users to be in one of the allowed groups (or be superuser)."""
@@ -69,14 +91,129 @@ def get_owned_player_or_404(user, **kwargs) -> Player:
 # ------------------------------------------------------
 @login_required
 def dashboard(request):
-    """Show only the current user's players."""
+    """Show current user's players + tasks panel."""
     players = (
-        request.user.players.select_related("player_type")
+        request.user.players
+        .select_related("player_type")
         .prefetch_related("team_memberships__team")
         .all()
     )
-    return render(request, "members/dashboard.html", {"players": players})
 
+    pending_tasks = []
+    user = request.user
+
+    # --- Try to load real tasks from your tasks app (robust to field names) ---
+    try:
+        from tasks.models import Task  # adjust if your app label differs
+
+        # 1) detect assignee field
+        assignee_field = None
+        for candidate in ("assignee", "assigned_to", "user", "owner", "created_for"):
+            if hasattr(Task, candidate):
+                assignee_field = candidate
+                break
+
+        # 2) build base queryset for "my tasks"
+        if assignee_field:
+            base_q = Q(**{assignee_field: user})
+        else:
+            base_q = Q()  # fallback: no filter (uncommon)
+
+        qs = Task.objects.all()
+
+        # 3) open filter: status or done flags
+        open_states = ["open", "todo", "pending", "in_progress", "new"]
+        if hasattr(Task, "status"):
+            qs = qs.filter(base_q, status__in=open_states)
+        elif hasattr(Task, "is_done"):
+            qs = qs.filter(base_q, is_done=False)
+        elif hasattr(Task, "completed_at"):
+            qs = qs.filter(base_q, completed_at__isnull=True)
+        else:
+            qs = qs.filter(base_q)  # last resort
+
+        qs = qs.order_by("due_at", "-created_at")[:10]
+
+        # 4) attach URLs if missing (adjust kinds to yours)
+        player_pub_ids = {
+            p.id: p.public_id for p in players
+        }
+        pending = []
+        for t in qs:
+            url = getattr(t, "url", None)
+            kind = getattr(t, "kind", "")
+            player_id = getattr(t, "player_id", None)
+
+            if not url:
+                if kind == "complete_answers" and player_id in player_pub_ids:
+                    url = reverse("answer", args=[player_pub_ids[player_id]])
+                elif kind == "choose_membership" and player_id:
+                    url = reverse("memberships:choose", args=[player_id])
+                elif hasattr(t, "get_absolute_url"):
+                    try:
+                        url = t.get_absolute_url()
+                    except Exception:
+                        pass
+            # attach a transient .url attribute for the template
+            setattr(t, "url", url)
+            pending.append(t)
+
+        pending_tasks = pending
+
+    except Exception:
+        # tasks app not available or schema unexpected
+        pending_tasks = []
+
+    # --- Optional: derive "virtual" tasks if none found (non-persistent) ---
+    if not pending_tasks:
+        # Example heuristics — tweak to your schema/methods
+        for p in players:
+            try:
+                answers_complete = getattr(p, "answers_complete", None)
+                if callable(answers_complete):
+                    answers_complete = answers_complete()
+            except Exception:
+                answers_complete = None
+
+            if answers_complete is False:
+                pending_tasks.append(type("T", (), {
+                    "title": f"Complete answers for {p.first_name} {p.last_name}",
+                    "due_at": None,
+                    "url": reverse("answer", args=[p.public_id]),
+                })())
+
+            # Example: no active membership => prompt
+            try:
+                has_active_membership = getattr(p, "has_active_membership", None)
+                if callable(has_active_membership):
+                    has_active_membership = has_active_membership()
+            except Exception:
+                has_active_membership = None
+
+            if has_active_membership is False:
+                pending_tasks.append(type("T", (), {
+                    "title": f"Choose membership for {p.first_name} {p.last_name}",
+                    "due_at": None,
+                    "url": reverse("memberships:choose", args=[p.id]),
+                })())
+
+        # limit to 10 visual items
+        pending_tasks = pending_tasks[:10]
+
+    # ✅ Always define notices and quick_links
+    notices = ClubNotice.objects.filter(active=True)
+    quick_links = QuickLink.objects.filter(active=True)
+
+    return render(
+        request,
+        "members/dashboard.html",
+        {
+            "players": players,
+            "pending_tasks": pending_tasks,
+            "notices": notices,
+            "quick_links": quick_links,
+        },
+    )
 
 class PlayerCreateView(LoginRequiredMixin, CreateView):
     """Create a player profile that is automatically owned by the creator."""
@@ -103,6 +240,13 @@ def answer_view(request, public_id):
         form = DynamicAnswerForm(request.POST, player=player)
         if form.is_valid():
             form.save()
+
+            # ✅ If the profile is now complete, mark the task done via generic event
+            if _profile_is_complete(player):
+                transaction.on_commit(
+                    lambda: emit("profile.completed", subject=player, actor=request.user)
+                )
+
             messages.success(request, "Details saved.")
             return redirect("dashboard")
     else:
