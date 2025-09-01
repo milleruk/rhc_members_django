@@ -1,8 +1,6 @@
-{# templates/partials/_nav_tasks_dropdown.html #}
 {% load humanize %}
-
 <li class="nav-item dropdown">
-  <a class="nav-link" data-toggle="dropdown" href="#" aria-expanded="false">
+  <a class="nav-link" data-toggle="dropdown" href="#">
     <i class="far fa-bell"></i>
     {% if open_task_count %}
       <span class="badge badge-warning navbar-badge">{{ open_task_count }}</span>
@@ -17,23 +15,18 @@
     {% if task_notifications %}
       <div class="dropdown-divider"></div>
       {% for n in task_notifications %}
-        <a href="#" class="dropdown-item d-flex align-items-start">
+        <a href="{{ n.url }}" class="dropdown-item d-flex align-items-start">
           <i class="mr-2 mt-1
-                    {% if n.overdue %}fas fa-exclamation-triangle text-danger
-                    {% elif n.due_at %}far fa-calendar text-info
-                    {% else %}far fa-clipboard text-muted{% endif %}"></i>
+             {% if n.overdue %}fas fa-exclamation-triangle text-danger
+             {% elif n.due_at %}far fa-calendar text-info
+             {% else %}far fa-clipboard text-muted{% endif %}"></i>
           <div class="flex-fill">
             <div class="small font-weight-bold text-wrap">{{ n.title }}</div>
-            {% if n.subject_str %}
-              <div class="text-muted small text-truncate">for {{ n.subject_str }}</div>
+            {% if n.subject %}
+              <div class="text-muted small text-truncate">for {{ n.subject }}</div>
             {% endif %}
             <div class="text-muted text-sm">
-              {% if n.due_at %}
-                Due {{ n.due_at|naturaltime }}
-                {% if n.overdue %}<span class="badge badge-danger ml-1">Overdue</span>{% endif %}
-              {% else %}
-                Created {{ n.created_at|default_if_none:"" }}
-              {% endif %}
+              {% if n.due_at %}Due {{ n.due_at|naturaltime }}{% else %}No due date{% endif %}
             </div>
           </div>
         </a>

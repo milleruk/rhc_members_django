@@ -1,0 +1,122 @@
+<aside class="main-sidebar sidebar-dark-primary elevation-4">
+  <a href="{% url 'dashboard' %}" class="brand-link d-flex align-items-center">
+    <img src="https://redditchhc.co.uk/wp-content/uploads/2020/01/logosm-1.png"
+         alt="Club Logo"
+         class="brand-image img-circle elevation-3 mr-2"
+         style="opacity:.9; max-height:32px;">
+    <span class="brand-text font-weight-light">Club Portal</span>
+  </a>
+
+
+  <div class="sidebar">
+    <div class="user-panel mt-3 pb-3 mb-3 d-flex">
+      <div class="image">
+        <i class="fas fa-inverse user-profile fa-user-circle"></i>
+      </div>
+      <div class="info">
+        <a href="#" class="d-block">{{ user.first_name }} {{ user.last_name }}</a>
+      </div>
+    </div>
+
+    {% with request.path as p %}
+    <nav class="mt-3">
+      <ul class="nav nav-pills nav-sidebar flex-column" role="menu">
+
+        <li class="nav-header">GENERAL</li>
+
+        <li class="nav-item">
+          <a href="{% url 'dashboard' %}" class="nav-link {% if p == '/dashboard/' %}active{% endif %}">
+            <i class="nav-icon fas fa-home"></i><p>Dashboard</p>
+          </a>
+        </li>
+
+        <li class="nav-item">
+          <a href="{% url 'player_add' %}" class="nav-link {% if '/players/add' in p %}active{% endif %}">
+            <i class="nav-icon fas fa-users"></i><p>Add a Player</p>
+          </a>
+        </li>
+
+        <li class="nav-item">
+          <a href="{% url 'memberships:mine' %}" class="nav-link {% if '/memberships/mine' in p %}active{% endif %}">
+            <i class="nav-icon fas fa-users"></i>
+            <p>Your Subscriptions</p>
+            {% if open_task_count %}
+              <span class="badge badge-danger navbar-badge">{{ open_task_count }}</span>
+            {% endif %}
+          </a>
+        </li>
+
+        <li class="nav-item">
+          <a href="{% url 'tasks:my_list' %}" class="nav-link {% if p|slice:':6' == '/tasks' %}active{% endif %}">
+            <i class="nav-icon fas fa-check-square"></i><p>My Tasks</p>
+          </a>
+        </li>
+
+        {% if perms.members.view_staff_area %}
+          <li class="nav-header">DETAILS</li>
+
+          <li class="nav-item">
+            <a href="{% url 'admin_player_list' %}" class="nav-link {% if '/staff/players' in p %}active{% endif %}">
+              <i class="nav-icon fas fa-users"></i><p>Club Players</p>
+            </a>
+          </li>
+
+          <li class="nav-item">
+            <a href="{% url 'spond:dashboard' %}" class="nav-link {% if '/spond/dashboard' in p %}active{% endif %}">
+              <i class="nav-icon fas fa-users"></i><p>Spond Players</p>
+            </a>
+          </li>
+
+          <li class="nav-item">
+            <a href="{% url 'spond:events_dashboard' %}" class="nav-link {% if '/spond/events' in p %}active{% endif %}">
+              <i class="nav-icon fas fa-users"></i><p>Spond Events</p>
+            </a>
+          </li>
+        {% endif %}
+
+        <li class="nav-header">CLUB RESOURCES</li>
+
+        {% if perms.resources.view_policy %}
+          <li class="nav-item">
+            <a href="{% url 'resources:policy_list' %}" class="nav-link {% if '/resources/policies' in p %}active{% endif %}">
+              <i class="nav-icon fas fa-shield-alt"></i><p>Policies</p>
+            </a>
+          </li>
+        {% endif %}
+
+        
+          <li class="nav-item">
+            <a href="{% url 'resources:document_list' %}" class="nav-link {% if '/resources/documents' in p %}active{% endif %}">
+              <i class="nav-icon fas fa-folder-open"></i><p>Documents</p>
+            </a>
+          </li>
+
+
+        <li class="nav-item">
+          <a href="{% url 'resources:links' %}" class="nav-link {% if '/resources/links' in p %}active{% endif %}">
+            <i class="nav-icon fas fa-link"></i><p>Useful Links</p>
+          </a>
+        </li>
+
+        {% if perms.members.view_player %}
+          <li class="nav-header">REPORTS</li>
+          <li class="nav-item">
+            <a href="#" class="nav-link disabled">
+              <i class="nav-icon fas fa-chart-bar"></i><p>Coming soon</p>
+            </a>
+          </li>
+        {% endif %}
+
+        {% if user.is_staff or user.is_superuser %}
+          <li class="nav-header">ADMINISTRATION</li>
+          <li class="nav-item">
+            <a href="{% url 'admin:index' %}" class="nav-link" target="_blank" rel="noopener">
+              <i class="nav-icon fas fa-toolbox"></i><p>Site Admin</p>
+            </a>
+          </li>
+        {% endif %}
+      </ul>
+    </nav>
+    {% endwith %}
+  </div>
+</aside>

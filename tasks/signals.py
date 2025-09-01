@@ -15,8 +15,8 @@ def create_starter_tasks_for_player(sender, instance: Player, created: bool, **k
     def _create():
         Task.objects.bulk_create([
             Task(
-                title="Complete player answers",
-                description="Please complete the player profile answers.",
+                title="Complete player profile",
+                description="Please complete the player profile answers for this player.",
                 subject=instance,
                 created_by=assigned,
                 assigned_to=assigned,

@@ -1,0 +1,13 @@
+<footer class="main-footer text-sm border-top pt-2 pb-2">
+  <div class="d-flex justify-content-between align-items-center">
+    <div>
+      <span class="text-muted">&copy; {{ current_year }}</span>
+      <strong> Redditch Hockey Club Portal</strong>
+      <span class="text-muted"> — Designed &amp; Coded by Ben Haresign</span>
+    </div>
+    <div class="d-none d-sm-block text-muted">
+      <i class="fas fa-code-branch mr-1"></i> {{ portal_version|default:"v1.0" }}
+      {% if portal_build %}<span class="ml-2">({{ portal_build }})</span>{% endif %}
+    </div>
+  </div>
+</footer>
