@@ -31,7 +31,7 @@
       <div class="col">
         <ol class="breadcrumb mb-0">
           <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
-          <li class="breadcrumb-item"><a href="{% url 'admin_player_list' %}">Players</a></li>
+          <li class="breadcrumb-item"><a href="{% url 'staff:player_list' %}">Players</a></li>
           <li class="breadcrumb-item active">{{ player.first_name }} {{ player.last_name }}</li>
         </ol>
       </div>
@@ -253,7 +253,7 @@
                               <td><small class="text-muted">{{ m.assigned_by }} · {{ m.assigned_at|date:"Y-m-d H:i" }}</small></td>
                               {% if show_team_actions %}
                                 <td class="text-right">
-                                  <form method="post" action="{% url 'remove_membership' m.id %}" class="d-inline">
+                                  <form method="post" action="{% url 'staff:remove_membership' m.id %}" class="d-inline">
                                     {% csrf_token %}
                                     <button type="submit" class="btn btn-outline-danger btn-xs">
                                       <i class="fas fa-times mr-1"></i> Remove

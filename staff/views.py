@@ -1,0 +1,496 @@
+# staff/views.py
+from collections import OrderedDict
+from datetime import timedelta
+from django.http import HttpResponseForbidden
+
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
+from django.core.exceptions import PermissionDenied
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+from django.db.models import Count, OuterRef, Subquery, Q
+from django.shortcuts import get_object_or_404, redirect
+from django.utils.timezone import now
+from django.views.generic import DetailView, ListView
+from django.contrib import messages
+from django.views.decorators.http import require_POST
+from django.views.generic import TemplateView
+
+# import from other apps (no circulars)
+from members.forms import TeamAssignmentForm
+from members.models import (
+    DynamicQuestion,
+    Player,
+    PlayerType,
+    TeamMembership,
+    PlayerAccessLog,
+    Team,
+    PlayerAccessLog,
+)
+from memberships.models import Subscription
+
+COACH_GROUPS = ["Full Access", "Committee", "Coach"]  # keep in one place if you share it
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Admin/Staff: Player list
+# ──────────────────────────────────────────────────────────────────────────────
+
+class PlayerListView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
+    model = Player
+    template_name = "staff/player_list.html"
+    context_object_name = "players"
+    permission_required = "members.view_staff_area"
+    raise_exception = True
+
+    def _base_qs(self):
+        return (
+            Player.objects
+            .select_related("player_type", "created_by")
+            .prefetch_related("team_memberships__team", "team_memberships__positions")
+            .distinct()
+        )
+
+    def _get_user_team_ids(self, user):
+        return list(Team.objects.filter(staff=user).values_list("id", flat=True))
+
+    def get_queryset(self):
+        qs = self._base_qs()
+        user = self.request.user
+        is_admin_all = user.has_perm("members.view_all_players")
+
+        allowed_team_ids = None
+        if not is_admin_all:
+            allowed_team_ids = set(self._get_user_team_ids(user))
+            if not allowed_team_ids:
+                return qs.none()
+            qs = qs.filter(team_memberships__team_id__in=allowed_team_ids)
+
+        team_param = (self.request.GET.get("team") or "").strip()
+        if team_param:
+            if team_param == "none":
+                qs = qs.filter(team_memberships__isnull=True) if is_admin_all else qs.none()
+            else:
+                try:
+                    team_id = int(team_param)
+                except ValueError:
+                    team_id = None
+                if team_id:
+                    if is_admin_all or (team_id in (allowed_team_ids or set())):
+                        qs = qs.filter(team_memberships__team_id=team_id)
+                    else:
+                        qs = qs.none()
+
+        player_type_id = self.request.GET.get("player_type")
+        if player_type_id:
+            qs = qs.filter(player_type_id=player_type_id)
+
+        sub_status = (self.request.GET.get("subscription_status") or "").strip().lower()
+        if sub_status in {"active", "pending", "paused", "cancelled"}:
+            qs = qs.filter(subscriptions__status=sub_status)
+        elif sub_status == "none":
+            qs = qs.exclude(subscriptions__status__in=["active", "pending"])
+
+        active_sub_qs = (
+            Subscription.objects
+            .filter(player=OuterRef("pk"), status__in=["active", "pending"])
+            .order_by("-started_at")
+        )
+        qs = qs.annotate(
+            active_sub_product=Subquery(active_sub_qs.values("product__name")[:1]),
+            active_sub_status=Subquery(active_sub_qs.values("status")[:1]),
+            active_sub_season=Subquery(active_sub_qs.values("season__name")[:1]),
+        ).annotate(
+            active_spond_count=Count("spond_links", filter=Q(spond_links__active=True), distinct=True)
+        )
+
+        return qs.distinct()
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        players = ctx["players"]
+        user = self.request.user
+        is_admin_all = user.has_perm("members.view_all_players")
+        today = now().date()
+
+        if is_admin_all:
+            ctx["teams"] = Team.objects.filter(active=True)
+        else:
+            team_ids = self._get_user_team_ids(user)
+            ctx["teams"] = Team.objects.filter(id__in=team_ids, active=True)
+
+        ctx["player_types"] = PlayerType.objects.all()
+
+        twelve_months_ago = now() - timedelta(days=365)
+        ctx["total_players"] = players.count()
+        ctx["recent_updates"] = players.filter(updated_at__gte=twelve_months_ago).count()
+        ctx["inactive_players"] = players.filter(updated_at__lt=twelve_months_ago).count()
+
+        try:
+            gender_map = dict(Player._meta.get_field("gender").flatchoices)
+        except Exception:
+            gender_map = {}
+        raw_gender_counts = players.values("gender").annotate(total=Count("id")).order_by("gender")
+        ctx["totals_by_gender"] = {
+            (gender_map.get(row["gender"], row["gender"] or "Unspecified")): row["total"]
+            for row in raw_gender_counts
+        }
+
+        ctx["totals_per_team"] = (
+            players.filter(team_memberships__isnull=False)
+            .values("team_memberships__team__name")
+            .annotate(total=Count("id", distinct=True))
+            .order_by("team_memberships__team__name")
+        )
+
+        membership_qs = (
+            players.values("player_type__name")
+            .annotate(total=Count("id"))
+            .order_by("player_type__name")
+        )
+        ctx["membership_breakdown"] = {
+            row["player_type__name"] or "Unspecified": row["total"] for row in membership_qs
+        }
+        ctx["membership_types"] = membership_qs
+
+        age_ranges = {"U10": (0, 9), "U12": (10, 11), "U14": (12, 13), "U16": (14, 15), "Adults": (16, 200)}
+        ctx["age_distribution"] = {
+            label: sum(1 for p in players if getattr(p, "age", None) is not None and lo <= p.age <= hi)
+            for label, (lo, hi) in age_ranges.items()
+        }
+
+        ctx["today_access_logs"] = PlayerAccessLog.objects.filter(accessed_at__date=today).count()
+
+        total_players = ctx["total_players"]
+        answered_players = players.filter(answers__isnull=False).distinct().count()
+        ctx["questionnaire_completion"] = round((answered_players / total_players) * 100, 1) if total_players else 0
+
+        debug_mode = (self.request.GET.get("debug") == "1")
+        ctx["debug_mode"] = debug_mode
+        if debug_mode:
+            team_ids = "ALL" if is_admin_all else list(self._get_user_team_ids(user))
+            ctx["debug_global"] = {
+                "is_admin_all": is_admin_all,
+                "allowed_team_ids": team_ids,
+                "visible_players_count": players.count(),
+            }
+            for p in players:
+                tm_summary = []
+                ids = set()
+                for tm in p.team_memberships.all():
+                    ids.add(tm.team_id)
+                    tm_summary.append({
+                        "team_id": tm.team_id,
+                        "team_name": getattr(tm.team, "name", None),
+                        "positions": [pos.name for pos in tm.positions.all()],
+                    })
+                setattr(p, "debug_teams", sorted(ids))
+                setattr(p, "debug_memberships", tm_summary)
+
+        return ctx
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Admin/Staff: Player detail
+# ──────────────────────────────────────────────────────────────────────────────
+
+class PlayerDetailView(LoginRequiredMixin, PermissionRequiredMixin, DetailView):
+    model = Player
+    pk_url_kwarg = "player_id"
+    template_name = "staff/player_detail.html"
+    context_object_name = "player"
+    permission_required = "members.view_staff_area"
+    raise_exception = True
+
+    def _get_user_team_ids(self, user):
+        team_ids = set()
+        try:
+            Team._meta.get_field("staff")
+            team_ids.update(Team.objects.filter(staff=user).values_list("id", flat=True))
+        except Exception:
+            pass
+        team_ids.update(
+            TeamMembership.objects.filter(assigned_by=user)
+            .values_list("team_id", flat=True)
+            .distinct()
+        )
+        return list(team_ids)
+
+    @staticmethod
+    def _parse_choices(choices_text: str):
+        mapping = {}
+        text = choices_text or ""
+        for line in [ln.strip() for ln in text.splitlines() if ln.strip()]:
+            if "|" in line:
+                val, lab = [p.strip() for p in line.split("|", 1)]
+            else:
+                val, lab = line, line
+            mapping[val] = lab
+        return mapping
+
+    def get_queryset(self):
+        return (
+            Player.objects
+            .select_related("player_type", "created_by")
+            .prefetch_related("team_memberships__team", "team_memberships__positions")
+        )
+
+    def get_object(self, queryset=None):
+        obj = super().get_object(queryset)
+        user = self.request.user
+
+        if user.is_superuser or user.has_perm("members.view_all_players"):
+            return obj
+
+        allowed_team_ids = self._get_user_team_ids(user)
+        if allowed_team_ids and obj.team_memberships.filter(team_id__in=allowed_team_ids).exists():
+            return obj
+
+        raise PermissionDenied("You do not have access to this player.")
+
+    def get(self, request, *args, **kwargs):
+        response = super().get(request, *args, **kwargs)
+        PlayerAccessLog.objects.create(player=self.object, accessed_by=request.user)
+        return response
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        user = self.request.user
+        player: Player = ctx["player"]
+
+        is_super = user.is_superuser
+        ctx.update({
+            "can_edit_player": is_super,
+            "can_delete_player": is_super,
+            "show_team_actions": is_super,
+            "can_hijack": is_super,
+            "player_created_by": getattr(player, "created_by", None),
+        })
+
+        questions = (
+            DynamicQuestion.objects.filter(active=True, applies_to=player.player_type)
+            .select_related("category")
+            .order_by("category__display_order", "category__name", "display_order", "id")
+        )
+        existing = {
+            a.question_id: a
+            for a in player.answers.select_related("question", "question__category").all()
+        }
+
+        grouped = OrderedDict()
+        for q in questions:
+            ans = existing.get(q.id)
+            qtype = getattr(q, "question_type", "text")
+            display = "—"
+            detail = getattr(ans, "detail_text", "") if ans else ""
+
+            if qtype == "text":
+                display = (getattr(ans, "text_answer", None) or "").strip() or "—"
+            elif qtype == "boolean":
+                bv = getattr(ans, "boolean_answer", None)
+                if bv is None and ans is not None:
+                    s = str(getattr(ans, "text_answer", "")).strip().lower()
+                    bv = s in {"1", "true", "yes", "on", "y"}
+                display = "Yes" if bv else "No"
+            elif qtype == "number":
+                val = None
+                for name in ("number_answer", "numeric_answer", "int_answer", "float_answer", "text_answer"):
+                    if ans is not None and hasattr(ans, name):
+                        val = getattr(ans, name)
+                        if val not in (None, ""):
+                            break
+                display = "—" if val in (None, "") else str(val)
+            elif qtype == "choice":
+                mapping = self._parse_choices(getattr(q, "choices_text", "") or "")
+                raw = None
+                for name in ("choice_answer", "choice_value", "selected_value", "text_answer"):
+                    if ans is not None and hasattr(ans, name):
+                        raw = getattr(ans, name)
+                        if raw not in (None, ""):
+                            break
+                raw_s = "" if raw in (None, "") else str(raw)
+                display = mapping.get(raw_s, raw_s or "—")
+            else:
+                display = (getattr(ans, "text_answer", None) or "").strip() or "—"
+
+            cat = q.category
+            key = cat.id if cat else "general"
+            if key not in grouped:
+                grouped[key] = {
+                    "name": cat.name if cat else "General",
+                    "description": (getattr(cat, "description", None) or getattr(cat, "discription", "")) if cat else "",
+                    "items": [],
+                }
+            grouped[key]["items"].append({
+                "label": q.label,
+                "description": getattr(q, "description", ""),
+                "type": qtype,
+                "display": display,
+                "detail": detail,
+            })
+
+        ctx["readonly_answers"] = grouped
+        ctx["memberships"] = player.team_memberships.select_related("team").all()
+        ctx["team_form"] = TeamAssignmentForm(player=player)
+
+        logs = player.access_logs.select_related("accessed_by").all()
+        paginator = Paginator(logs, 10)
+        ctx["log_page"] = paginator.get_page(self.request.GET.get("page"))
+
+        link = player.spond_links.filter(active=True).select_related("spond_member").first()
+        ctx["spond_member"] = getattr(link, "spond_member", None)
+
+        attendances_qs = None
+        if ctx["spond_member"]:
+            attendances_qs = ctx["spond_member"].attendances.select_related("event").order_by("-event__start_at")
+
+        page_number = self.request.GET.get("spond_page", 1)
+        if attendances_qs is not None:
+            sp_paginator = Paginator(attendances_qs, 25)
+            try:
+                sp_page_obj = sp_paginator.page(page_number)
+            except PageNotAnInteger:
+                sp_page_obj = sp_paginator.page(1)
+            except EmptyPage:
+                sp_page_obj = sp_paginator.page(sp_paginator.num_pages)
+        else:
+            sp_page_obj = None
+
+        ctx["spond_attendances_page"] = sp_page_obj
+        return ctx
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Mutations
+# ──────────────────────────────────────────────────────────────────────────────
+
+from django.views.decorators.http import require_POST
+from django.utils.decorators import method_decorator
+from django.http import HttpResponseForbidden
+
+@require_POST
+def remove_membership(request, membership_id):
+    membership = get_object_or_404(TeamMembership, id=membership_id)
+    COACH_GROUPS = ["Full Access", "Committee", "Coach"]
+    if not (request.user.is_superuser or request.user.groups.filter(name__in=COACH_GROUPS).exists()):
+        return HttpResponseForbidden("Not allowed")
+    player_id = membership.player_id
+    membership.delete()
+    messages.success(request, "Removed from team.")
+    return redirect("staff:player_detail", player_id=player_id)
+
+
+@login_required
+@require_POST
+def remove_membership(request, membership_id):
+    """Remove a team membership — allowed for superusers and select coach groups."""
+    membership = get_object_or_404(TeamMembership, id=membership_id)
+
+    if not (request.user.is_superuser or request.user.groups.filter(name__in=COACH_GROUPS).exists()):
+        return HttpResponseForbidden("Not allowed")
+
+    player_id = membership.player_id
+    membership.delete()
+    messages.success(request, "Removed from team.")
+    return redirect("staff:player_detail", player_id=player_id)
+
+class StaffHomeView(LoginRequiredMixin, PermissionRequiredMixin, TemplateView):
+    """
+    Lightweight staff dashboard. Keeps dependencies minimal so it won't explode
+    if optional apps aren't installed.
+    """
+    permission_required = "members.view_staff_area"
+    raise_exception = True
+    template_name = "staff/home.html"
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        user = self.request.user
+        is_admin_all = user.has_perm("members.view_all_players")
+
+        # Scope players
+        players = (
+            Player.objects
+            .select_related("player_type")
+            .prefetch_related("team_memberships__team")
+        )
+        if not is_admin_all:
+            # visible via Team.staff
+            team_ids = Team.objects.filter(staff=user).values_list("id", flat=True)
+            players = players.filter(team_memberships__team_id__in=team_ids).distinct()
+
+        # Headline metrics
+        last_30 = now() - timedelta(days=30)
+        twelve_months = now() - timedelta(days=365)
+
+        total_players = players.count()
+        recent_updates = players.filter(updated_at__gte=twelve_months).count()
+        inactive_players = players.filter(updated_at__lt=twelve_months).count()
+
+        # Questionnaire completion
+        answered_players = players.filter(answers__isnull=False).distinct().count()
+        questionnaire_completion = round((answered_players / total_players) * 100, 1) if total_players else 0
+
+        # Subscriptions snapshot (only if memberships app hooked up)
+        sub_breakdown = (
+            Subscription.objects
+            .filter(player__in=players)
+            .values("status")
+            .annotate(total=Count("id"))
+            .order_by("status")
+        )
+        subs = {row["status"] or "unknown": row["total"] for row in sub_breakdown}
+        active_subs = subs.get("active", 0)
+        pending_subs = subs.get("pending", 0)
+
+        # Players by type
+        by_type = (
+            players.values("player_type__name")
+            .annotate(total=Count("id"))
+            .order_by("player_type__name")
+        )
+        player_types = {row["player_type__name"] or "Unspecified": row["total"] for row in by_type}
+
+        # Teams with counts (within visibility)
+        teams_with_counts = (
+            players.filter(team_memberships__isnull=False)
+            .values("team_memberships__team__name")
+            .annotate(total=Count("id", distinct=True))
+            .order_by("team_memberships__team__name")
+        )
+
+        # Recent access logs (today)
+        today = now().date()
+        today_access_logs = PlayerAccessLog.objects.filter(accessed_at__date=today).count()
+
+        # Upcoming birthdays (next 30 days)
+        upcoming = []
+        for p in players:
+            dob = getattr(p, "date_of_birth", None)
+            if not dob:
+                continue
+            try:
+                next_bd = dob.replace(year=today.year)
+            except ValueError:
+                # handle Feb 29
+                next_bd = dob.replace(year=today.year, month=3, day=1)
+            if next_bd < today:
+                try:
+                    next_bd = dob.replace(year=today.year + 1)
+                except ValueError:
+                    next_bd = dob.replace(year=today.year + 1, month=3, day=1)
+            days = (next_bd - today).days
+            if 0 <= days <= 30:
+                upcoming.append((p, next_bd))
+        upcoming = sorted(upcoming, key=lambda t: t[1])[:10]
+
+        ctx.update({
+            "is_admin_all": is_admin_all,
+            "total_players": total_players,
+            "recent_updates": recent_updates,
+            "inactive_players": inactive_players,
+            "questionnaire_completion": questionnaire_completion,
+            "active_subs": active_subs,
+            "pending_subs": pending_subs,
+            "player_types": player_types,
+            "teams_with_counts": teams_with_counts,
+            "today_access_logs": today_access_logs,
+            "upcoming_birthdays": upcoming,
+        })
+        return ctx

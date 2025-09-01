@@ -163,7 +163,7 @@
                         {% with pl=a.member.player_links.all|first %}
                           {% if pl and pl.player %}
                             <a class="badge bg-outline-primary border text-decoration-none"
-                              href="{% url 'admin_player_detail' player_id=pl.player.id %}">
+                              href="{% url 'staff:player_detail' player_id=pl.player.id %}">
                               {{ pl.player.first_name }} {{ pl.player.last_name }}
                             </a>
                           {% else %}

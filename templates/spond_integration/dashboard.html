@@ -174,7 +174,7 @@
                       {% with first_link=m.player_links.all|first %}
                         {% if first_link and first_link.player %}
                           <a class="btn btn-sm btn-outline-primary"
-                             href="{% url 'admin_player_detail' player_id=first_link.player.id %}">
+                             href="{% url 'staff:player_detail' player_id=first_link.player.id %}">
                             {{ first_link.player.first_name }} {{ first_link.player.last_name }}
                           </a>
                         {% else %}

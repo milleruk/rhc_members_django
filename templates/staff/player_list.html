@@ -4,177 +4,10 @@
 {% block title %}Players{% endblock %}
 
 {% block content %}
-<!-- Page header -->
-<div class="content-header py-2">
-  <div class="container-fluid">
-    <div class="row mb-2 align-items-center">
-      <div class="col-sm-6"><h1 class="m-0">Players</h1></div>
-      <div class="col-sm-6">
-        <ol class="breadcrumb float-sm-right">
-          <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
-          <li class="breadcrumb-item active">Players</li>
-        </ol>
-      </div>
-    </div>
-  </div>
-</div>
-
 <section class="content">
   <div class="container-fluid">
 
-    <!-- ROW 1: Key metrics -->
-    <div class="row">
-      <div class="col-lg-3 col-6">
-        <div class="small-box bg-info">
-          <div class="inner">
-            <h3>{{ total_players }}</h3><p>Total Players</p>
-          </div>
-          <div class="icon"><i class="fas fa-users"></i></div>
-        </div>
-      </div>
-
-      <div class="col-lg-3 col-6">
-        <div class="small-box bg-success">
-          <div class="inner">
-            <h3>{{ recent_updates }}</h3><p>Updated Last 12 Months</p>
-          </div>
-          <div class="icon"><i class="fas fa-sync-alt"></i></div>
-        </div>
-      </div>
-
-      <div class="col-lg-3 col-6">
-        <div class="small-box bg-danger">
-          <div class="inner">
-            <h3>{{ inactive_players }}</h3><p>Inactive Last 12 Months</p>
-          </div>
-          <div class="icon"><i class="fas fa-user-slash"></i></div>
-        </div>
-      </div>
-
-      <div class="col-lg-3 col-6">
-        <div class="small-box bg-primary">
-          <div class="inner">
-            <h3>{{ today_access_logs }}</h3><p>Records Viewed Today</p>
-          </div>
-          <div class="icon"><i class="fas fa-eye"></i></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ROW 2: Breakdown cards -->
-    <div class="row">
-      <!-- Membership Types -->
-      <div class="col-lg-3 col-12">
-        <div class="card card-outline card-primary h-100">
-          <div class="card-header d-flex align-items-center justify-content-between">
-            <h3 class="card-title mb-0">Membership Types</h3>
-            <span class="badge badge-primary">{{ membership_types|length }}</span>
-          </div>
-          <div class="card-body p-2">
-            {% if membership_breakdown %}
-              <ul class="list-group list-group-flush">
-                {% for t, c in membership_breakdown.items %}
-                  <li class="list-group-item d-flex justify-content-between align-items-center py-2">
-                    <span><i class="fas fa-id-card mr-2 text-muted"></i>{{ t }}</span>
-                    <span class="badge badge-secondary">{{ c }}</span>
-                  </li>
-                {% endfor %}
-              </ul>
-            {% else %}
-              {% if membership_types %}
-                <ul class="list-group list-group-flush">
-                  {% for t in membership_types %}
-                    <li class="list-group-item py-2">
-                      <i class="fas fa-id-card mr-2 text-muted"></i>{{ t.player_type__name|default:"Unspecified" }}
-                      <span class="badge badge-secondary float-right">{{ t.total }}</span>
-                    </li>
-                  {% endfor %}
-                </ul>
-              {% else %}
-                <div class="text-muted">No data.</div>
-              {% endif %}
-            {% endif %}
-          </div>
-        </div>
-      </div>
-
-      <!-- Age Distribution -->
-      <div class="col-lg-3 col-12">
-        <div class="card card-outline card-secondary h-100">
-          <div class="card-header d-flex align-items-center justify-content-between">
-            <h3 class="card-title mb-0">Age Distribution</h3>
-            {% if age_distribution %}<span class="badge badge-secondary">{{ age_distribution|length }} groups</span>{% endif %}
-          </div>
-          <div class="card-body p-2">
-            {% if age_distribution %}
-              <ul class="list-group list-group-flush">
-                {% for label, count in age_distribution.items %}
-                  <li class="list-group-item d-flex justify-content-between align-items-center py-2">
-                    <span><i class="fas fa-birthday-cake mr-2 text-muted"></i>{{ label }}</span>
-                    <span class="badge badge-secondary">{{ count }}</span>
-                  </li>
-                {% endfor %}
-              </ul>
-            {% else %}
-              <div class="text-muted">No data.</div>
-            {% endif %}
-          </div>
-        </div>
-      </div>
-
-      <!-- Genders -->
-      <div class="col-lg-3 col-12">
-        <div class="card card-outline card-warning h-100">
-          <div class="card-header d-flex align-items-center justify-content-between">
-            <h3 class="card-title mb-0">Genders</h3>
-            <span class="badge badge-warning">{{ totals_by_gender|length }} types</span>
-          </div>
-          <div class="card-body p-2">
-            {% if totals_by_gender %}
-              <ul class="list-group list-group-flush">
-                {% for g, c in totals_by_gender.items %}
-                  <li class="list-group-item d-flex justify-content-between align-items-center py-2">
-                    <span><i class="fas fa-venus-mars mr-2 text-muted"></i>{{ g }}</span>
-                    <span class="badge badge-secondary">{{ c }}</span>
-                  </li>
-                {% endfor %}
-              </ul>
-            {% else %}
-              <div class="text-muted">No data.</div>
-            {% endif %}
-          </div>
-        </div>
-      </div>
-
-      <!-- Birthdays (next 30 days) -->
-      <div class="col-lg-3 col-12">
-        <div class="card card-outline card-warning h-100">
-          <div class="card-header">
-            <h3 class="card-title mb-0">Upcoming Birthdays</h3>
-          </div>
-          <div class="card-body p-0">
-            {% if upcoming_birthdays %}
-              <ul class="list-group list-group-flush">
-                {% for p in upcoming_birthdays %}
-                  <li class="list-group-item d-flex align-items-center">
-                    <div class="img-circle bg-warning d-inline-flex justify-content-center align-items-center mr-3"
-                         style="width:36px;height:36px;color:#fff;font-weight:600;">
-                      {{ p.first_name|slice:":1" }}{{ p.last_name|slice:":1" }}
-                    </div>
-                    <div class="flex-fill">
-                      <div class="mb-0">{{ p.first_name }} {{ p.last_name }}</div>
-                      <small class="text-muted">{{ p.date_of_birth|date:"j M" }}</small>
-                    </div>
-                  </li>
-                {% endfor %}
-              </ul>
-            {% else %}
-              <div class="p-3 text-muted">No upcoming birthdays.</div>
-            {% endif %}
-          </div>
-        </div>
-      </div>
-    </div>
+    
     <br>
     <!-- PLAYER LIST -->
     <div class="row">
@@ -287,7 +120,7 @@
                              style="width:28px;height:28px;color:#fff;font-weight:600;">
                           {{ p.first_name|slice:":1" }}{{ p.last_name|slice:":1" }}
                         </div>
-                        <a href="{% url 'admin_player_detail' p.id %}">{{ p.first_name }} {{ p.last_name }}</a>
+                        <a href="{% url 'staff:player_detail' p.id %}">{{ p.first_name }} {{ p.last_name }}</a>
                       </div>
                     </td>
                     <td class="align-middle">{{ p.get_gender_display }}</td>
@@ -317,7 +150,7 @@
                       </button>
                       {% endif %}
                       
-                      <a href="{% url 'admin_player_detail' p.id %}" class="btn btn-primary btn-xs">
+                      <a href="{% url 'staff:player_detail' p.id %}" class="btn btn-primary btn-xs">
                         <i class="fas fa-eye mr-1"></i>View
                       </a>
 
