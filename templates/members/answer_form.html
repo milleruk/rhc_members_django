@@ -155,13 +155,38 @@
         <form method="post" novalidate>
           {% csrf_token %}
 
+          {# Validation summary banner #}
+            {% if form.errors %}
+              <div class="alert alert-danger d-flex align-items-start" role="alert">
+                <i class="fas fa-exclamation-triangle mt-1 mr-2"></i>
+                <div>
+                  <strong>We couldn’t save yet — please review the items below.</strong>
+                  <ul class="mb-0 mt-2 pl-3">
+                    {# Non-field errors #}
+                    {% for err in form.non_field_errors %}
+                      <li>{{ err }}</li>
+                    {% endfor %}
+                    {# Per-field errors (pre-resolved in the view) #}
+                    {% for e in error_summary %}
+                      <li>
+                        <a href="#group-{{ e.name }}" class="text-white text-underline" style="text-decoration: underline;">
+                          {{ e.label }}
+                        </a>: {{ e.message|striptags }}
+                      </li>
+                    {% endfor %}
+                  </ul>
+                </div>
+              </div>
+            {% endif %}
+
+
           {% for cat in grouped_fields.values %}
             <div class="card card-outline card-primary mb-3">
               <div class="card-header d-flex justify-content-between align-items-center">
                 <div>
                   <div class="h6 mb-0">{{ cat.name }}</div>
-                  {% if cat.description %}
-                    <small class="text-muted">{{ cat.description }}</small>
+                  {% if cat.description_html %}
+                    <div class="text-muted small prose">{{ cat.description_html|safe }}</div>
                   {% endif %}
                 </div>
                 <button class="btn btn-tool" type="button"
@@ -176,12 +201,35 @@
               <div id="section-{{ forloop.counter }}" class="card-body collapse show">
                 {% for item in cat.items %}
                   {% if item.main %}
-                    <div class="form-group mb-3" id="group-{{ item.main.name }}">
-                      {{ item.main|as_crispy_field }}
-                    </div>
+                    {% if item.override_template %}
+                      {% include item.override_template with field=item.main item=item player=player only %}
+                    {% else %}
+                      <div class="border rounded p-3 mb-3 shadow-sm" id="group-{{ item.main.name }}">
+                        {% if item.desc_html %}
+                          <div class="prose text-muted small mb-2">
+                            {{ item.desc_html|safe }}
+                          </div>
+                        {% endif %}
+                        <div class="d-flex justify-content-between align-items-start">
+                          <div class="flex-grow-1">
+                            {{ item.main|as_crispy_field }}
+                          </div>
+                          {% if item.main.field.required %}
+                            <span class="badge badge-info ml-2">
+                              <i class="far fa-check-square mr-1"></i> Required
+                            </span>
+                          {% endif %}
+                        </div>
+                        {% if item.detail %}
+                          <div class="form-group mt-2 detail-field d-none" id="group-{{ item.detail.name }}">
+                            {{ item.detail|as_crispy_field }}
+                          </div>
+                        {% endif %}
+                      </div>
+                    {% endif %}
                   {% endif %}
-                  {% if item.detail %}
-                    <div class="form-group mb-3 detail-field d-none" id="group-{{ item.detail.name }}">
+                  {% if not item.main and item.detail %}
+                    <div class="border rounded p-3 mb-3 shadow-sm" id="group-{{ item.detail.name }}">
                       {{ item.detail|as_crispy_field }}
                     </div>
                   {% endif %}
@@ -206,29 +254,25 @@
               </div>
             </div>
           </div>
-
         </form>
       </div>
     </div>
   </div>
 </div>
 
-<!-- Behaviour: detail-field toggling & collapse icon sync -->
 <script>
 document.addEventListener("DOMContentLoaded", function() {
-  // Toggle "detail" fields when their main checkbox/radio is on (convention: _detail suffix)
+  // Toggle detail fields
   function initDetailToggles(root) {
     const inputs = root.querySelectorAll("input[type=checkbox], input[type=radio]");
     inputs.forEach(function(input) {
       const detailGroup = document.getElementById("group-" + input.name + "_detail");
       if (!detailGroup) return;
-
       function apply() {
         const on = (input.type === "checkbox")
           ? input.checked
           : !!root.querySelector('input[name="' + input.name + '"]:checked');
         detailGroup.classList.toggle("d-none", !on);
-
         if (!on) {
           const first = detailGroup.querySelector("input, textarea, select");
           if (first) {
@@ -243,12 +287,11 @@ document.addEventListener("DOMContentLoaded", function() {
   }
   initDetailToggles(document);
 
-  // Swap plus/minus icons on collapses (Bootstrap)
+  // Collapse icons
   document.querySelectorAll('[data-bs-toggle="collapse"]').forEach(btn => {
     const icon = btn.querySelector("i");
     const target = document.querySelector(btn.getAttribute("data-bs-target"));
     if (!icon || !target) return;
-
     const updateIcon = () => {
       const expanded = target.classList.contains("show");
       icon.classList.toggle("fa-minus", expanded);
@@ -258,15 +301,31 @@ document.addEventListener("DOMContentLoaded", function() {
     target.addEventListener("hidden.bs.collapse", updateIcon);
     updateIcon();
   });
+
+  // Auto scroll to first error
+  {% if form.errors and error_summary %}
+    const firstKey = "{{ error_summary.0.name }}";
+    if (firstKey) {
+      const block = document.getElementById("group-" + firstKey);
+      if (block) {
+        block.scrollIntoView({ behavior: "smooth", block: "center" });
+        block.classList.add("error-highlight");
+        setTimeout(() => block.classList.remove("error-highlight"), 1500);
+      }
+    }
+  {% endif %}
+
 });
 </script>
 
 <style>
-/* Small, scoped polish */
 .widget-user-username { font-size: 1.05rem; }
 .card-widget .badge { vertical-align: middle; }
 .badge + .badge { margin-left: .25rem; }
 .font-weight-semibold { font-weight: 600; }
+.prose ul { margin-left: 1.25rem; }
+.prose h4, .prose h5 { margin:.25rem 0 .5rem; }
+.error-highlight { box-shadow: 0 0 0 0.25rem rgba(220,53,69,.25); }
 @media (min-width: 992px) {
   .content .container-fluid .col-lg-8 form .card:last-child { position: sticky; bottom: 0; z-index: 5; }
 }

@@ -5,6 +5,25 @@ from django.contrib import messages
 from django.utils import timezone
 from datetime import date
 
+from django.utils.safestring import mark_safe
+from django.utils.html import escape, linebreaks
+try:
+    import markdown as md
+except Exception:
+    md = None
+
+def _md(text: str) -> str:
+    """Convert Markdown to HTML for help text/description."""
+    if not text:
+        return ""
+    if md:
+        return mark_safe(md.markdown(
+            text,
+            extensions=["extra", "sane_lists", "tables", "nl2br"],
+            output_format="html5"
+        ))
+    return mark_safe(linebreaks(escape(text)))
+
 class PlayerForm(forms.ModelForm):
     class Meta:
         model = Player
@@ -49,20 +68,32 @@ class DynamicAnswerForm(forms.Form):
 
         for q in questions:
             base_name = f"q_{q.id}"
-            help_txt = (getattr(q, "description", None) or getattr(q, "help_text", "") or "").strip()
+            help_txt_raw = (q.description or q.help_text or "").strip()
+            help_txt = _md(help_txt_raw)
 
+            # TEXT
             if q.question_type == "text":
-                field = forms.CharField(label=q.label, help_text=help_txt, required=q.required)
+                field = forms.CharField(
+                    label=q.label,
+                    help_text=help_txt,
+                    required=q.required,
+                )
                 if q.id in self._existing and self._existing[q.id].text_answer:
                     field.initial = self._existing[q.id].text_answer
                 self.fields[base_name] = field
 
+            # BOOLEAN
             elif q.question_type == "boolean":
-                field = forms.BooleanField(label=q.label, help_text=help_txt, required=False)
+                field = forms.BooleanField(
+                    label=q.label,
+                    help_text=help_txt,
+                    required=q.required,   # ✅ now respects required flag
+                )
                 if q.id in self._existing and self._existing[q.id].boolean_answer is not None:
                     field.initial = self._existing[q.id].boolean_answer
                 self.fields[base_name] = field
 
+                # If "requires detail"
                 if q.requires_detail_if_yes:
                     dfield = forms.CharField(
                         label=f"Details for: {q.label}",
@@ -73,64 +104,43 @@ class DynamicAnswerForm(forms.Form):
                         dfield.initial = self._existing[q.id].detail_text
                     self.fields[f"{base_name}_detail"] = dfield
 
+            # CHOICE
             elif q.question_type == "choice":
-                choices = [(opt.strip(), opt.strip())
-                           for opt in (getattr(q, "choices_text", "") or "").split(",")
-                           if opt.strip()]
+                choices = [
+                    (opt.strip(), opt.strip())
+                    for opt in (q.choices_text or "").split(",")
+                    if opt.strip()
+                ]
                 field = forms.ChoiceField(
-                    label=q.label, help_text=help_txt, required=q.required,
-                    choices=choices, widget=forms.Select(attrs={"class": "form-control"}),
+                    label=q.label,
+                    help_text=help_txt,
+                    required=q.required,
+                    choices=choices,
+                    widget=forms.Select(attrs={"class": "form-control"}),
                 )
                 if q.id in self._existing and self._existing[q.id].text_answer:
                     field.initial = self._existing[q.id].text_answer
                 self.fields[base_name] = field
 
+            # NUMBER
             elif q.question_type == "number":
                 widget = forms.TextInput(attrs={"inputmode": "numeric", "pattern": r"[0-9]*"})
-                field = forms.CharField(label=q.label, help_text=help_txt, required=q.required, widget=widget)
+                field = forms.CharField(
+                    label=q.label,
+                    help_text=help_txt,
+                    required=q.required,
+                    widget=widget,
+                )
                 existing = self._existing.get(q.id)
                 if existing and getattr(existing, "numeric_answer", None):
                     field.initial = existing.numeric_answer
                 self.fields[base_name] = field
 
-            # 👇 IMPORTANT: keep this OUTSIDE the if/elif chain
+            # map back
             self._question_field_map[q.id] = q
 
     def save(self):
-        for qid, q in self._question_field_map.items():
-            base = f"q_{qid}"
-            ans = self._existing.get(qid) or PlayerAnswer(player=self.player, question_id=qid)
-
-            if q.question_type == "text":
-                ans.text_answer = self.cleaned_data.get(base) or ""
-                ans.boolean_answer = None
-                ans.numeric_answer = None
-
-            elif q.question_type == "boolean":
-                val = self.cleaned_data.get(base)
-                ans.boolean_answer = bool(val) if val is not None else None
-                ans.text_answer = ""
-                ans.numeric_answer = None
-                ans.detail_text = (self.cleaned_data.get(f"{base}_detail", "").strip()
-                                   if q.requires_detail_if_yes and val else "")
-
-            elif q.question_type == "choice":
-                ans.text_answer = self.cleaned_data.get(base) or ""
-                ans.boolean_answer = None
-                ans.numeric_answer = None
-
-            elif q.question_type == "number":
-                val = (self.cleaned_data.get(base) or "").strip()
-                ans.numeric_answer = val or None
-                ans.text_answer = ""
-                ans.boolean_answer = None
-
-            ans.save()
-
-        if self.request:
-            messages.success(self.request, "Your answers have been saved successfully.")
-
-    def save(self):
+        """Persist answers for this player."""
         for qid, q in self._question_field_map.items():
             base = f"q_{qid}"
             ans = self._existing.get(qid) or PlayerAnswer(player=self.player, question_id=qid)
@@ -163,7 +173,7 @@ class DynamicAnswerForm(forms.Form):
 
             ans.save()
 
-        # 👇 Success message banner
+        # show banner if in request context
         if self.request:
             messages.success(self.request, "Your answers have been saved successfully.")
 

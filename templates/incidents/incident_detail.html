@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+{% block title %}Incident #{{ incident.id }}{% endblock %}
+{% block content %}
+<div class="content-header pb-0">
+  <div class="container-fluid d-flex justify-content-between align-items-center">
+    <h1 class="m-0">Incident #{{ incident.id }}</h1>
+    <div>
+
+      {% if perms.incidents.change_incident %}
+        {% if incident.status != 'closed' %}
+          {% if not incident.assigned_to or incident.assigned_to == user or perms.incidents.can_action_incident %}
+            <a href="{% url 'incidents:edit' incident.pk %}" class="btn btn-outline-secondary mr-2">
+              <i class="fas fa-edit mr-1"></i>Edit
+            </a>
+          {% endif %}
+        {% endif %}
+      {% endif %}
+
+      {% if perms.incidents.assign_incident %}
+        {% if incident.status == 'submitted' %}
+          {% if not incident.assigned_to %}
+            <form method="post" action="{% url 'incidents:assign_to_me' incident.pk %}" class="d-inline mr-2">
+              {% csrf_token %}
+              <button class="btn btn-primary">
+                <i class="fas fa-user-check mr-1"></i> Assign to me
+              </button>
+            </form>
+          {% endif %}
+        {% endif %}
+
+        {% if incident.assigned_to == user and incident.status == 'assigned' %}
+          <form method="post" action="{% url 'incidents:mark_action_required' incident.pk %}" class="d-inline mr-2">
+            {% csrf_token %}
+            <button class="btn btn-warning">
+              <i class="fas fa-exclamation-triangle mr-1"></i> Mark action required
+            </button>
+          </form>
+          <form method="post" action="{% url 'incidents:close' incident.pk %}" class="d-inline mr-2">
+            {% csrf_token %}
+            <button class="btn btn-outline-success">
+              <i class="fas fa-check mr-1"></i> Close (no further action)
+            </button>
+          </form>
+        {% endif %}
+
+        {% if incident.assigned_to == user and incident.status == 'action_required' %}
+          <form method="post" action="{% url 'incidents:close' incident.pk %}" class="d-inline mr-2">
+            {% csrf_token %}
+            <button class="btn btn-success">
+              <i class="fas fa-clipboard-check mr-1"></i> Close (actions completed)
+            </button>
+          </form>
+        {% endif %}
+
+        {% if incident.assigned_to == user %}
+          {% if incident.status == 'assigned' or incident.status == 'action_required' %}
+            <form method="post" action="{% url 'incidents:unassign' incident.pk %}" class="d-inline mr-2">
+              {% csrf_token %}
+              <button class="btn btn-outline-secondary">
+                <i class="fas fa-user-times mr-1"></i> Unassign
+              </button>
+            </form>
+          {% endif %}
+        {% endif %}
+
+        <a href="{% url 'incidents:action' incident.pk %}" class="btn btn-outline-info">
+          <i class="fas fa-tasks mr-1"></i> Review form
+        </a>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<section class="content">
+  <div class="container-fluid">
+    <div class="row">
+      <!-- LEFT -->
+      <div class="col-lg-8">
+        <div class="card">
+          <div class="card-header"><h3 class="card-title h6 mb-0">Summary</h3></div>
+          <div class="card-body">
+            <p class="mb-1"><strong>Date/Time:</strong> {{ incident.incident_datetime|date:"Y-m-d H:i" }}</p>
+            <p class="mb-1"><strong>Location:</strong> {{ incident.location }}</p>
+            <p class="mb-1"><strong>Activity:</strong> {{ incident.get_activity_type_display }}{% if incident.team %} · {{ incident.team }}{% endif %}</p>
+            <p class="mb-1"><strong>Involved:</strong> {{ incident.get_role_involved_display }}
+              {% if incident.primary_player %}· {{ incident.primary_player }}{% endif %}
+              {% if incident.age_under_18 %}<span class="badge badge-warning ml-1">U18</span>{% endif %}
+            </p>
+            <p class="mb-1"><strong>Suspected Concussion:</strong> {{ incident.suspected_concussion|yesno:"Yes,No" }}</p>
+            <p class="mb-1"><strong>Treatment:</strong> {{ incident.get_treatment_level_display }}</p>
+            <p class="mb-1"><strong>Summary:</strong> {{ incident.summary }}</p>
+            <p><strong>Description:</strong><br>{{ incident.description|linebreaks }}</p>
+            {% if incident.injury_types %}
+              <p class="mb-0"><strong>Injury Types:</strong> {{ incident.injury_types }}</p>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><h3 class="card-title h6 mb-0">Safeguarding & Reporting</h3></div>
+          <div class="card-body">
+            <p class="mb-1"><strong>Status:</strong>
+              {% if incident.status == 'closed' %}
+                <span class="badge badge-success">{{ incident.get_status_display }}</span>
+              {% elif incident.status == 'action_required' %}
+                <span class="badge badge-danger">{{ incident.get_status_display }}</span>
+              {% elif incident.status == 'assigned' %}
+                <span class="badge badge-warning">{{ incident.get_status_display }}</span>
+              {% elif incident.status == 'submitted' %}
+                <span class="badge badge-info">{{ incident.get_status_display }}</span>
+              {% else %}
+                <span class="badge badge-secondary">{{ incident.get_status_display }}</span>
+              {% endif %}
+              {% if incident.is_sensitive %}<span class="badge badge-dark ml-1">Sensitive</span>{% endif %}
+
+            </p>
+            {% if incident.status_notes %}
+              <p class="mb-1"><strong>Status Notes:</strong><br>{{ incident.status_notes|linebreaks }}</p>
+            {% endif %}
+
+            <hr>
+            <p class="mb-1"><strong>Safeguarding Notified:</strong> {{ incident.safeguarding_notified|yesno:"Yes,No" }}</p>
+            {% if incident.safeguarding_notes %}
+              <p class="mb-1"><strong>Safeguarding Notes:</strong><br>{{ incident.safeguarding_notes|linebreaks }}</p>
+            {% endif %}
+
+            <hr>
+            <p class="mb-1"><strong>Submitted to England Hockey (SportSmart):</strong> {{ incident.submitted_to_eh|yesno:"Yes,No" }}</p>
+            {% if incident.eh_submission_datetime %}
+              <p class="mb-0"><strong>Submission Date:</strong> {{ incident.eh_submission_datetime|date:"Y-m-d H:i" }}</p>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT -->
+      <div class="col-lg-4">
+        <div class="card">
+          <div class="card-header"><h3 class="card-title h6 mb-0">Meta</h3></div>
+          <div class="card-body">
+            <p class="mb-1"><strong>Assigned to:</strong> {{ incident.assigned_to|default:"—" }}</p>
+            {% if incident.assigned_at %}
+              <p class="mb-1"><strong>Assigned at:</strong> {{ incident.assigned_at|date:"Y-m-d H:i" }}</p>
+            {% endif %}
+            <hr>
+            <p class="mb-1"><strong>Reported by:</strong> {{ incident.reported_by|default:"—" }}</p>
+            <p class="mb-1"><strong>Reported at:</strong> {{ incident.reported_at|date:"Y-m-d H:i" }}</p>
+            {% if incident.attachments %}
+              <hr>
+              <a class="btn btn-sm btn-outline-secondary" href="{{ incident.attachments.url }}">
+                <i class="fas fa-paperclip mr-1"></i> Download attachment
+              </a>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+{% endblock %}

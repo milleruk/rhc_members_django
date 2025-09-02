@@ -1,20 +1,19 @@
 # staff/views.py
 from collections import OrderedDict
 from datetime import timedelta
-from django.http import HttpResponseForbidden
 
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.core.exceptions import PermissionDenied
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+from django.db import transaction
 from django.db.models import Count, OuterRef, Subquery, Q
+from django.http import HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect
 from django.utils.timezone import now
-from django.views.generic import DetailView, ListView, TemplateView
-from django.contrib import messages
 from django.views.decorators.http import require_POST
-from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
-from django.db import transaction
+from django.views.generic import DetailView, ListView, TemplateView
 
 # import from other apps (no circulars)
 from members.forms import TeamAssignmentForm
@@ -25,7 +24,6 @@ from members.models import (
     TeamMembership,
     PlayerAccessLog,
     Team,
-    PlayerAccessLog,
 )
 from memberships.models import Subscription
 try:
@@ -35,7 +33,6 @@ except Exception:
     Season = None
 
 COACH_GROUPS = ["Full Access", "Committee", "Coach"]  # keep in one place if you share it
-
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -70,6 +67,7 @@ def _current_subqs():
         "curr_started": Subquery(current_qs.values("started_at")[:1]),
         "curr_id": Subquery(current_qs.values("id")[:1]),
     }
+
 
 def _season_product_options(players_qs):
     """
@@ -112,6 +110,7 @@ def _season_product_options(players_qs):
     products = [{"id": p["id"], "name": p["name"]} for p in products]
     return seasons, products
 
+
 def _update_subscription_status(sub, new_status, user):
     old_status = sub.status
     sub.status = new_status
@@ -119,6 +118,7 @@ def _update_subscription_status(sub, new_status, user):
         sub.started_at = now()
     sub.save(update_fields=["status", "started_at"])
     return old_status, new_status
+
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Admin/Staff: Player list
@@ -276,6 +276,7 @@ class PlayerListView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
                 setattr(p, "debug_memberships", tm_summary)
 
         return ctx
+
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Admin/Staff: Player detail
@@ -446,25 +447,35 @@ class PlayerDetailView(LoginRequiredMixin, PermissionRequiredMixin, DetailView):
         ctx["spond_attendances_page"] = sp_page_obj
         return ctx
 
+    def post(self, request, *args, **kwargs):
+        """
+        Handle TeamAssignmentForm submissions on the same URL to avoid 405.
+        """
+        self.object = self.get_object()  # ensures permission checks run
+        form = TeamAssignmentForm(request.POST, player=self.object)
+
+        if form.is_valid():
+            membership = form.save(commit=False)
+            membership.player = self.object
+            if hasattr(membership, "assigned_by_id"):
+                membership.assigned_by = request.user
+            membership.save()
+            # save M2M (e.g., positions)
+            if hasattr(form, "save_m2m"):
+                form.save_m2m()
+
+            messages.success(request, "Team assignment saved.")
+            return redirect("staff:player_detail", player_id=self.object.id)
+
+        messages.error(request, "Please fix the errors below.")
+        context = self.get_context_data()
+        context["team_form"] = form
+        return self.render_to_response(context)
+
+
 # ──────────────────────────────────────────────────────────────────────────────
 # Mutations
 # ──────────────────────────────────────────────────────────────────────────────
-
-from django.views.decorators.http import require_POST
-from django.utils.decorators import method_decorator
-from django.http import HttpResponseForbidden
-
-@require_POST
-def remove_membership(request, membership_id):
-    membership = get_object_or_404(TeamMembership, id=membership_id)
-    COACH_GROUPS = ["Full Access", "Committee", "Coach"]
-    if not (request.user.is_superuser or request.user.groups.filter(name__in=COACH_GROUPS).exists()):
-        return HttpResponseForbidden("Not allowed")
-    player_id = membership.player_id
-    membership.delete()
-    messages.success(request, "Removed from team.")
-    return redirect("staff:player_detail", player_id=player_id)
-
 
 @login_required
 @require_POST
@@ -479,6 +490,7 @@ def remove_membership(request, membership_id):
     membership.delete()
     messages.success(request, "Removed from team.")
     return redirect("staff:player_detail", player_id=player_id)
+
 
 class StaffHomeView(LoginRequiredMixin, PermissionRequiredMixin, TemplateView):
     """
@@ -584,7 +596,7 @@ class StaffHomeView(LoginRequiredMixin, PermissionRequiredMixin, TemplateView):
             "upcoming_birthdays": upcoming,
         })
         return ctx
-    
+
 
 class MembershipOverviewView(LoginRequiredMixin, PermissionRequiredMixin, TemplateView):
     permission_required = "members.view_staff_area"
@@ -709,7 +721,11 @@ class SubscriptionListView(LoginRequiredMixin, PermissionRequiredMixin, ListView
             "player_type": g.get("player_type", ""),
         }
         return ctx
-    
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Subscription status mutations
+# ──────────────────────────────────────────────────────────────────────────────
 
 @login_required
 @permission_required("memberships.activate_subscription", raise_exception=True)

@@ -1,0 +1,75 @@
+{# templates/members/overrides/q_code_conduct.html #}
+{% load widget_tweaks %} {# for add_class #}
+{# Expects: field (BoundField), item (with desc_html/label), player #}
+
+<div class="card border mb-3 shadow-sm" id="group-{{ field.name }}">
+  <div class="card-header bg-light d-flex align-items-center py-2">
+    <i class="fas fa-handshake mr-2"></i>
+    <strong>Code of Conduct</strong>
+  </div>
+
+  <div class="card-body">
+    {% if item.desc_html %}
+      <div class="prose text-muted small mb-3 conduct-text"
+           style="max-height: 280px; overflow:auto; padding-right:.5rem;">
+        {{ item.desc_html|safe }}
+      </div>
+    {% endif %}
+
+    <div class="custom-control custom-checkbox">
+      {% if field.errors %}
+        {{ field|add_class:"custom-control-input is-invalid" }}
+      {% else %}
+        {{ field|add_class:"custom-control-input" }}
+      {% endif %}
+      <label class="custom-control-label" for="{{ field.id_for_label }}">
+        {{ item.label }}{% if field.field.required %}<span class="text-danger">*</span>{% endif %}
+      </label>
+    </div>
+
+    {% if field.errors %}
+      <div class="invalid-feedback d-block mt-1">
+        {{ field.errors|striptags }}
+      </div>
+    {% endif %}
+  </div>
+
+  <div class="card-footer d-flex justify-content-between align-items-center">
+    <span class="small text-muted mb-0">
+      Please read the code of conduct above and tick to confirm acceptance.
+    </span>
+    {% if field.field.required %}
+      <span class="badge badge-info"><i class="far fa-check-square mr-1"></i> Required</span>
+    {% endif %}
+  </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  const card = document.getElementById("group-{{ field.name }}");
+  if (!card) return;
+  const container = card.querySelector(".conduct-text");
+  const cb = document.getElementById("{{ field.id_for_label }}");
+
+  // Only gate if there is actual overflow to scroll, and only when no errors yet
+  const hasErrors = {{ field.errors|yesno:"true,false" }};
+  if (container && cb && !hasErrors) {
+    const needsScroll = (container.scrollHeight - container.clientHeight) > 8;
+    if (needsScroll) {
+      cb.disabled = true;
+      const onScroll = () => {
+        if (container.scrollTop + container.clientHeight >= container.scrollHeight - 4) {
+          cb.disabled = false;
+          container.removeEventListener("scroll", onScroll);
+        }
+      };
+      container.addEventListener("scroll", onScroll);
+    }
+  }
+});
+</script>
+
+<style>
+.prose ul { margin-left: 1.25rem; }
+.prose h4, .prose h5 { margin:.25rem 0 .5rem; }
+</style>

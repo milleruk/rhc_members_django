@@ -27,6 +27,7 @@ urlpatterns = [
     path("spond/", include(("spond_integration.urls", "spond"), namespace="spond")),
     path("players/", include(("members.urls", "members"), namespace="members")),
     path("staff/", include(("staff.urls", "staff"), namespace="staff")),
+    path("incidents/", include(("incidents.urls", "incidents"), namespace="incidents")),
 
     # ---- Static pages ----
     path("terms/", TermsView.as_view(), name="terms"),

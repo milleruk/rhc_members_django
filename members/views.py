@@ -3,7 +3,6 @@
 # ──────────────────────────────────────────────────────────────────────────────
 # Standard library
 # ──────────────────────────────────────────────────────────────────────────────
-from datetime import timedelta
 from collections import OrderedDict
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -11,22 +10,18 @@ from collections import OrderedDict
 # ──────────────────────────────────────────────────────────────────────────────
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth.mixins import (
-    LoginRequiredMixin,
-    UserPassesTestMixin,
-    PermissionRequiredMixin,
-)
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin, PermissionRequiredMixin
 from django.core.exceptions import PermissionDenied
-from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.db import transaction
-from django.db.models import Count, OuterRef, Subquery, Q
-from django.http import HttpResponseForbidden
+from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse, reverse_lazy
 from django.utils import timezone
-from django.utils.timezone import now
+from django.utils.safestring import mark_safe
 from django.views.decorators.http import require_POST
-from django.views.generic import CreateView, DetailView, ListView, TemplateView, UpdateView
+from django.views.generic import CreateView, UpdateView, ListView, DetailView, TemplateView
+from django.template.loader import get_template
+from django.template import TemplateDoesNotExist
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Local apps
@@ -39,14 +34,20 @@ from .models import (
     PlayerType,
     TeamMembership,
     PlayerAccessLog,
+    Team,  # used in admin list view helpers
 )
 
 from club.models import ClubNotice, QuickLink
 from memberships.models import Subscription
 from tasks.events import emit
 
-# If you reference these elsewhere (kept for clarity)
-from .models import Team  # used in admin list view helpers
+# ──────────────────────────────────────────────────────────────────────────────
+# Third-party (optional)
+# ──────────────────────────────────────────────────────────────────────────────
+try:
+    import markdown as md
+except Exception:
+    md = None
 
 
 # =============================================================================
@@ -105,6 +106,24 @@ def get_owned_player_or_404(user, **kwargs) -> Player:
         created_by=user,
         **kwargs,
     )
+
+def _md(text: str) -> str:
+    """
+    Convert Markdown to safe HTML. If python-markdown isn't installed,
+    fall back to escaped text with <br> line breaks.
+    """
+    if not text:
+        return ""
+    if md:
+        html = md.markdown(
+            text,
+            extensions=["extra", "sane_lists", "tables", "nl2br"],
+            output_format="html5",
+        )
+        return mark_safe(html)
+    # fallback: escape + linebreaks
+    from django.utils.html import escape, linebreaks
+    return mark_safe(linebreaks(escape(text)))
 
 
 # =============================================================================
@@ -310,8 +329,23 @@ def answer_view(request, public_id):
     """Owner flow for answering dynamic questions for a player."""
     player = get_owned_player_or_404(request.user, public_id=public_id)
 
+    # local helper for Markdown -> HTML (safe)
+    def _md(text: str) -> str:
+        if not text:
+            return ""
+        if md:
+            html = md.markdown(
+                text,
+                extensions=["extra", "sane_lists", "tables", "nl2br"],
+                output_format="html5",
+            )
+            return mark_safe(html)
+        # fallback: escape + <br>
+        from django.utils.html import escape, linebreaks
+        return mark_safe(linebreaks(escape(text)))
+
     if request.method == "POST":
-        form = DynamicAnswerForm(request.POST, player=player)
+        form = DynamicAnswerForm(request.POST, player=player, request=request)
         if form.is_valid():
             form.save()
 
@@ -322,23 +356,25 @@ def answer_view(request, public_id):
             messages.success(request, "Details saved.")
             return redirect("dashboard")
     else:
-        form = DynamicAnswerForm(player=player)
+        form = DynamicAnswerForm(player=player, request=request)
 
+    # Pull active questions for this player's type
     questions = (
         DynamicQuestion.objects.filter(active=True, applies_to=player.player_type)
         .select_related("category")
         .order_by("category__display_order", "category__name", "display_order", "id")
     )
 
+    # Group into sections (categories), compute Markdown & per-question override templates
     grouped_fields = OrderedDict()
     for q in questions:
         cat = q.category
         cat_key = cat.id if cat else "general"
         if cat_key not in grouped_fields:
+            raw_desc = (getattr(cat, "description", None) or getattr(cat, "discription", "")) if cat else ""
             grouped_fields[cat_key] = {
                 "name": cat.name if cat else "General",
-                # support both 'description' and legacy 'discription'
-                "description": (getattr(cat, "description", None) or getattr(cat, "discription", "")) if cat else "",
+                "description_html": _md(raw_desc),
                 "items": [],
             }
 
@@ -347,11 +383,43 @@ def answer_view(request, public_id):
         main_bf = form[main_name] if main_name in form.fields else None
         detail_bf = form[detail_name] if q.requires_detail_if_yes and detail_name in form.fields else None
 
-        grouped_fields[cat_key]["items"].append({"main": main_bf, "detail": detail_bf})
+        # Per-question override template lookup: templates/members/overrides/q_<code>.html
+        override_template = None
+        if getattr(q, "code", ""):
+            try:
+                tpl = get_template(f"members/overrides/q_{q.code}.html")
+                override_template = tpl.template.name  # store resolved path for {% include %}
+            except TemplateDoesNotExist:
+                override_template = None
 
+        grouped_fields[cat_key]["items"].append({
+            "main": main_bf,
+            "detail": detail_bf,
+            "qid": q.id,
+            "code": q.code,
+            "label": q.label,
+            "desc_html": _md(getattr(q, "description", "") or ""),
+            "override_template": override_template,
+        })
+
+    # Team memberships (for sidebar)
     memberships = (
         player.team_memberships.select_related("team").prefetch_related("positions").order_by("team__name")
     )
+
+    # ---------- Build error summary for the banner (template-friendly; no dict indexing) ----------
+    error_summary = []
+    if form.errors:
+        # non-field errors are rendered directly from form.non_field_errors in the template
+        for name, errs in form.errors.items():
+            if name in form.fields:
+                bf = form[name]
+                msg = "; ".join([str(e) for e in errs])  # flatten ErrorList
+                error_summary.append({
+                    "name": name,                          # used for #group-<name> anchors
+                    "label": getattr(bf, "label", name),   # nice label (fallback to name)
+                    "message": msg,
+                })
 
     return render(
         request,
@@ -361,6 +429,7 @@ def answer_view(request, public_id):
             "form": form,
             "grouped_fields": grouped_fields,
             "team_memberships": memberships,
+            "error_summary": error_summary,  # for the validation banner
         },
     )
 
