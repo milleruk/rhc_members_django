@@ -13,6 +13,7 @@ from .views import (
 urlpatterns = [
     # Member-facing (UUIDs)
     path("dashboard/", dashboard, name="dashboard"),
+    path("players/", dashboard, name="dashboard"),
     path("players/add/", PlayerCreateView.as_view(), name="player_add"),
     path("players/<uuid:public_id>/answers/", answer_view, name="answer"),         
     path("players/<uuid:public_id>/delete/", player_delete, name="player_delete"), 

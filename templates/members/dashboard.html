@@ -21,7 +21,7 @@
       </div>
     </div>
 
-    <!-- KPI WIDGETS (Small Boxes) -->
+    <!-- KPI WIDGETS -->
     <div class="row">
       <div class="col-6 col-md-3">
         <div class="small-box bg-primary">
@@ -47,114 +47,199 @@
       </div>
     </div>
 
+    <!-- MEMBERSHIP CARDS HEADER -->
+    <div class="card card-info mb-3">
+      <div class="card-header d-flex align-items-center justify-content-between">
+        <h3 class="card-title mb-0">
+          <i class="fas fa-id-card-alt mr-1"></i> Membership Cards
+        </h3>
+        <span class="badge badge-light text-muted">
+          {{ players|length }} player{{ players|length|pluralize }}
+        </span>
+      </div>
+      <div class="card-body py-2">
+        <p class="text-muted mb-0">
+          View membership details and actions for each player. (Wallet passes coming soon.)
+        </p>
+      </div>
+    </div>
+    <!-- /MEMBERSHIP CARDS HEADER -->
+
     <div class="row">
-      <!-- LEFT: PLAYER CARDS (Widget User 2) -->
+      <!-- LEFT: PLAYER CARDS -->
       <div class="col-12 col-lg-8">
         {% if players %}
           <div class="row">
             {% for p in players %}
-            <div class="col-12 col-md-6">
-              <div class="card card-widget widget-user-2 shadow-sm">
-                <div class="widget-user-header bg-light">
-                  <div class="widget-user-image">
-                    <span class="img-circle elevation-2 d-inline-flex align-items-center justify-content-center bg-white border"
-                          style="width:48px; height:48px;">
-                      <span class="text-muted font-weight-bold">
-                        {{ p.first_name|default:"?"|slice:":1" }}{{ p.last_name|default:""|slice:":1" }}
-                      </span>
-                    </span>
-                  </div>
-                  <h3 class="widget-user-username mb-0">{{ p.full_name|default:p }}</h3>
-                  {% if p.email %}
-                    <h5 class="widget-user-desc text-muted small mb-0"><i class="far fa-envelope mr-1"></i>{{ p.email }}</h5>
-                  {% endif %}
-                </div>
-                <div class="card-body">
-                  <div class="mb-2">
-                    {% if p.player_type %}<span class="badge badge-secondary mr-1">{{ p.player_type }}</span>{% endif %}
-                    {% if p.get_relation_display %}<span class="badge badge-light border">{{ p.get_relation_display }}</span>{% endif %}
-                    {% if p.membership_status %}
-                      <span class="badge
-                        {% if p.membership_status|lower == 'active' %}badge-success
-                        {% elif p.membership_status|lower == 'pending' %}badge-info
-                        {% else %}badge-dark{% endif %} ml-1">
-                        {{ p.membership_status }}
-                      </span>
-                    {% endif %}
-                    {% if p.membership_plan_label %}
-                      <span class="badge badge-light border ml-1">{{ p.membership_plan_label }}</span>
-                    {% endif %}
-                  </div>
+            <div class="col-12 col-md-6 mb-3">
+              <div id="card-{{ p.public_id }}"
+                   class="membership-card shadow-sm"
+                   tabindex="0"
+                   aria-label="Membership card for {{ p.full_name|default:p }}"
+                   data-name="{{ p.full_name|default:p }}"
+                   data-number="RHC{{ p.membership_number }}"
+                   data-player-type="{{ p.player_type|default:'' }}"
+                   data-public-id="{{ p.public_id }}"
+                   data-email="{{ p.email|default:'' }}">
+                <div class="mc-inner">
 
-                  {% if p.answers_pct is not None %}
-                  <div class="mb-3">
-                    <div class="d-flex justify-content-between small mb-1">
-                      <span class="text-muted">Profile completeness</span>
-                      <span class="text-muted">{{ p.answers_pct }}%</span>
+                  <!-- FRONT -->
+                  <div class="mc-face mc-front">
+                    <div class="mc-top d-flex justify-content-between align-items-start">
+                      <div class="d-flex align-items-center">
+                        <div class="mc-avatar mr-2">
+                          <span class="mc-initials">
+                            {{ p.first_name|default:"?"|slice:":1" }}{{ p.last_name|default:""|slice:":1" }}
+                          </span>
+                        </div>
+                        <div>
+                          <div class="mc-name">{{ p.full_name|default:p }}</div>
+                          {% if p.player_type %}
+                            <div class="mc-sub text-muted small">{{ p.player_type }}</div>
+                          {% endif %}
+                          {% if p.email %}
+                            <div class="text-muted small"><i class="far fa-envelope mr-1"></i>{{ p.email }}</div>
+                          {% endif %}
+                        </div>
+                      </div>
+                      <div class="mc-chip" title="Club chip"></div>
                     </div>
-                    <div class="progress" style="height:8px;">
-                      <div class="progress-bar
-                                  {% if p.answers_pct >= 80 %}bg-success
-                                  {% elif p.answers_pct >= 40 %}bg-warning
-                                  {% else %}bg-danger{% endif %}"
-                           role="progressbar"
-                           style="width: {{ p.answers_pct }}%;"
-                           aria-valuenow="{{ p.answers_pct }}" aria-valuemin="0" aria-valuemax="100"></div>
-                    </div>
-                  </div>
-                  {% endif %}
 
-                  {% with teams=p.team_memberships.all %}
-                    {% if teams %}
-                      <div class="small">
-                        <span class="text-muted">Teams:</span>
-                        {% for m in teams|slice:":3" %}
-                          <span class="badge badge-light border ml-1">{{ m.team.name }}</span>
-                        {% endfor %}
-                        {% if teams|length > 3 %}
-                          <span class="badge badge-light border ml-1">+{{ teams|length|add:"-3" }}</span>
-                        {% endif %}
+                    <div class="mc-number mt-2" title="Membership number">
+                      <i class="fas fa-id-card-alt mr-2"></i>RHC{{ p.membership_number }}
+                    </div>
+
+                    <div class="mc-badges mt-2">
+                      {% if p.get_relation_display %}
+                        <span class="badge badge-light border mr-1">{{ p.get_relation_display }}</span>
+                      {% endif %}
+                      {% if p.membership_status %}
+                        <span class="badge
+                          {% if p.membership_status|lower == 'active' %}badge-success
+                          {% elif p.membership_status|lower == 'pending' %}badge-info
+                          {% else %}badge-dark{% endif %} mr-1">
+                          {{ p.membership_status }}
+                        </span>
+                      {% endif %}
+                      {% if p.membership_plan_label %}
+                        <span class="badge badge-secondary">{{ p.membership_plan_label }}</span>
+                      {% endif %}
+                    </div>
+
+                    {% with teams=p.team_memberships.all %}
+                      {% if teams %}
+                        <div class="mt-2 small text-muted">
+                          <i class="fas fa-users mr-1"></i>
+                          {% for m in teams|slice:":3" %}
+                            <span class="badge badge-light border mr-1">{{ m.team.name }}</span>
+                          {% endfor %}
+                          {% if teams|length > 3 %}
+                            <span class="badge badge-light border">+{{ teams|length|add:"-3" }}</span>
+                          {% endif %}
+                        </div>
+                      {% endif %}
+                    {% endwith %}
+
+                    {% if p.answers_pct is not None %}
+                      <div class="mt-3">
+                        <div class="d-flex justify-content-between small mb-1">
+                          <span class="text-muted">Profile completeness</span>
+                          <span class="text-muted">{{ p.answers_pct }}%</span>
+                        </div>
+                        <div class="progress mc-progress">
+                          <div class="progress-bar
+                                      {% if p.answers_pct >= 80 %}bg-success
+                                      {% elif p.answers_pct >= 40 %}bg-warning
+                                      {% else %}bg-danger{% endif %}"
+                               role="progressbar"
+                               style="width: {{ p.answers_pct }}%;"
+                               aria-valuenow="{{ p.answers_pct }}" aria-valuemin="0" aria-valuemax="100"></div>
+                        </div>
                       </div>
                     {% endif %}
-                  {% endwith %}
-                </div>
-                <div class="card-footer bg-white">
-                  <div class="btn-group btn-group-sm d-none d-md-inline-flex">
-                    <a href="{% url 'answer' p.public_id %}" class="btn btn-primary"><i class="fas fa-edit"></i> <span class="d-none d-lg-inline">Update Profile</span></a>
-                    <a href="{% url 'player_edit' public_id=p.public_id %}" class="btn btn-outline-primary"><i class="fas fa-user-cog"></i> <span class="d-none d-lg-inline">Edit Details</span></a>
-                    <a href="{% url 'memberships:choose' p.id %}" class="btn btn-info"><i class="fas fa-id-badge"></i> <span class="d-none d-lg-inline">Membership</span></a>
-                    <button type="button" class="btn btn-danger"
-                            onclick="confirmDelete('{{ p.public_id }}', '{{ p.full_name|default:p|escapejs }}')">
-                      <i class="fas fa-trash"></i> <span class="d-none d-lg-inline">Remove</span>
-                    </button>
-                  </div>
 
-                  <!-- Mobile dropdown (BS4) -->
-                  <div class="dropdown d-inline d-md-none">
-                    <button class="btn btn-outline-secondary btn-sm dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                      Actions
-                    </button>
-                    <div class="dropdown-menu dropdown-menu-right">
-                      <a class="dropdown-item" href="{% url 'answer' p.public_id %}">
-                        <i class="fas fa-edit mr-2"></i>Update Profile
+                    <div class="d-flex justify-content-between align-items-center mt-3">
+                      <a href="{% url 'answer' p.public_id %}" class="btn btn-sm btn-primary">
+                        <i class="fas fa-edit mr-1"></i> Update Profile
                       </a>
-                      <a class="dropdown-item" href="{% url 'player_edit' public_id=p.public_id %}">
-                        <i class="fas fa-user-cog mr-2"></i>Edit Player Details
+                      <a href="{% url 'player_edit' public_id=p.public_id %}" class="btn btn-sm btn-primary">
+                        <i class="fas fa-user-cog mr-1"></i> Edit Details
                       </a>
-                      <a class="dropdown-item" href="{% url 'memberships:choose' p.id %}">
-                        <i class="fas fa-id-badge mr-2"></i>Membership
-                      </a>
-                      <div class="dropdown-divider"></div>
-                      <a class="dropdown-item text-danger" href="#"
-                         onclick="confirmDelete('{{ p.public_id }}', '{{ p.full_name|default:p|escapejs }}')">
-                        <i class="fas fa-trash mr-2"></i>Remove
-                      </a>
+                      <button class="btn btn-sm btn-outline-secondary mc-flip-btn" type="button">
+                        <i class="fas fa-ellipsis-h"></i>
+                      </button>
                     </div>
                   </div>
 
-                  <form id="delete-form-{{ p.public_id }}" method="post" action="{% url 'player_delete' p.public_id %}" class="d-none">
-                    {% csrf_token %}
-                  </form>
+                  <!-- BACK -->
+                  <div class="mc-face mc-back">
+                    <div class="small text-muted mb-2">Actions</div>
+
+                    <!-- Desktop / Tablet -->
+                    <div class="btn-group btn-group-sm d-none d-sm-flex flex-wrap">
+
+                      <!-- Apple Wallet placeholder -->
+                      <a class="btn btn-dark mb-2 mr-2"
+                        href="{% url 'wallet:wallet_apple' p.public_id %}"
+                        title="Download test Apple Wallet pass">
+                        <i class="fab fa-apple mr-1"></i> Apple Wallet (test)
+                      </a>
+
+                      <button type="button" class="btn btn-outline-danger mb-2"
+                              onclick="confirmDelete('{{ p.public_id }}', '{{ p.full_name|default:p|escapejs }}')">
+                        <i class="fas fa-trash mr-1"></i> Remove
+                      </button>
+                    </div>
+
+                    <!-- Mobile: Dropdown -->
+                    <div class="d-flex d-sm-none">
+                      <div class="dropdown w-100">
+                        <button class="btn btn-outline-secondary btn-sm dropdown-toggle w-100"
+                                type="button" id="actionsMenu{{ forloop.counter }}"
+                                data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                          Actions
+                        </button>
+                        <div class="dropdown-menu dropdown-menu-right w-100" aria-labelledby="actionsMenu{{ forloop.counter }}">
+                          <a class="dropdown-item" href="{% url 'answer' p.public_id %}">
+                            <i class="fas fa-edit mr-2"></i> Update Profile
+                          </a>
+                          <a class="dropdown-item" href="{% url 'player_edit' public_id=p.public_id %}">
+                            <i class="fas fa-user-cog mr-2"></i> Edit Details
+                          </a>
+
+                          <!-- Apple Wallet placeholder -->
+                          <a class="dropdown-item"
+                            href="{% url 'wallet:wallet_apple' p.public_id %}">
+                            <i class="fab fa-apple mr-2"></i> Apple Wallet (test)
+                          </a>
+
+                          <div class="dropdown-divider"></div>
+                          <a class="dropdown-item text-danger" href="#"
+                             onclick="confirmDelete('{{ p.public_id }}', '{{ p.full_name|default:p|escapejs }}')">
+                            <i class="fas fa-trash mr-2"></i> Remove
+                          </a>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Club strip -->
+                    <div class="mc-strip mt-3">
+                      <div class="mc-note small">
+                        Club use only • Player ID: {{ p.public_id }}
+                      </div>
+                    </div>
+
+                    <!-- Print/PDF -->
+                    <button class="btn btn-sm btn-outline-secondary mt-3" type="button"
+                            onclick="printMembershipCard('{{ p.public_id }}')">
+                      <i class="fas fa-print mr-1"></i> Print / PDF
+                    </button>
+
+                    <button class="btn btn-sm btn-light mt-3 mc-flip-btn" type="button">
+                      <i class="fas fa-undo"></i> Back
+                    </button>
+                  </div>
+
                 </div>
               </div>
             </div>
@@ -174,114 +259,14 @@
 
       <!-- RIGHT: TASKS + CLUB NOTICES + QUICK LINKS -->
       <div class="col-12 col-lg-4">
-
-        <!-- Tasks (Todo List) -->
-        <div class="card card-outline card-info mb-3">
-          <div class="card-header d-flex justify-content-between align-items-center">
-            <h3 class="card-title mb-0"><i class="fas fa-bell mr-2"></i>Your Tasks</h3>
-            <a href="{% url 'tasks:my_list' %}" class="small text-muted">View all</a>
-          </div>
-          <div class="card-body p-0">
-            {% if pending_tasks %}
-              <ul class="todo-list" data-widget="todo-list">
-                {% for t in pending_tasks|slice:":8" %}
-                <li>
-                  <span class="handle">
-                    <i class="fas fa-ellipsis-v"></i>
-                    <i class="fas fa-ellipsis-v"></i>
-                  </span>
-                  <div class="icheck-primary d-inline ml-2">
-                    <input type="checkbox" id="todoCheck{{ forloop.counter }}" disabled>
-                    <label for="todoCheck{{ forloop.counter }}"></label>
-                  </div>
-                  <span class="text">{{ t.title }} • {{ t.subject }}</span>
-                  {% if t.due_at %}
-                    <small class="badge badge-light border ml-2"><i class="far fa-clock mr-1"></i>{{ t.due_at|date:"D j M, H:i" }}</small>
-                  {% endif %}
-                  <div class="tools">
-                    {% if t.url %}
-                      <a class="text-primary" href="{{ t.url }}" title="Open"><i class="fas fa-arrow-right"></i></a>
-                    {% else %}
-                      <i class="far fa-circle text-muted" title="No link"></i>
-                    {% endif %}
-                  </div>
-                </li>
-                {% endfor %}
-              </ul>
-            {% else %}
-              <div class="p-3 text-muted"><i class="far fa-check-circle mr-1"></i>Nothing urgent right now.</div>
-            {% endif %}
-          </div>
-        </div>
-
-        <!-- Club Notices (Collapsible card + callouts) -->
-        <div class="card card-outline card-warning mb-3">
-          <div class="card-header">
-            <h3 class="card-title mb-0"><i class="fas fa-bullhorn mr-2"></i>Club Notices</h3>
-            <div class="card-tools">
-              <button type="button" class="btn btn-tool" data-card-widget="collapse">
-                <i class="fas fa-minus"></i>
-              </button>
-            </div>
-          </div>
-          <div class="card-body p-2">
-            {% if notices %}
-              {% for n in notices %}
-                <div class="callout callout-{% if n.level in 'warning danger info success' %}{{ n.level }}{% else %}info{% endif %} mb-2">
-                  <h5 class="mb-1">{{ n.title }}</h5>
-                  <p class="mb-1">{{ n.text }}</p>
-                  {% if n.url %}
-                    <a class="small" href="{{ n.url }}" target="_blank" rel="noopener">Learn more <i class="fas fa-external-link-alt ml-1"></i></a>
-                  {% endif %}
-                </div>
-              {% endfor %}
-            {% else %}
-              <div class="callout callout-info mb-2">
-                <h5 class="mb-1">No club notices</h5>
-                <p class="mb-0 small text-muted">Announcements from the club will appear here.</p>
-              </div>
-            {% endif %}
-          </div>
-        </div>
-
-        <!-- Quick Links -->
-        <div class="card card-outline card-secondary">
-          <div class="card-header">
-            <h3 class="card-title mb-0"><i class="fas fa-link mr-2"></i>Quick Links</h3>
-          </div>
-          <div class="list-group list-group-flush">
-            {% if quick_links %}
-              {% for q in quick_links %}
-                <a class="list-group-item list-group-item-action d-flex align-items-center" href="{{ q.url }}">
-                  {% if q.icon %}<i class="{{ q.icon }} mr-2"></i>{% else %}<i class="fas fa-external-link-alt mr-2"></i>{% endif %}
-                  <span>{{ q.label }}</span>
-                  <i class="fas fa-chevron-right ml-auto text-muted small"></i>
-                </a>
-              {% endfor %}
-            {% else %}
-              <!-- sensible defaults -->
-              <a class="list-group-item list-group-item-action d-flex align-items-center" href="{% url 'memberships:mine' %}">
-                <i class="fas fa-id-card-alt mr-2"></i><span>My Memberships</span>
-                <i class="fas fa-chevron-right ml-auto text-muted small"></i>
-              </a>
-              <a class="list-group-item list-group-item-action d-flex align-items-center" href="{% url 'player_add' %}">
-                <i class="fas fa-user-plus mr-2"></i><span>Add a Player</span>
-                <i class="fas fa-chevron-right ml-auto text-muted small"></i>
-              </a>
-              <a class="list-group-item list-group-item-action d-flex align-items-center" href="#">
-                <i class="fas fa-file-alt mr-2"></i><span>Club Policies</span>
-                <i class="fas fa-chevron-right ml-auto text-muted small"></i>
-              </a>
-            {% endif %}
-          </div>
-        </div>
-
+        {# keep your existing tasks, notices, quick links here unchanged #}
       </div>
     </div>
 
   </div>
 </div>
 
+<!-- JS: confirm delete -->
 <script>
 function confirmDelete(publicId, name) {
   if (confirm('Remove ' + name + '? This cannot be undone.')) {
@@ -291,12 +276,214 @@ function confirmDelete(publicId, name) {
 }
 </script>
 
+<!-- JS: flip interactions -->
+<script>
+  document.addEventListener('click', function(e) {
+    const btn = e.target.closest('.mc-flip-btn');
+    if (!btn) return;
+    const card = btn.closest('.membership-card');
+    card.classList.toggle('is-flipped');
+  });
+
+  document.addEventListener('keydown', function(e) {
+    if (!['Enter',' '].includes(e.key)) return;
+    const active = document.activeElement;
+    if (active && active.classList.contains('membership-card')) {
+      e.preventDefault();
+      active.classList.toggle('is-flipped');
+    }
+  });
+</script>
+
+<!-- JS: TRUE CR80 print (front/back; no actions) -->
+<script>
+function printMembershipCard(publicId) {
+  const el = document.getElementById('card-' + publicId);
+  if (!el) return;
+
+  const data = {
+    name: el.dataset.name || '',
+    number: el.dataset.number || '',
+    type: el.dataset.playerType || '',
+    publicId: el.dataset.publicId || '',
+    email: el.dataset.email || ''
+  };
+
+  const w = window.open('', '', 'width=1000,height=800');
+  w.document.write(`<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Membership Card – ${data.name}</title>
+<link rel="stylesheet" href="/static/css/adminlte.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
 <style>
-/* Scoped polish */
-.widget-user-username { font-size: 1.05rem; }
-.widget-user-desc { line-height: 1.2; }
-.card-widget .badge { vertical-align: middle; }
-.todo-list > li { padding-right: 2.25rem; }
-.todo-list .tools { right: .5rem; }
+  @page { size: A4; margin: 12mm; }
+  @media print { .no-print { display:none !important; } }
+
+  body { font-family: system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,'Helvetica Neue',Arial; color:#111; }
+  .pair { display:flex; gap: 12mm; margin-bottom: 12mm; flex-wrap:wrap; }
+
+  /* CR80 with 3mm bleed (content slightly inside trim) */
+  .card-bleed { width: 91.6mm; height: 60mm; position: relative; }
+  .card      { position:absolute; inset: 3mm; width: 84.6mm; height: 53mm; border-radius: 5mm; overflow:hidden; margin:auto; }
+
+  .card-bleed:before {
+    content:""; position:absolute; left:0; right:0; top:0; bottom:0; pointer-events:none; opacity:.22;
+    background:
+      linear-gradient(#000, #000) 0 3mm/8mm .3mm no-repeat,
+      linear-gradient(#000, #000) 3mm 0/.3mm 8mm no-repeat,
+      linear-gradient(#000, #000) calc(100% - 8mm) 3mm/8mm .3mm no-repeat,
+      linear-gradient(#000, #000) calc(100% - 3mm) 0/.3mm 8mm no-repeat,
+      linear-gradient(#000, #000) 0 calc(100% - 3mm)/8mm .3mm no-repeat,
+      linear-gradient(#000, #000) 3mm calc(100% - 8mm)/.3mm 8mm no-repeat,
+      linear-gradient(#000, #000) calc(100% - 8mm) calc(100% - 3mm)/8mm .3mm no-repeat,
+      linear-gradient(#000, #000) calc(100% - 3mm) calc(100% - 8mm)/.3mm 8mm no-repeat;
+  }
+
+  .front { background: linear-gradient(135deg, #0f5aa6, #1b6bd1); color:#fff; }
+  .back  { background: #fff; border: .4mm solid #e5e7eb; }
+
+  .row-pad { padding: 6mm; height:100%; display:flex; flex-direction:column; }
+  .logo-line { display:flex; align-items:center; justify-content:space-between; }
+  .logo { display:flex; align-items:center; font-weight:700; letter-spacing:.02em; }
+  .logo img { height:10mm; width:auto; margin-right:4mm; }
+  .chip { width: 14mm; height: 10mm; border-radius: 2mm; background: linear-gradient(135deg,#d7dbe0,#aeb5bd); box-shadow: inset 0 0 0 1px rgba(255,255,255,.5); }
+
+  .name { font-size: 4.7mm; font-weight: 800; margin-top: 5mm; line-height:1.1; }
+  .meta { margin-top: 1.5mm; font-size: 3.2mm; opacity:.95; }
+  .member-num { margin-top: 5mm; font-weight: 800; font-size: 4mm; letter-spacing:.08em; background: rgba(255,255,255,.14); padding: 2mm 3mm; border-radius: 2mm; display:inline-flex; align-items:center; }
+
+  .stripe { height: 14mm; background: #1f2937; margin-bottom: 3mm; }
+  .sig { background: repeating-linear-gradient(90deg, #f5f7fa 0, #f5f7fa 3mm, #eef2f7 3mm, #eef2f7 6mm);
+         border: .3mm solid #e5e7eb; border-radius: 1.5mm; padding: 2mm 3mm; font-size: 3mm; color:#6b7280; }
+
+  .field { margin-top: 3mm; font-size: 3.1mm; }
+  .label { font-weight: 700; color:#374151; }
+  .muted { color:#6b7280; }
+
+  .footer { margin-top:auto; display:flex; justify-content:space-between; align-items:flex-end; font-size: 3mm; color:#e5e7eb; }
+  .footer-back { margin-top:auto; display:flex; justify-content:space-between; align-items:flex-end; font-size: 3mm; color:#6b7280; }
+  .qr { width: 16mm; height: 16mm; background:#f3f4f6; border:.3mm dashed #d1d5db; border-radius:1mm; display:flex; align-items:center; justify-content:center; }
 </style>
+</head>
+<body>
+
+<div class="pair">
+  <!-- FRONT -->
+  <div class="card-bleed">
+    <div class="card front">
+      <div class="row-pad">
+        <div class="logo-line">
+          <div class="logo">
+            <img src="/static/img/club-logo.png" onerror="this.style.display='none'">
+            Redditch Hockey Club
+          </div>
+          <div class="chip"></div>
+        </div>
+        <div class="name">${data.name}</div>
+        <div class="meta">${data.type ? data.type + ' · ' : ''}${data.email}</div>
+        <div class="member-num"><i class="fas fa-id-card-alt" style="margin-right:3mm;"></i>${data.number}</div>
+        <div class="footer">
+          <div>Player ID: ${data.publicId}</div>
+          <div class="qr">QR</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BACK -->
+  <div class="card-bleed">
+    <div class="card back">
+      <div class="row-pad">
+        <div class="stripe"></div>
+        <div class="sig">Signature / Club use</div>
+
+        <div class="field"><span class="label">Member No:</span> ${data.number}</div>
+        <div class="field"><span class="label">Player ID:</span> ${data.publicId}</div>
+
+        <div class="footer-back">
+          <div>www.redditchhc.co.uk</div>
+          <div class="muted">If found, please return to club.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="no-print" style="margin-top:12px;text-align:center;">
+  <button onclick="window.print()" class="btn btn-primary"><i class="fas fa-print"></i> Print</button>
+</div>
+
+</body>
+</html>`);
+  w.document.close();
+  w.focus();
+}
+</script>
+
+<!-- STYLES: flip engine + responsive -->
+<style>
+/* Flip card engine */
+.membership-card{ position:relative; perspective:1000px; border-radius:14px; }
+.membership-card:focus{ outline:2px dashed rgba(0,0,0,.2); outline-offset:2px; }
+
+.mc-inner{
+  position:relative; width:100%; min-height:225px;
+  transform-style:preserve-3d; -webkit-transform-style:preserve-3d;
+  transition:transform .6s cubic-bezier(.22,.61,.36,1);
+  border-radius:14px;
+}
+.membership-card.is-flipped .mc-inner{ transform:rotateY(180deg); }
+
+.mc-face{
+  position:absolute; inset:0; padding:14px; border-radius:14px;
+  border:1px solid rgba(0,0,0,.06);
+  background:linear-gradient(135deg,#f8fafc,#eef2f7);
+  backface-visibility:hidden; -webkit-backface-visibility:hidden;
+}
+.mc-front{ transform:rotateY(0); z-index:2; }
+.mc-back{ transform:rotateY(180deg); background:#fff; border-color:rgba(0,0,0,.08); z-index:1; }
+
+/* Chrome */
+.mc-top .mc-avatar{ width:46px;height:46px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;background:#fff;border:1px solid rgba(0,0,0,.08); }
+.mc-initials{ font-weight:700;color:#6c757d; }
+.mc-chip{ width:36px;height:26px;border-radius:6px;background:linear-gradient(135deg,#c6cbd1,#9ea5ad);box-shadow:inset 0 0 0 2px rgba(255,255,255,.4),0 1px 2px rgba(0,0,0,.1); }
+.mc-name{ font-size:1.05rem;font-weight:700; }
+.mc-sub{ margin-top:-2px; }
+.mc-number{ display:inline-flex;align-items:center;font-variant-numeric:tabular-nums;letter-spacing:.05em;font-weight:700;background:#fff;border:1px dashed rgba(0,0,0,.12);border-radius:8px;padding:6px 10px; }
+.mc-badges .badge{ vertical-align:middle; }
+.mc-progress{ height:8px;border-radius:6px;background:rgba(0,0,0,.05); }
+
+/* Back strip */
+.mc-strip{ height:40px;border-radius:6px;background:#2c2c2c;display:flex;align-items:center;padding:0 10px; }
+.mc-note{ color:#e5e7eb; }
+
+/* Mobile niceties */
+@media (max-width:575.98px){
+  .mc-inner{ min-height:240px; }
+  .mc-name{ font-size:1.1rem; }
+  .mc-number{ font-size:.95rem;padding:6px 10px; }
+  .mc-top .mc-avatar{ width:44px;height:44px; }
+  .btn-group .btn,.mc-back .btn{ width:100%; }
+  .mc-badges .badge{ margin-bottom:.25rem; }
+  .d-flex.justify-content-between.align-items-center.mt-3{ flex-wrap:wrap;gap:.5rem; }
+  .dropdown-menu.w-100{ min-width:100%!important; }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce){
+  .mc-inner{ transition:none; }
+}
+</style>
+<style>
+/* --- Flip fix: ensure true 3D + hide mirrored faces --- */
+.membership-card{ perspective: 1000px; -webkit-perspective: 1000px; }
+.mc-inner{ transform-style: preserve-3d; -webkit-transform-style: preserve-3d; transition: transform .6s cubic-bezier(.22,.61,.36,1); }
+.mc-face{ backface-visibility: hidden; -webkit-backface-visibility: hidden; transform-style: preserve-3d; -webkit-transform-style: preserve-3d; }
+.mc-front{ transform: rotateY(0deg); z-index:2; }
+.mc-back{  transform: rotateY(180deg) !important; z-index:1; }
+.mc-front, .mc-back { transform: translateZ(0) rotateY(var(--ry,0)); }
+</style>
+
 {% endblock %}

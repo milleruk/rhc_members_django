@@ -58,6 +58,14 @@ class Player(models.Model):
         object_id_field="subject_id",
         related_query_name="player_subject",
     )
+    
+    membership_number = models.CharField(
+        max_length=10,
+        unique=True,
+        blank=False,
+        null=False,
+        help_text="Automatically generated sequential membership number"
+    )
 
 
     class Meta:
@@ -112,6 +120,26 @@ class Player(models.Model):
             raise ValidationError({
                 "date_of_birth": "Date of birth cannot be today or in the future."
             })
+        
+    @property
+    def active_subscription(self):
+        # Adjust related name & fields to your models
+        return (
+            self.subscriptions  # e.g. related_name='subscriptions'
+            .filter(status='active')
+            .select_related('product', 'season', 'plan')
+            .order_by('-started_at')
+            .first()
+        )
+        
+    def save(self, *args, **kwargs):
+        creating = self._state.adding and not self.pk
+        super().save(*args, **kwargs)  # save first so we have a pk/id
+
+        if creating and not self.membership_number:
+            self.membership_number = f"{self.pk:05d}"  # e.g. 00001, 00002
+            super().save(update_fields=["membership_number"])
+
 
 QUESTION_TYPE_CHOICES = (
     ("text", "Text"),

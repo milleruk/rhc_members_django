@@ -154,6 +154,13 @@ class Subscription(models.Model):
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL)
 
     class Meta:
+        permissions = [
+            ("activate_subscription", "Can activate a pending subscription"),
+            ("set_pending_subscription", "Can set a subscription back to pending"),
+            ("cancel_subscription", "Can cancel a subscription"),
+        ]
+
+    class Meta:
         ordering = ["-started_at"]
         constraints = [
             # Exactly one pending/active sub per player per season

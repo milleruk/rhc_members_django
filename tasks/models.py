@@ -12,11 +12,10 @@ class TaskStatus(models.TextChoices):
 
 
 class Task(models.Model):
-    # Human-facing
+
     title = models.CharField(max_length=200)
     description = models.TextField(blank=True)
 
-    # Who/when
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="tasks_created"
     )
@@ -35,6 +34,7 @@ class Task(models.Model):
     complete_on = models.CharField(
         max_length=100,
         blank=True,
+        null=True,
         help_text="When an event with this name is emitted for the same subject, mark this task DONE.",
     )
 

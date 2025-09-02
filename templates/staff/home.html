@@ -128,17 +128,29 @@
           </div>
         </div>
 
-        <div class="card mt-3">
-          <div class="card-header">
-            <h3 class="card-title h6 mb-0">Shortcuts</h3>
+          <div class="card mt-3">
+            <div class="card-header">
+              <h3 class="card-title h6 mb-0">Shortcuts</h3>
+            </div>
+            <div class="card-body">
+              <a class="btn btn-outline-primary btn-sm mr-2 mb-2" href="{% url 'staff:player_list' %}">
+                <i class="fas fa-users mr-1"></i> Players
+              </a>
+              <a class="btn btn-outline-success btn-sm mr-2 mb-2" href="{% url 'staff:player_list' %}">
+                <i class="fas fa-id-card-alt mr-1"></i> Memberships
+              </a>
+              <a class="btn btn-outline-info btn-sm mr-2 mb-2" href="{% url 'staff:memberships_list' %}">
+                <i class="fas fa-receipt mr-1"></i> Subscriptions
+              </a>
+              <a class="btn btn-outline-warning btn-sm mr-2 mb-2" href="{% url 'tasks:bulk_generate' %}">
+                <i class="fas fa-tasks mr-1"></i> Create Bulk Task
+              </a>
+              <a class="btn btn-outline-danger btn-sm mr-2 mb-2" href="{% url 'tasks:create' %}">
+                <i class="fas fa-plus-circle mr-1"></i> Create Task
+              </a>
+            </div>
           </div>
-          <div class="card-body">
-            <a class="btn btn-outline-primary btn-sm mr-2 mb-2" href="{% url 'staff:player_list' %}">
-              <i class="fas fa-users mr-1"></i> Players
-            </a>
-            <!-- Add more quick links as needed -->
-          </div>
-        </div>
+
       </div>
     </div>
 

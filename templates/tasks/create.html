@@ -28,45 +28,41 @@
 
       <form method="post">
         {% csrf_token %}
+
+        {% if form.non_field_errors %}
+          <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+        {% endif %}
+
         <div class="card-body">
           <div class="row">
             <div class="col-lg-8">
               {% include "partials/_field.html" with field=form.title %}
               {% include "partials/_field.html" with field=form.description %}
-
-              <div class="card card-light mb-3">
-                <div class="card-header">
-                  <h3 class="card-title"><i class="fas fa-link mr-2"></i>Subject (what this task is about)</h3>
-                  <div class="card-tools">
-                    <button type="button" class="btn btn-tool" data-card-widget="collapse"><i class="fas fa-minus"></i></button>
-                  </div>
-                </div>
-                <div class="card-body">
-                  <div class="form-row">
-                    <div class="col-md-6">{% include "partials/_field.html" with field=form.subject_ct %}</div>
-                    <div class="col-md-6">{% include "partials/_field.html" with field=form.subject_id %}</div>
-                  </div>
-                </div>
-              </div>
-
             </div>
+
             <div class="col-lg-4">
               <div class="card card-light mb-3">
-                <div class="card-header"><h3 class="card-title"><i class="far fa-user mr-2"></i>Assignment</h3></div>
+                <div class="card-header">
+                  <h3 class="card-title"><i class="far fa-user mr-2"></i>Player Assignment</h3>
+                </div>
                 <div class="card-body">
-                  {% include "partials/_field.html" with field=form.assigned_to %}
+
+                  {# Assign to — Tom Select, single clean input style #}
+                  <div class="form-group">
+                    <label for="{{ form.assigned_to.id_for_label }}">{{ form.assigned_to.label }}</label>
+                    {% render_field form.assigned_to style="width:100%;" data-placeholder="Search users…" %}
+                    {% if form.assigned_to.errors %}
+                      <div class="invalid-feedback d-block">{{ form.assigned_to.errors }}</div>
+                    {% endif %}
+                    <small class="form-text text-muted">Start typing to search by name, username, or email.</small>
+                  </div>
+
                   {% include "partials/_field.html" with field=form.due_at %}
+                  {# Removed allow_manual_complete — all manual by default #}
                 </div>
               </div>
-
-              <div class="card card-light">
-                <div class="card-header"><h3 class="card-title"><i class="fas fa-robot mr-2"></i>Automation</h3></div>
-                    <div class="card-body">
-                    {% include "partials/_field.html" with field=form.complete_on %}
-                    </div>
-              </div>
             </div>
-          </div><!-- row -->
+          </div><!-- /row -->
         </div><!-- /.card-body -->
 
         <div class="card-footer d-flex">
@@ -78,4 +74,62 @@
 
   </div>
 </section>
+
+{# --- Tom Select: CSS + JS --- #}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tom-select@2.4.1/dist/css/tom-select.css">
+<script src="https://cdn.jsdelivr.net/npm/tom-select@2.4.1/dist/js/tom-select.complete.min.js"></script>
+
+<style>
+  /* Make Tom Select look like a single AdminLTE/Bootstrap input */
+  .ts-wrapper.single .ts-control {
+    border: 1px solid #ced4da;
+    border-radius: .25rem;
+    background-color: #fff;
+    min-height: calc(2.25rem + 2px);
+    padding: .375rem .75rem;
+    box-shadow: none;
+  }
+  .ts-wrapper.single .ts-control .item {
+    margin: 0;
+    padding: 0;
+    background: none;
+    border: 0;
+  }
+  .ts-wrapper .ts-control input {
+    height: 1.5rem;
+    line-height: 1.5;
+    margin: 0;
+  }
+  .ts-wrapper.focus .ts-control {
+    border-color: #80bdff;
+    box-shadow: 0 0 0 .2rem rgba(0,123,255,.25);
+  }
+  /* Keep dropdown consistent with AdminLTE */
+  .ts-dropdown {
+    border: 1px solid #ced4da;
+    border-radius: .25rem;
+  }
+</style>
+
+<script>
+  function initAssignedToTomSelect() {
+    const el = document.getElementById('id_assigned_to');
+    if (!el) return;
+
+    if (el.tomselect) el.tomselect.destroy();
+
+    new TomSelect('#id_assigned_to', {
+      create: false,
+      allowEmptyOption: true,                          // use blank option as placeholder
+      placeholder: el.dataset.placeholder || 'Search users…',
+      maxOptions: 5000,
+      searchField: ['text'],
+      sortField: { field: 'text', direction: 'asc' },
+      plugins: ['dropdown_input','clear_button']
+    });
+  }
+  document.addEventListener('DOMContentLoaded', initAssignedToTomSelect);
+  document.addEventListener('turbo:load', initAssignedToTomSelect);
+  document.addEventListener('htmx:afterSettle', initAssignedToTomSelect);
+</script>
 {% endblock %}

@@ -212,6 +212,10 @@ def dashboard(request):
     notices = ClubNotice.objects.filter(active=True)
     quick_links = QuickLink.objects.filter(active=True)
 
+    def wallet_flags(request):
+        from django.conf import settings
+        return {"WALLET_APPLE_ENABLED": getattr(settings, "WALLET_APPLE_ENABLED", False)}
+
     return render(
         request,
         "members/dashboard.html",

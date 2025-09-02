@@ -3,17 +3,18 @@ from collections import OrderedDict
 from datetime import timedelta
 from django.http import HttpResponseForbidden
 
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.core.exceptions import PermissionDenied
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.db.models import Count, OuterRef, Subquery, Q
 from django.shortcuts import get_object_or_404, redirect
 from django.utils.timezone import now
-from django.views.generic import DetailView, ListView
+from django.views.generic import DetailView, ListView, TemplateView
 from django.contrib import messages
 from django.views.decorators.http import require_POST
-from django.views.generic import TemplateView
+from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
+from django.db import transaction
 
 # import from other apps (no circulars)
 from members.forms import TeamAssignmentForm
@@ -27,8 +28,97 @@ from members.models import (
     PlayerAccessLog,
 )
 from memberships.models import Subscription
+try:
+    from memberships.models import Product, Season
+except Exception:
+    Product = None
+    Season = None
 
 COACH_GROUPS = ["Full Access", "Committee", "Coach"]  # keep in one place if you share it
+
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+#  Helpers
+# ──────────────────────────────────────────────────────────────────────────────
+
+def _players_in_scope(request):
+    """
+    Players visible to this staff user.
+    Superusers or users with `members.view_all_players` see all.
+    Others only see players on teams where they are in Team.staff.
+    """
+    user = request.user
+    players = Player.objects.select_related("player_type").prefetch_related("team_memberships__team")
+    if user.is_superuser or user.has_perm("members.view_all_players"):
+        return players
+    team_ids = Team.objects.filter(staff=user).values_list("id", flat=True)
+    return players.filter(team_memberships__team_id__in=team_ids).distinct()
+
+
+def _current_subqs():
+    """Subqueries to annotate a player's latest active/pending subscription."""
+    current_qs = (
+        Subscription.objects
+        .filter(player=OuterRef("pk"), status__in=["active", "pending"])
+        .order_by("-started_at")
+    )
+    return {
+        "curr_status": Subquery(current_qs.values("status")[:1]),
+        "curr_product": Subquery(current_qs.values("product__name")[:1]),
+        "curr_season": Subquery(current_qs.values("season__name")[:1]),
+        "curr_started": Subquery(current_qs.values("started_at")[:1]),
+        "curr_id": Subquery(current_qs.values("id")[:1]),
+    }
+
+def _season_product_options(players_qs):
+    """
+    Return lists of seasons and products visible within the staff user's scope,
+    as [{'id': .., 'name': ..}, ...]. Uses Season/Product if available, otherwise
+    derives distinct values from Subscription to avoid empty dropdowns.
+    """
+    base_subs = Subscription.objects.filter(player__in=players_qs)
+
+    # Seasons
+    try:
+        if Season is not None:
+            seasons = Season.objects.all().values("id", "name")
+        else:
+            raise Exception("Season model not available")
+    except Exception:
+        seasons = (
+            base_subs.values("season_id", "season__name")
+            .distinct()
+            .order_by("season__name")
+        )
+        seasons = [{"id": row["season_id"], "name": row["season__name"] or "—"} for row in seasons if row["season_id"]]
+
+    # Products
+    try:
+        if Product is not None:
+            products = Product.objects.all().values("id", "name")
+        else:
+            raise Exception("Product model not available")
+    except Exception:
+        products = (
+            base_subs.values("product_id", "product__name")
+            .distinct()
+            .order_by("product__name")
+        )
+        products = [{"id": row["product_id"], "name": row["product__name"] or "—"} for row in products if row["product_id"]]
+
+    # Normalize to simple lists of dicts in both cases
+    seasons = [{"id": s["id"], "name": s["name"]} for s in seasons]
+    products = [{"id": p["id"], "name": p["name"]} for p in products]
+    return seasons, products
+
+def _update_subscription_status(sub, new_status, user):
+    old_status = sub.status
+    sub.status = new_status
+    if new_status == "active" and not sub.started_at:
+        sub.started_at = now()
+    sub.save(update_fields=["status", "started_at"])
+    return old_status, new_status
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Admin/Staff: Player list
@@ -494,3 +584,176 @@ class StaffHomeView(LoginRequiredMixin, PermissionRequiredMixin, TemplateView):
             "upcoming_birthdays": upcoming,
         })
         return ctx
+    
+
+class MembershipOverviewView(LoginRequiredMixin, PermissionRequiredMixin, TemplateView):
+    permission_required = "members.view_staff_area"
+    raise_exception = True
+    template_name = "staff/memberships/overview.html"
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+
+        players = _players_in_scope(self.request)
+
+        season_id = self.request.GET.get("season")
+        product_id = self.request.GET.get("product")
+
+        sub_filter = Q(player__in=players)
+        if season_id and season_id.isdigit():
+            sub_filter &= Q(season_id=int(season_id))
+        if product_id and product_id.isdigit():
+            sub_filter &= Q(product_id=int(product_id))
+
+        subs = Subscription.objects.filter(sub_filter)
+
+        status_counts = subs.values("status").annotate(total=Count("id")).order_by("status")
+        kpi = {row["status"] or "unknown": row["total"] for row in status_counts}
+        ctx["kpi"] = {
+            "active": kpi.get("active", 0),
+            "pending": kpi.get("pending", 0),
+            "paused": kpi.get("paused", 0),
+            "cancelled": kpi.get("cancelled", 0),
+        }
+
+        ctx["by_product"] = subs.values("product__name").annotate(total=Count("id")).order_by("product__name")
+        ctx["by_season"]  = subs.values("season__name").annotate(total=Count("id")).order_by("season__name")
+
+        players_annotated = players.annotate(**_current_subqs())
+        if season_id and season_id.isdigit():
+            season_filtered_current = (
+                Subscription.objects
+                .filter(player=OuterRef("pk"), status__in=["active", "pending"], season_id=int(season_id))
+                .order_by("-started_at")
+            )
+            players_annotated = players.annotate(
+                curr_status=Subquery(season_filtered_current.values("status")[:1]),
+                curr_product=Subquery(season_filtered_current.values("product__name")[:1]),
+                curr_season=Subquery(season_filtered_current.values("season__name")[:1]),
+                curr_started=Subquery(season_filtered_current.values("started_at")[:1]),
+                curr_id=Subquery(season_filtered_current.values("id")[:1]),
+            )
+
+        no_current = players_annotated.filter(Q(curr_status__isnull=True) | ~Q(curr_status__in=["active", "pending"]))
+        ctx["no_current_count"] = no_current.count()
+        ctx["no_current_players"] = no_current.order_by("last_name", "first_name")[:25]
+
+        ctx["seasons"], ctx["products"] = _season_product_options(players)
+        ctx["selected_season"] = int(season_id) if season_id and season_id.isdigit() else None
+        ctx["selected_product"] = int(product_id) if product_id and product_id.isdigit() else None
+
+        return ctx
+
+
+class SubscriptionListView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
+    permission_required = "members.view_staff_area"
+    raise_exception = True
+    template_name = "staff/memberships/list.html"
+    paginate_by = 25
+    context_object_name = "subscriptions"
+
+    def get_queryset(self):
+        players = _players_in_scope(self.request)
+
+        qs = (
+            Subscription.objects
+            .select_related("player", "player__player_type", "product", "season")
+            .filter(player__in=players)
+            .order_by("-started_at", "-id")   # ← replace "-created_at" with "-id"
+        )
+
+        status = (self.request.GET.get("status") or "").strip().lower()
+        if status in {"active", "pending", "paused", "cancelled"}:
+            qs = qs.filter(status=status)
+
+        season_id = self.request.GET.get("season")
+        if season_id and season_id.isdigit():
+            qs = qs.filter(season_id=int(season_id))
+
+        product_id = self.request.GET.get("product")
+        if product_id and product_id.isdigit():
+            qs = qs.filter(product_id=int(product_id))
+
+        team_id = self.request.GET.get("team")
+        if team_id and team_id.isdigit():
+            qs = qs.filter(player__team_memberships__team_id=int(team_id))
+
+        player_type_id = self.request.GET.get("player_type")
+        if player_type_id and player_type_id.isdigit():
+            qs = qs.filter(player__player_type_id=int(player_type_id))
+
+        q = (self.request.GET.get("q") or "").strip()
+        if q:
+            qs = qs.filter(
+                Q(player__first_name__icontains=q) |
+                Q(player__last_name__icontains=q)  |
+                Q(product__name__icontains=q)
+            ).distinct()
+
+        return qs.distinct()
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx["statuses"] = ["active", "pending", "paused", "cancelled"]
+        ctx["seasons"], ctx["products"] = _season_product_options(_players_in_scope(self.request))
+        ctx["teams"]    = Team.objects.filter(active=True)
+        ctx["player_types"] = PlayerType.objects.all()
+
+        g = self.request.GET
+        ctx["values"] = {
+            "q": g.get("q", ""),
+            "status": g.get("status", ""),
+            "season": g.get("season", ""),
+            "product": g.get("product", ""),
+            "team": g.get("team", ""),
+            "player_type": g.get("player_type", ""),
+        }
+        return ctx
+    
+
+@login_required
+@permission_required("memberships.activate_subscription", raise_exception=True)
+@require_POST
+@transaction.atomic
+def activate_subscription(request, subscription_id):
+    sub = get_object_or_404(Subscription.objects.select_for_update(), id=subscription_id)
+
+    if sub.status != "pending":
+        messages.warning(request, "Only pending subscriptions can be activated.")
+    else:
+        _update_subscription_status(sub, "active", request.user)
+        messages.success(request, f"Subscription #{sub.id} activated.")
+
+    return redirect(request.META.get("HTTP_REFERER") or "staff:memberships_list")
+
+
+@login_required
+@permission_required("memberships.set_pending_subscription", raise_exception=True)
+@require_POST
+@transaction.atomic
+def set_pending_subscription(request, subscription_id):
+    sub = get_object_or_404(Subscription.objects.select_for_update(), id=subscription_id)
+
+    if sub.status == "cancelled":
+        messages.warning(request, "Cancelled subscriptions cannot be set back to pending.")
+    else:
+        _update_subscription_status(sub, "pending", request.user)
+        messages.success(request, f"Subscription #{sub.id} set back to pending.")
+
+    return redirect(request.META.get("HTTP_REFERER") or "staff:memberships_list")
+
+
+@login_required
+@permission_required("memberships.cancel_subscription", raise_exception=True)
+@require_POST
+@transaction.atomic
+def cancel_subscription(request, subscription_id):
+    sub = get_object_or_404(Subscription.objects.select_for_update(), id=subscription_id)
+
+    if sub.status == "cancelled":
+        messages.info(request, "Subscription already cancelled.")
+    else:
+        _update_subscription_status(sub, "cancelled", request.user)
+        messages.success(request, f"Subscription #{sub.id} cancelled.")
+
+    return redirect(request.META.get("HTTP_REFERER") or "staff:memberships_list")

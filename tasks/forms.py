@@ -11,35 +11,30 @@ User = get_user_model()
 ALLOWED_SUBJECT_APPS = ["members", "memberships", "spond_integration", "resources", "tasks"]
 
 class TaskCreateForm(forms.ModelForm):
+    assigned_to = forms.ModelChoiceField(
+        queryset=User.objects.all(),
+        required=False,
+        label="Assign to",
+        empty_label="",  # avoids "----------" and lets TS placeholder show
+        widget=forms.Select(attrs={"style": "width:100%;"})
+    )
+
+    # hide and force True (all manual tasks)
+    allow_manual_complete = forms.BooleanField(
+        required=False,
+        initial=True,
+        widget=forms.HiddenInput()
+    )
+
     class Meta:
         model = Task
-        fields = [
-            "title", "description",
-            "assigned_to", "due_at",
-            "subject_ct", "subject_id",
-            "complete_on", "allow_manual_complete",
-        ]
+        fields = ["title", "description", "assigned_to", "due_at", "allow_manual_complete"]
         widgets = {
-            "due_at": forms.DateTimeInput(attrs={"type": "datetime-local"}),
-            "complete_on": forms.DateInput(attrs={"type": "date"}),
+            "due_at": forms.DateTimeInput(attrs={"type": "datetime-local", "class": "form-control"}),
         }
 
-    subject_ct = forms.ModelChoiceField(
-        queryset=ContentType.objects.filter(app_label__in=ALLOWED_SUBJECT_APPS),
-        label="Subject type",
-    )
-    subject_id = forms.CharField(label="Subject ID / PK")
-    assigned_to = forms.ModelChoiceField(queryset=User.objects.all(), required=False)
-
-    def clean(self):
-        cleaned = super().clean()
-        ct = cleaned.get("subject_ct")
-        sid = cleaned.get("subject_id")
-        if ct and sid:
-            model = ct.model_class()
-            if not model.objects.filter(pk=sid).exists():
-                raise forms.ValidationError("Subject object not found for the provided ID.")
-        return cleaned
+    def clean_due_at(self):
+        return self.cleaned_data.get("due_at") or None
 
 class TaskBulkGenerateForm(forms.Form):
     # Task fields

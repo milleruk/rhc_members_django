@@ -17,6 +17,8 @@ urlpatterns = [
     # If it's a class-based view, change to views.DashboardView.as_view()
     #path("dashboard/", members.views.dashboard, name="dashboard"),
     path("", include("members.urls")),
+    path("api/passes/", include("django_walletpass.urls")),  # webservice endpoints (ok to register now)
+    path("wallet/", include("memberships.wallet_urls")),     # our helper endpoints below
 
     # ---- Apps (namespaced) ----
     path("tasks/", include(("tasks.urls", "tasks"), namespace="tasks")),

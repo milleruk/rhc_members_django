@@ -183,6 +183,10 @@ class TaskCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateView):
 
     def form_valid(self, form):
         form.instance.created_by = self.request.user
+        if hasattr(form.instance, "allow_manual_complete"):
+            form.instance.allow_manual_complete = True
+        if hasattr(form.instance, "assigned_to") and not form.cleaned_data.get("assigned_to"):
+            form.instance.assigned_to = self.request.user  # optional default
         return super().form_valid(form)
 
 

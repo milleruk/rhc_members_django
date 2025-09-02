@@ -1,0 +1,202 @@
+{% extends "base.html" %}
+{% block title %}All Subscriptions{% endblock %}
+
+{% block content %}
+<div class="content-header py-2">
+  <div class="container-fluid d-flex justify-content-between align-items-center">
+    <div>
+      <h1 class="m-0 h4">All Subscriptions</h1>
+      <p class="text-muted small mb-0">Search and filter within your staff scope.</p>
+    </div>
+    <div>
+      <a class="btn btn-sm btn-outline-secondary" href="{% url 'staff:memberships_overview' %}">Back to Overview</a>
+    </div>
+  </div>
+</div>
+
+<section class="content">
+  <div class="container-fluid">
+
+    <!-- Filters -->
+    <form class="card card-body mb-3" method="get" action="">
+      <div class="form-row">
+        <div class="col-md-3">
+          <label class="small text-muted mb-1">Search</label>
+          <input type="text"
+                 class="form-control form-control-sm"
+                 name="q"
+                 value="{{ values.q }}"
+                 placeholder="Player or product...">
+        </div>
+
+        <div class="col-md-2">
+          <label class="small text-muted mb-1">Status</label>
+          <select name="status" class="form-control form-control-sm">
+            <option value="" {% if not values.status %}selected{% endif %}>Any</option>
+            {% for s in statuses %}
+              <option value="{{ s }}" {% if values.status == s %}selected{% endif %}>{{ s|capfirst }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="col-md-2">
+          <label class="small text-muted mb-1">Season</label>
+          <select name="season" class="form-control form-control-sm">
+            <option value="" {% if not values.season %}selected{% endif %}>Any</option>
+            {% for s in seasons %}
+              <option value="{{ s.id }}" {% if values.season|add:'' == s.id|add:'' %}selected{% endif %}>{{ s.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="col-md-2">
+          <label class="small text-muted mb-1">Product</label>
+          <select name="product" class="form-control form-control-sm">
+            <option value="" {% if not values.product %}selected{% endif %}>Any</option>
+            {% for p in products %}
+              <option value="{{ p.id }}" {% if values.product|add:'' == p.id|add:'' %}selected{% endif %}>{{ p.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="col-md-2">
+          <label class="small text-muted mb-1">Team</label>
+          <select name="team" class="form-control form-control-sm">
+            <option value="" {% if not values.team %}selected{% endif %}>Any</option>
+            {% for t in teams %}
+              <option value="{{ t.id }}" {% if values.team|add:'' == t.id|add:'' %}selected{% endif %}>{{ t.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="col-md-1">
+          <label class="small text-muted mb-1">Type</label>
+          <select name="player_type" class="form-control form-control-sm">
+            <option value="" {% if not values.player_type %}selected{% endif %}>Any</option>
+            {% for pt in player_types %}
+              <option value="{{ pt.id }}" {% if values.player_type|add:'' == pt.id|add:'' %}selected{% endif %}>{{ pt.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+
+      <div class="mt-2 d-flex">
+        <button class="btn btn-sm btn-primary mr-2" type="submit">Filter</button>
+        <a class="btn btn-sm btn-light" href="{% url 'staff:memberships_list' %}">Reset</a>
+      </div>
+    </form>
+
+    <!-- Results -->
+    <div class="card">
+      <div class="card-body p-0">
+            <table class="table table-sm mb-0">
+              <thead>
+                <tr>
+                  <th>Player</th>
+                  <th>Type</th>
+                  <th>Product</th>
+                  <th>Season</th>
+                  <th>Status</th>
+                  <th>Started</th>
+                  <th class="text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for s in subscriptions %}
+                  <tr>
+                    <td>{{ s.player.first_name }} {{ s.player.last_name }}</td>
+                    <td>{{ s.player.player_type.name|default:"—" }}</td>
+                    <td>{{ s.product.name|default:"—" }}</td>
+                    <td>{{ s.season.name|default:"—" }}</td>
+                    <td>
+                      {% if s.status == 'active' %}
+                        <span class="badge badge-success">Active</span>
+                      {% elif s.status == 'pending' %}
+                        <span class="badge badge-info">Pending</span>
+                      {% elif s.status == 'paused' %}
+                        <span class="badge badge-warning">Paused</span>
+                      {% elif s.status == 'cancelled' %}
+                        <span class="badge badge-danger">Cancelled</span>
+                      {% else %}
+                        <span class="badge badge-secondary">{{ s.status|capfirst|default:'—' }}</span>
+                      {% endif %}
+                    </td>
+                    <td>{{ s.started_at|date:"Y-m-d" }}</td>
+                    <td class="text-right">
+                      <a class="btn btn-xs btn-outline-secondary" href="{% url 'staff:player_detail' s.player_id %}">Player</a>
+
+                      {% if s.status == 'pending' and perms.memberships.activate_subscription %}
+                        <form method="post" action="{% url 'staff:activate_subscription' s.id %}" class="d-inline">
+                          {% csrf_token %}
+                          <button type="submit" class="btn btn-xs btn-success"
+                                  onclick="return confirm('Activate this subscription for {{ s.player.first_name }} {{ s.player.last_name }}?');">
+                            Activate
+                          </button>
+                        </form>
+                      {% endif %}
+
+                      {% if s.status == 'active' and perms.memberships.set_pending_subscription %}
+                        <form method="post" action="{% url 'staff:set_pending_subscription' s.id %}" class="d-inline">
+                          {% csrf_token %}
+                          <button type="submit" class="btn btn-xs btn-warning"
+                                  onclick="return confirm('Set subscription for {{ s.player.first_name }} {{ s.player.last_name }} back to Pending?');">
+                            Set Pending
+                          </button>
+                        </form>
+                      {% endif %}
+
+                      {% if s.status != 'cancelled' and perms.memberships.cancel_subscription %}
+                        <form method="post" action="{% url 'staff:cancel_subscription' s.id %}" class="d-inline">
+                          {% csrf_token %}
+                          <button type="submit" class="btn btn-xs btn-danger"
+                                  onclick="return confirm('Cancel this subscription for {{ s.player.first_name }} {{ s.player.last_name }}?');">
+                            Cancel
+                          </button>
+                        </form>
+                      {% endif %}
+                    </td>
+
+                  </tr>
+                {% empty %}
+                  <tr>
+                    <td colspan="7" class="text-muted p-3">No subscriptions match your filters.</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+      </div>
+
+      {% if is_paginated %}
+      <div class="card-footer">
+        {% with qp=request.GET.urlencode %}
+          <nav>
+            <ul class="pagination pagination-sm mb-0">
+              {% if page_obj.has_previous %}
+                <li class="page-item">
+                  <a class="page-link"
+                     href="?{% if qp %}{{ qp|cut:'page='|cut:'&&' }}&{% endif %}page={{ page_obj.previous_page_number }}">«</a>
+                </li>
+              {% else %}
+                <li class="page-item disabled"><span class="page-link">«</span></li>
+              {% endif %}
+
+              <li class="page-item active"><span class="page-link">{{ page_obj.number }}</span></li>
+
+              {% if page_obj.has_next %}
+                <li class="page-item">
+                  <a class="page-link"
+                     href="?{% if qp %}{{ qp|cut:'page='|cut:'&&' }}&{% endif %}page={{ page_obj.next_page_number }}">»</a>
+                </li>
+              {% else %}
+                <li class="page-item disabled"><span class="page-link">»</span></li>
+              {% endif %}
+            </ul>
+          </nav>
+        {% endwith %}
+      </div>
+      {% endif %}
+    </div>
+
+  </div>
+</section>
+{% endblock %}

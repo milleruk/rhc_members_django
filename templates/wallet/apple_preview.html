@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Apple Wallet Preview{% endblock %}
+
+{% block content %}
+<div class="content">
+  <div class="container">
+    <div class="card card-outline card-primary">
+      <div class="card-header">
+        <h3 class="card-title mb-0"><i class="fab fa-apple mr-2"></i> Apple Wallet (Preview)</h3>
+      </div>
+      <div class="card-body">
+        {% if not WALLET_APPLE_ENABLED %}
+          <p class="text-danger"><strong>Apple Wallet is not enabled.</strong><br>
+          You’ll need an Apple Developer licence and a Pass Type ID certificate before this works.</p>
+        {% endif %}
+        <pre class="bg-light p-3 rounded border small">{{ payload }}</pre>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

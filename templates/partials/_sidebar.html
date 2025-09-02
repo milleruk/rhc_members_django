@@ -25,7 +25,7 @@
         <li class="nav-header">GENERAL</li>
 
         <li class="nav-item">
-          <a href="{% url 'dashboard' %}" class="nav-link {% if p == '/dashboard/' %}active{% endif %}">
+          <a href="{% url 'dashboard' %}" class="nav-link {% if p == '/players/' %}active{% endif %}">
             <i class="nav-icon fas fa-home"></i><p>Dashboard</p>
           </a>
         </li>
@@ -71,6 +71,19 @@
               class="nav-link {% if request.path|slice:':14' == '/staff/players' %}active{% endif %}">
               <i class="nav-icon fas fa-users"></i>
               <p>Player List</p>
+            </a>
+          </li>
+
+          <li class="nav-item">
+            <a href="{% url 'staff:memberships_overview' %}"
+              class="nav-link {% if request.path == '/staff/memberships/' %}active{% endif %}">
+              <i class="nav-icon fas fa-id-card-alt"></i><p>Memberships</p>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="{% url 'staff:memberships_list' %}"
+              class="nav-link {% if request.path|slice:':19' == '/staff/memberships' and request.path != '/staff/memberships/' %}active{% endif %}">
+              <i class="nav-icon fas fa-list"></i><p>All Subscriptions</p>
             </a>
           </li>
 
