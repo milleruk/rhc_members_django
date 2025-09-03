@@ -13,9 +13,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+
       - name: Cache pip
         uses: actions/cache@v4
         with:
@@ -23,16 +25,22 @@ jobs:
           key: pip-${{ runner.os }}-${{ hashFiles('**/requirements*.txt') }}
           restore-keys: |
             pip-${{ runner.os }}-
-      - name: Install linters
+
+      - name: Install pre-commit
         run: |
           python -m pip install --upgrade pip
-          pip install flake8 black isort
-      - name: Lint (flake8)
-        run: flake8 .
-      - name: Format checks (black)
-        run: black --check .
-      - name: Import order (isort)
-        run: isort --profile black --check-only .
+          pip install pre-commit
+
+      - name: Cache pre-commit environments
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pre-commit
+          key: precommit-${{ runner.os }}-${{ hashFiles('.pre-commit-config.yaml') }}
+          restore-keys: |
+            precommit-${{ runner.os }}-
+
+      - name: Run pre-commit (lint & format checks)
+        run: pre-commit run --all-files
 
   test:
     runs-on: ubuntu-latest
@@ -40,16 +48,19 @@ jobs:
       DJANGO_SETTINGS_MODULE: hockey_club.settings
       PYTHONDONTWRITEBYTECODE: 1
       PYTHONUNBUFFERED: 1
-      SECRET_KEY: dummy-but-long-enough-1234567890abcdefghijklmnopqrstuvwxyzXYZ  # for CI only
+      SECRET_KEY: dummy-but-long-enough-1234567890abcdefghijklmnopqrstuvwxyzXYZ
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+
       - name: System libs (safe even if unused)
         run: |
           sudo apt-get update
           sudo apt-get install -y build-essential libmariadb-dev libpq-dev
+
       - name: Cache pip
         uses: actions/cache@v4
         with:
@@ -57,17 +68,22 @@ jobs:
           key: pip-${{ runner.os }}-${{ hashFiles('**/requirements*.txt') }}
           restore-keys: |
             pip-${{ runner.os }}-
+
       - name: Install deps
         run: |
           python -m pip install --upgrade pip
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
           pip install pytest pytest-django pytest-cov
+
       - name: Prepare static dir (avoid staticfiles warning)
         run: mkdir -p static
+
       - name: Django checks (non-deploy)
-        run: python manage.py check  # no --deploy; don't fail on warnings in CI
+        run: python manage.py check
+
       - name: Run tests
         run: pytest -q --cov=. --cov-report=xml --cov-report=term-missing
+
       - name: Upload coverage.xml
         uses: actions/upload-artifact@v4
         with:
