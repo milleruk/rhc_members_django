@@ -9,10 +9,16 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument(
-            "--from", dest="from_name", required=True, help="Source season name (e.g. 2024/25)"
+            "--from",
+            dest="from_name",
+            required=True,
+            help="Source season name (e.g. 2024/25)",
         )
         parser.add_argument(
-            "--to", dest="to_name", required=True, help="Target season name (must exist)"
+            "--to",
+            dest="to_name",
+            required=True,
+            help="Target season name (must exist)",
         )
 
     @transaction.atomic

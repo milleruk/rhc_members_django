@@ -21,7 +21,10 @@ class Migration(migrations.Migration):
                 (
                     "id",
                     models.BigAutoField(
-                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
                     ),
                 ),
                 ("name", models.CharField(max_length=32, unique=True)),
@@ -39,14 +42,20 @@ class Migration(migrations.Migration):
                 (
                     "id",
                     models.BigAutoField(
-                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
                     ),
                 ),
                 ("code", models.SlugField(unique=True)),
                 ("label", models.CharField(max_length=100)),
                 ("description", models.TextField(blank=True)),
                 ("is_selectable", models.BooleanField(default=True)),
-                ("applies_to", models.ManyToManyField(blank=True, to="members.playertype")),
+                (
+                    "applies_to",
+                    models.ManyToManyField(blank=True, to="members.playertype"),
+                ),
             ],
         ),
         migrations.CreateModel(
@@ -55,7 +64,10 @@ class Migration(migrations.Migration):
                 (
                     "id",
                     models.BigAutoField(
-                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
                     ),
                 ),
                 ("name", models.CharField(max_length=150)),
@@ -91,16 +103,26 @@ class Migration(migrations.Migration):
                 (
                     "id",
                     models.BigAutoField(
-                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
                     ),
                 ),
                 ("label", models.CharField(max_length=120)),
-                ("instalment_amount_gbp", models.DecimalField(decimal_places=2, max_digits=8)),
+                (
+                    "instalment_amount_gbp",
+                    models.DecimalField(decimal_places=2, max_digits=8),
+                ),
                 ("instalment_count", models.PositiveIntegerField()),
                 (
                     "frequency",
                     models.CharField(
-                        choices=[("once", "One-off"), ("monthly", "Monthly"), ("weekly", "Weekly")],
+                        choices=[
+                            ("once", "One-off"),
+                            ("monthly", "Monthly"),
+                            ("weekly", "Weekly"),
+                        ],
                         default="monthly",
                         max_length=16,
                     ),
@@ -127,7 +149,10 @@ class Migration(migrations.Migration):
                 (
                     "id",
                     models.BigAutoField(
-                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
                     ),
                 ),
                 ("name", models.CharField(max_length=80)),
@@ -153,7 +178,10 @@ class Migration(migrations.Migration):
                 (
                     "id",
                     models.BigAutoField(
-                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
                     ),
                 ),
                 ("started_at", models.DateField(auto_now_add=True)),

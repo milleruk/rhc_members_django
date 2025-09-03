@@ -15,14 +15,16 @@ class Migration(migrations.Migration):
             model_name="membershipproduct",
             name="pay_per_match",
             field=models.BooleanField(
-                default=False, help_text="If true, no membership payments; player pays per match."
+                default=False,
+                help_text="If true, no membership payments; player pays per match.",
             ),
         ),
         migrations.AddField(
             model_name="membershipproduct",
             name="requires_plan",
             field=models.BooleanField(
-                default=True, help_text="If false, plan is optional (e.g., £0 guest memberships)."
+                default=True,
+                help_text="If false, plan is optional (e.g., £0 guest memberships).",
             ),
         ),
         migrations.AlterField(
@@ -47,7 +49,10 @@ class Migration(migrations.Migration):
                 (
                     "id",
                     models.BigAutoField(
-                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
                     ),
                 ),
                 ("name", models.CharField(default="League Match", max_length=80)),

@@ -83,7 +83,9 @@ class RequireMFAMixin:
                 Model = import_string(dotted)
                 for d in Model.objects.filter(user=user):
                     confirmed = getattr(
-                        d, "confirmed", getattr(d, "is_confirmed", getattr(d, "confirmed_at", None))
+                        d,
+                        "confirmed",
+                        getattr(d, "is_confirmed", getattr(d, "confirmed_at", None)),
                     )
                     active = getattr(d, "is_active", True)
                     if (confirmed is True or confirmed) and active:

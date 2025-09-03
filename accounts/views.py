@@ -55,7 +55,8 @@ class SignupView(FormView):
 
         transaction.on_commit(lambda: send_activation_email(self.request, user))
         messages.success(
-            self.request, "Account created. Please check your email to confirm before logging in."
+            self.request,
+            "Account created. Please check your email to confirm before logging in.",
         )
         return super().form_valid(form)
 
@@ -101,7 +102,8 @@ class ResendConfirmationView(FormView):
             user = User.objects.get(email__iexact=email)
         except User.DoesNotExist:
             messages.info(
-                self.request, "If that address exists, a verification email has been sent."
+                self.request,
+                "If that address exists, a verification email has been sent.",
             )
             return super().form_valid(form)
 

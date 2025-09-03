@@ -30,7 +30,14 @@ except Exception:
 ATTENDED_STATUSES = getattr(
     settings,
     "SPOND_ATTENDED_STATUSES",
-    ["attended", "present", "checked_in", "yes", "confirmed", "going"],  # customise as you like
+    [
+        "attended",
+        "present",
+        "checked_in",
+        "yes",
+        "confirmed",
+        "going",
+    ],  # customise as you like
 )
 
 PERM = "spond_integration.access_spond_app"
@@ -80,7 +87,9 @@ def link_player(request, player_id: int):
         return HttpResponseBadRequest("Invalid Spond member")
 
     link, _ = PlayerSpondLink.objects.update_or_create(
-        player=player, spond_member=sm, defaults={"linked_by": request.user, "active": True}
+        player=player,
+        spond_member=sm,
+        defaults={"linked_by": request.user, "active": True},
     )
     return JsonResponse({"ok": True, "link_id": link.id})
 
@@ -174,7 +183,7 @@ class SpondDashboardView(LoginRequiredMixin, PermissionRequiredMixin, TemplateVi
                 "events": events_qs,
                 "has_events": has_events,
                 "q": q,
-                "selected_group": int(group_id) if group_id and str(group_id).isdigit() else None,
+                "selected_group": (int(group_id) if group_id and str(group_id).isdigit() else None),
                 "kpi": {
                     "total_groups": total_groups,
                     "total_members": total_members,
@@ -282,7 +291,7 @@ class SpondEventsDashboardView(LoginRequiredMixin, PermissionRequiredMixin, Temp
             {
                 "q": q,
                 "when": when,
-                "selected_group": int(group_id) if group_id and group_id.isdigit() else None,
+                "selected_group": (int(group_id) if group_id and group_id.isdigit() else None),
                 "selected_kind": kind if kind in {"MATCH", "EVENT"} else "",
                 "groups": SpondGroup.objects.all()
                 .annotate(member_count=Count("members"))
@@ -432,7 +441,11 @@ def debug_spond_methods(request):
                             if isinstance(res, (list, tuple))
                             else (len(res or {}) if isinstance(res, dict) else 1)
                         )
-                        tried[cand] = {"ok": True, "count": count, "type": type(res).__name__}
+                        tried[cand] = {
+                            "ok": True,
+                            "count": count,
+                            "type": type(res).__name__,
+                        }
                     except TypeError as e:
                         tried[cand] = {"ok": False, "error": f"TypeError: {e}"}
                     except Exception as e:
@@ -481,10 +494,16 @@ def debug_spond_call(request):
         data = run_async(_fetch())
     except Exception as e:
         return JsonResponse(
-            {"error": f"fetch failed: {e!r}", "path": path, "params": forward}, status=500
+            {"error": f"fetch failed: {e!r}", "path": path, "params": forward},
+            status=500,
         )
 
-    payload = {"path": path, "params": forward, "type": type(data).__name__, "data": data}
+    payload = {
+        "path": path,
+        "params": forward,
+        "type": type(data).__name__,
+        "data": data,
+    }
     if pretty:
         return HttpResponse(
             json.dumps(payload, indent=2, ensure_ascii=False),

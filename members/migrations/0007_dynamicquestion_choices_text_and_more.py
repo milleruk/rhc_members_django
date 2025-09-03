@@ -14,14 +14,19 @@ class Migration(migrations.Migration):
             model_name="dynamicquestion",
             name="choices_text",
             field=models.TextField(
-                blank=True, help_text="For dropdown questions, provide options separated by commas"
+                blank=True,
+                help_text="For dropdown questions, provide options separated by commas",
             ),
         ),
         migrations.AlterField(
             model_name="dynamicquestion",
             name="question_type",
             field=models.CharField(
-                choices=[("text", "Text"), ("boolean", "Checkbox"), ("choice", "Dropdown")],
+                choices=[
+                    ("text", "Text"),
+                    ("boolean", "Checkbox"),
+                    ("choice", "Dropdown"),
+                ],
                 default="text",
                 max_length=10,
             ),

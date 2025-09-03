@@ -17,7 +17,13 @@ from members.models import Player
 from tasks.events import emit
 
 from .forms import ConfirmSubscriptionForm
-from .models import MembershipProduct, PaymentPlan, Season, Subscription, resolve_match_fee_for
+from .models import (
+    MembershipProduct,
+    PaymentPlan,
+    Season,
+    Subscription,
+    resolve_match_fee_for,
+)
 from .permissions import can_manage_player
 
 # ---------------------------
@@ -217,7 +223,7 @@ def confirm(request: HttpRequest, player_id: int, plan_id: int) -> HttpResponse:
                         product=product,
                         plan=plan,  # may be None
                         status="pending",
-                        created_by=request.user if request.user.is_authenticated else None,
+                        created_by=(request.user if request.user.is_authenticated else None),
                     )
                     sub.full_clean()  # validates requires_plan + season alignment
                     sub.save()  # model.save() sets season from product

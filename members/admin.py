@@ -46,7 +46,12 @@ class PlayerAdmin(admin.ModelAdmin):
         "created_at",
     )
     readonly_fields = ("public_id",)
-    search_fields = ("first_name", "last_name", "created_by__username", "created_by__email")
+    search_fields = (
+        "first_name",
+        "last_name",
+        "created_by__username",
+        "created_by__email",
+    )
     list_filter = ("player_type", "relation")
 
 
@@ -77,7 +82,12 @@ class DynamicQuestionAdmin(admin.ModelAdmin):
 class PlayerAnswerAdmin(admin.ModelAdmin):
     list_display = ("player", "question", "boolean_answer", "short_text")
     list_select_related = ("player", "question")
-    search_fields = ("player__first_name", "player__last_name", "question__label", "text_answer")
+    search_fields = (
+        "player__first_name",
+        "player__last_name",
+        "question__label",
+        "text_answer",
+    )
 
     def short_text(self, obj):
         return (obj.text_answer or obj.detail_text)[:60]

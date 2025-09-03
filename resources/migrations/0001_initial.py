@@ -21,7 +21,10 @@ class Migration(migrations.Migration):
                 (
                     "id",
                     models.BigAutoField(
-                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
                     ),
                 ),
                 ("title", models.CharField(max_length=200)),
@@ -50,15 +53,24 @@ class Migration(migrations.Migration):
                 (
                     "id",
                     models.BigAutoField(
-                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
                     ),
                 ),
                 ("title", models.CharField(max_length=200)),
                 ("category", models.CharField(blank=True, max_length=100)),
                 ("body", models.TextField(blank=True)),
-                ("file", models.FileField(blank=True, null=True, upload_to="policies/")),
+                (
+                    "file",
+                    models.FileField(blank=True, null=True, upload_to="policies/"),
+                ),
                 ("is_active", models.BooleanField(default=True)),
-                ("published_at", models.DateTimeField(default=django.utils.timezone.now)),
+                (
+                    "published_at",
+                    models.DateTimeField(default=django.utils.timezone.now),
+                ),
                 ("created_at", models.DateTimeField(auto_now_add=True)),
                 ("updated_at", models.DateTimeField(auto_now=True)),
                 (
@@ -80,7 +92,10 @@ class Migration(migrations.Migration):
                 (
                     "id",
                     models.BigAutoField(
-                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
                     ),
                 ),
                 ("title", models.CharField(max_length=200)),

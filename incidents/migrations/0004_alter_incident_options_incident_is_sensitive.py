@@ -29,7 +29,8 @@ class Migration(migrations.Migration):
             model_name="incident",
             name="is_sensitive",
             field=models.BooleanField(
-                default=False, help_text="Tick if this report contains sensitive information."
+                default=False,
+                help_text="Tick if this report contains sensitive information.",
             ),
         ),
     ]

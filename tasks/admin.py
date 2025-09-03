@@ -36,7 +36,15 @@ class TaskAdmin(admin.ModelAdmin):
     fieldsets = (
         (
             None,
-            {"fields": ("title", "description", ("created_by", "assigned_to"), "status", "due_at")},
+            {
+                "fields": (
+                    "title",
+                    "description",
+                    ("created_by", "assigned_to"),
+                    "status",
+                    "due_at",
+                )
+            },
         ),
         (
             "Subject (generic link)",
@@ -91,7 +99,13 @@ class TaskAdmin(admin.ModelAdmin):
     def get_form(self, request, obj=None, **kwargs):
         form = super().get_form(request, obj, **kwargs)
         try:
-            allowed_apps = ["members", "memberships", "spond_integration", "resources", "tasks"]
+            allowed_apps = [
+                "members",
+                "memberships",
+                "spond_integration",
+                "resources",
+                "tasks",
+            ]
             form.base_fields["subject_ct"].queryset = ContentType.objects.filter(
                 app_label__in=allowed_apps
             )

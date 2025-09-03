@@ -14,7 +14,12 @@ from .models import (
     SpondMember,
     SpondTransaction,
 )
-from .services import SpondClient, fetch_events_between, fetch_groups_and_members, run_async
+from .services import (
+    SpondClient,
+    fetch_events_between,
+    fetch_groups_and_members,
+    run_async,
+)
 
 
 def _pick(*vals):
@@ -105,7 +110,11 @@ def _int_minor(amount):
 
 
 def _status_for_member(
-    member_id: str, accepted: set[str], declined: set[str], unanswered: set[str], reg_att: dict
+    member_id: str,
+    accepted: set[str],
+    declined: set[str],
+    unanswered: set[str],
+    reg_att: dict,
 ) -> str:
     """Pure helper: decide status given explicit inputs (no closures)."""
     ra = (reg_att.get(member_id) or "").upper()

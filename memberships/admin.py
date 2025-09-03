@@ -104,7 +104,15 @@ class MembershipProductAdmin(admin.ModelAdmin):
 
 @admin.register(MatchFeeTariff)
 class MatchFeeTariffAdmin(admin.ModelAdmin):
-    list_display = ("name", "season", "category", "product", "amount_gbp", "is_default", "active")
+    list_display = (
+        "name",
+        "season",
+        "category",
+        "product",
+        "amount_gbp",
+        "is_default",
+        "active",
+    )
     list_filter = ("season", "category", "product", "active", "is_default")
     search_fields = ("name", "season__name", "category__label", "product__name")
 
@@ -113,6 +121,11 @@ class MatchFeeTariffAdmin(admin.ModelAdmin):
 class SubscriptionAdmin(admin.ModelAdmin):
     list_display = ("player", "season", "product", "plan", "status", "started_at")
     list_filter = ("status", "season", "product__category")
-    search_fields = ("player__first_name", "player__last_name", "product__name", "external_ref")
+    search_fields = (
+        "player__first_name",
+        "player__last_name",
+        "product__name",
+        "external_ref",
+    )
     autocomplete_fields = ("player", "product", "plan", "created_by")
     list_select_related = ("season", "product", "product__season", "product__category")

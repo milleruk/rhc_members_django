@@ -65,10 +65,16 @@ class Migration(migrations.Migration):
                 (
                     "id",
                     models.BigAutoField(
-                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
                     ),
                 ),
-                ("name", models.CharField(default="Default incident review team", max_length=100)),
+                (
+                    "name",
+                    models.CharField(default="Default incident review team", max_length=100),
+                ),
                 ("is_active", models.BooleanField(default=True)),
                 (
                     "reviewers",

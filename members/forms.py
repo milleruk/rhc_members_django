@@ -7,7 +7,14 @@ from django.utils import timezone
 from django.utils.html import escape, linebreaks
 from django.utils.safestring import mark_safe
 
-from .models import DynamicQuestion, Player, PlayerAnswer, PlayerType, Position, TeamMembership
+from .models import (
+    DynamicQuestion,
+    Player,
+    PlayerAnswer,
+    PlayerType,
+    Position,
+    TeamMembership,
+)
 
 try:
     import markdown as md
@@ -22,7 +29,9 @@ def _md(text: str) -> str:
     if md:
         return mark_safe(
             md.markdown(
-                text, extensions=["extra", "sane_lists", "tables", "nl2br"], output_format="html5"
+                text,
+                extensions=["extra", "sane_lists", "tables", "nl2br"],
+                output_format="html5",
             )
         )
     return mark_safe(linebreaks(escape(text)))
@@ -31,7 +40,14 @@ def _md(text: str) -> str:
 class PlayerForm(forms.ModelForm):
     class Meta:
         model = Player
-        fields = ("first_name", "last_name", "date_of_birth", "gender", "relation", "player_type")
+        fields = (
+            "first_name",
+            "last_name",
+            "date_of_birth",
+            "gender",
+            "relation",
+            "player_type",
+        )
         widgets = {"date_of_birth": forms.DateInput(attrs={"type": "date"})}
         error_messages = {
             "date_of_birth": {

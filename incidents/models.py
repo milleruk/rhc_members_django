@@ -48,7 +48,11 @@ class Incident(models.Model):
     team = models.ForeignKey(Team, on_delete=models.SET_NULL, null=True, blank=True)
 
     primary_player = models.ForeignKey(
-        Player, on_delete=models.SET_NULL, null=True, blank=True, related_name="primary_incidents"
+        Player,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="primary_incidents",
     )
     role_involved = models.CharField(
         max_length=16, choices=RoleInvolved.choices, default=RoleInvolved.PLAYER

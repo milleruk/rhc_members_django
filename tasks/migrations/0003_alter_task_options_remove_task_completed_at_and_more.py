@@ -78,7 +78,11 @@ class Migration(migrations.Migration):
             model_name="task",
             name="status",
             field=models.CharField(
-                choices=[("open", "Open"), ("done", "Done"), ("dismissed", "Dismissed")],
+                choices=[
+                    ("open", "Open"),
+                    ("done", "Done"),
+                    ("dismissed", "Dismissed"),
+                ],
                 default="open",
                 max_length=12,
             ),

@@ -22,16 +22,29 @@ class Migration(migrations.Migration):
                 (
                     "id",
                     models.BigAutoField(
-                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
                     ),
                 ),
-                ("reported_at", models.DateTimeField(default=django.utils.timezone.now)),
+                (
+                    "reported_at",
+                    models.DateTimeField(default=django.utils.timezone.now),
+                ),
                 ("incident_datetime", models.DateTimeField()),
-                ("location", models.CharField(help_text="Pitch / venue / area", max_length=255)),
+                (
+                    "location",
+                    models.CharField(help_text="Pitch / venue / area", max_length=255),
+                ),
                 (
                     "activity_type",
                     models.CharField(
-                        choices=[("match", "Match"), ("training", "Training"), ("other", "Other")],
+                        choices=[
+                            ("match", "Match"),
+                            ("training", "Training"),
+                            ("other", "Other"),
+                        ],
                         default="match",
                         max_length=16,
                     ),
@@ -152,7 +165,10 @@ class Migration(migrations.Migration):
             options={
                 "ordering": ["-incident_datetime", "-id"],
                 "permissions": [
-                    ("can_action_incident", "Can action incidents (review/escalate/close)")
+                    (
+                        "can_action_incident",
+                        "Can action incidents (review/escalate/close)",
+                    )
                 ],
             },
         ),

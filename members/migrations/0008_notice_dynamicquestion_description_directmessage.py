@@ -19,7 +19,10 @@ class Migration(migrations.Migration):
                 (
                     "id",
                     models.BigAutoField(
-                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
                     ),
                 ),
                 ("title", models.CharField(max_length=200)),
@@ -27,7 +30,11 @@ class Migration(migrations.Migration):
                 (
                     "audience",
                     models.CharField(
-                        choices=[("all", "All"), ("senior", "Senior"), ("junior", "Junior")],
+                        choices=[
+                            ("all", "All"),
+                            ("senior", "Senior"),
+                            ("junior", "Junior"),
+                        ],
                         default="all",
                         max_length=50,
                     ),
@@ -56,18 +63,25 @@ class Migration(migrations.Migration):
                 (
                     "id",
                     models.BigAutoField(
-                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
                     ),
                 ),
                 ("subject", models.CharField(max_length=200)),
                 ("body", models.TextField()),
                 ("is_read", models.BooleanField(default=False)),
                 ("created_at", models.DateTimeField(auto_now_add=True)),
-                ("attachment", models.FileField(blank=True, null=True, upload_to="messages/")),
+                (
+                    "attachment",
+                    models.FileField(blank=True, null=True, upload_to="messages/"),
+                ),
                 (
                     "to_user",
                     models.ForeignKey(
-                        on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to=settings.AUTH_USER_MODEL,
                     ),
                 ),
             ],

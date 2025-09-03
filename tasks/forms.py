@@ -7,7 +7,13 @@ from .models import Task
 
 User = get_user_model()
 
-ALLOWED_SUBJECT_APPS = ["members", "memberships", "spond_integration", "resources", "tasks"]
+ALLOWED_SUBJECT_APPS = [
+    "members",
+    "memberships",
+    "spond_integration",
+    "resources",
+    "tasks",
+]
 
 
 class TaskCreateForm(forms.ModelForm):
@@ -26,7 +32,13 @@ class TaskCreateForm(forms.ModelForm):
 
     class Meta:
         model = Task
-        fields = ["title", "description", "assigned_to", "due_at", "allow_manual_complete"]
+        fields = [
+            "title",
+            "description",
+            "assigned_to",
+            "due_at",
+            "allow_manual_complete",
+        ]
         widgets = {
             "due_at": forms.DateTimeInput(
                 attrs={"type": "datetime-local", "class": "form-control"}

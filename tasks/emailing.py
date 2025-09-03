@@ -43,7 +43,12 @@ def _send_digest(to_user, tasks):
     list_url = reverse("tasks:my_list")
     base_list_url = f"{site_url}{list_url}" if site_url else list_url
 
-    ctx = {"user": to_user, "tasks": tasks, "base_list_url": base_list_url, "site_name": site_name}
+    ctx = {
+        "user": to_user,
+        "tasks": tasks,
+        "base_list_url": base_list_url,
+        "site_name": site_name,
+    }
     subject = f"[{site_name}] You have {len(tasks)} open task(s)"
 
     text_body = render_to_string("emails/tasks/digest.txt", ctx)

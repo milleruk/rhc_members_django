@@ -59,7 +59,15 @@ class BeatPeriodicTaskAdmin(SyncFromSettingsMixin, admin.ModelAdmin):
         "one_off",
         "queue",
     )
-    list_filter = ("enabled", "one_off", "queue", "crontab", "interval", "solar", "clocked")
+    list_filter = (
+        "enabled",
+        "one_off",
+        "queue",
+        "crontab",
+        "interval",
+        "solar",
+        "clocked",
+    )
     search_fields = ("name", "task")
     actions = ["run_selected_now"]
 
@@ -107,8 +115,22 @@ class BeatPeriodicTaskAdmin(SyncFromSettingsMixin, admin.ModelAdmin):
 # ---------- Schedules ----------
 @admin.register(BeatCrontabSchedule)
 class BeatCrontabScheduleAdmin(admin.ModelAdmin):
-    list_display = ("minute", "hour", "day_of_week", "day_of_month", "month_of_year", "timezone")
-    search_fields = ("minute", "hour", "day_of_week", "day_of_month", "month_of_year", "timezone")
+    list_display = (
+        "minute",
+        "hour",
+        "day_of_week",
+        "day_of_month",
+        "month_of_year",
+        "timezone",
+    )
+    search_fields = (
+        "minute",
+        "hour",
+        "day_of_week",
+        "day_of_month",
+        "month_of_year",
+        "timezone",
+    )
 
 
 @admin.register(BeatIntervalSchedule)

@@ -19,7 +19,10 @@ class Migration(migrations.Migration):
                 (
                     "id",
                     models.BigAutoField(
-                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
                     ),
                 ),
                 ("spond_txn_id", models.CharField(max_length=64, unique=True)),
@@ -32,7 +35,10 @@ class Migration(migrations.Migration):
                 ("settled_at", models.DateTimeField(blank=True, null=True)),
                 ("reference", models.CharField(blank=True, max_length=128)),
                 ("metadata", models.JSONField(blank=True, default=dict)),
-                ("last_synced_at", models.DateTimeField(default=django.utils.timezone.now)),
+                (
+                    "last_synced_at",
+                    models.DateTimeField(default=django.utils.timezone.now),
+                ),
                 (
                     "event",
                     models.ForeignKey(

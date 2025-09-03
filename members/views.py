@@ -137,7 +137,9 @@ def dashboard(request):
     pending_tasks = []
     user = request.user
     try:
-        from tasks.models import Task  # import here to avoid hard dependency at import time
+        from tasks.models import (  # import here to avoid hard dependency at import time
+            Task,
+        )
 
         # detect assignee field
         assignee_field = None

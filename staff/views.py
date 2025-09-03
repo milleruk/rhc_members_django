@@ -33,7 +33,11 @@ except Exception:
     Product = None
     Season = None
 
-COACH_GROUPS = ["Full Access", "Committee", "Coach"]  # keep in one place if you share it
+COACH_GROUPS = [
+    "Full Access",
+    "Committee",
+    "Coach",
+]  # keep in one place if you share it
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -421,7 +425,12 @@ class PlayerDetailView(LoginRequiredMixin, PermissionRequiredMixin, DetailView):
             elif qtype == "choice":
                 mapping = self._parse_choices(getattr(q, "choices_text", "") or "")
                 raw = None
-                for name in ("choice_answer", "choice_value", "selected_value", "text_answer"):
+                for name in (
+                    "choice_answer",
+                    "choice_value",
+                    "selected_value",
+                    "text_answer",
+                ):
                     if ans is not None and hasattr(ans, name):
                         raw = getattr(ans, name)
                         if raw not in (None, ""):
@@ -681,7 +690,9 @@ class MembershipOverviewView(LoginRequiredMixin, PermissionRequiredMixin, Templa
         players_annotated = players.annotate(**_current_subqs())
         if season_id and season_id.isdigit():
             season_filtered_current = Subscription.objects.filter(
-                player=OuterRef("pk"), status__in=["active", "pending"], season_id=int(season_id)
+                player=OuterRef("pk"),
+                status__in=["active", "pending"],
+                season_id=int(season_id),
             ).order_by("-started_at")
             players_annotated = players.annotate(
                 curr_status=Subquery(season_filtered_current.values("status")[:1]),

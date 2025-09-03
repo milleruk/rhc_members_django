@@ -156,7 +156,8 @@ class QuestionCategory(models.Model):
     name = models.CharField(max_length=100, unique=True)
     display_order = models.PositiveIntegerField(default=0)
     description = models.TextField(
-        blank=True, help_text="Optional detailed description or instructions (Markdown supported)."
+        blank=True,
+        help_text="Optional detailed description or instructions (Markdown supported).",
     )
 
     class Meta:
@@ -175,7 +176,8 @@ class DynamicQuestion(models.Model):
     label = models.CharField(max_length=255)
     help_text = models.CharField(max_length=255, blank=True)
     description = models.TextField(
-        blank=True, help_text="Optional detailed description or instructions (Markdown supported)."
+        blank=True,
+        help_text="Optional detailed description or instructions (Markdown supported).",
     )
     question_type = models.CharField(max_length=10, choices=QUESTION_TYPE_CHOICES, default="text")
     required = models.BooleanField(default=False)

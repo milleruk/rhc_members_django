@@ -21,7 +21,10 @@ class Migration(migrations.Migration):
                 (
                     "id",
                     models.BigAutoField(
-                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
                     ),
                 ),
                 ("name", models.CharField(max_length=20, unique=True)),
@@ -36,7 +39,10 @@ class Migration(migrations.Migration):
                 (
                     "id",
                     models.BigAutoField(
-                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
                     ),
                 ),
                 (
@@ -61,7 +67,8 @@ class Migration(migrations.Migration):
                 (
                     "requires_detail_if_yes",
                     models.BooleanField(
-                        default=False, help_text="If checkbox is ticked, require additional detail"
+                        default=False,
+                        help_text="If checkbox is ticked, require additional detail",
                     ),
                 ),
                 ("display_order", models.PositiveIntegerField(default=0)),
@@ -87,7 +94,10 @@ class Migration(migrations.Migration):
                 (
                     "id",
                     models.BigAutoField(
-                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
                     ),
                 ),
                 ("first_name", models.CharField(max_length=100)),
@@ -118,7 +128,8 @@ class Migration(migrations.Migration):
                 (
                     "player_type",
                     models.ForeignKey(
-                        on_delete=django.db.models.deletion.PROTECT, to="members.playertype"
+                        on_delete=django.db.models.deletion.PROTECT,
+                        to="members.playertype",
                     ),
                 ),
             ],
@@ -133,7 +144,10 @@ class Migration(migrations.Migration):
                 (
                     "id",
                     models.BigAutoField(
-                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
                     ),
                 ),
                 ("text_answer", models.TextField(blank=True)),

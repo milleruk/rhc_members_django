@@ -10,9 +10,13 @@ urlpatterns = [
     path("confirm/<int:player_id>/<int:plan_id>/", views.confirm, name="confirm"),
     path("mine/", views.my_memberships, name="mine"),
     path(
-        "subscription/<int:sub_id>/cancel/", views.subscription_cancel, name="subscription_cancel"
+        "subscription/<int:sub_id>/cancel/",
+        views.subscription_cancel,
+        name="subscription_cancel",
     ),
     path(
-        "subscription/<int:sub_id>/delete/", views.subscription_delete, name="subscription_delete"
+        "subscription/<int:sub_id>/delete/",
+        views.subscription_delete,
+        name="subscription_delete",
     ),
 ]

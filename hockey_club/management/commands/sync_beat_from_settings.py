@@ -147,7 +147,9 @@ class Command(BaseCommand):
 
         if ptype == "solar":
             so, _ = SolarSchedule.objects.get_or_create(
-                event=spec["event"], latitude=spec["latitude"], longitude=spec["longitude"]
+                event=spec["event"],
+                latitude=spec["latitude"],
+                longitude=spec["longitude"],
             )
             base["solar"] = so
             return base

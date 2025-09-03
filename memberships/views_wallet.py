@@ -32,7 +32,11 @@ def _pass_payload(player):
         "generic": {
             "primaryFields": [{"key": "name", "label": "Member", "value": name}],
             "auxiliaryFields": [
-                {"key": "member_no", "label": "Number", "value": f"RHC{player.membership_number}"}
+                {
+                    "key": "member_no",
+                    "label": "Number",
+                    "value": f"RHC{player.membership_number}",
+                }
             ],
             "backFields": [{"key": "pid", "label": "Player ID", "value": str(player.public_id)}],
         },
@@ -79,7 +83,8 @@ def apple_wallet_pkpass(request, public_id):
             zf.writestr(
                 "pass.json",
                 json.dumps(
-                    {"disabled": True, "payload": _pass_payload(player)}, ensure_ascii=False
+                    {"disabled": True, "payload": _pass_payload(player)},
+                    ensure_ascii=False,
                 ),
             )
         resp = HttpResponse(buf.getvalue(), content_type="application/vnd.apple.pkpass")

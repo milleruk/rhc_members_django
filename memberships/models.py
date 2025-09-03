@@ -75,7 +75,8 @@ class MembershipProduct(models.Model):
 
     # Behaviour flags
     requires_plan = models.BooleanField(
-        default=True, help_text="If false, plan is optional (e.g., £0 guest memberships)."
+        default=True,
+        help_text="If false, plan is optional (e.g., £0 guest memberships).",
     )
     pay_per_match = models.BooleanField(
         default=False,
@@ -157,7 +158,8 @@ class MatchFeeTariff(models.Model):
         ordering = ["-product__id", "-category__id", "name"]
         constraints = [
             models.UniqueConstraint(
-                fields=["season", "name", "category", "product"], name="uniq_match_fee_scope"
+                fields=["season", "name", "category", "product"],
+                name="uniq_match_fee_scope",
             )
         ]
 
@@ -181,7 +183,11 @@ class Subscription(models.Model):
         "MembershipProduct", on_delete=models.PROTECT, related_name="subscriptions"
     )
     plan = models.ForeignKey(
-        "PaymentPlan", on_delete=models.PROTECT, related_name="subscriptions", null=True, blank=True
+        "PaymentPlan",
+        on_delete=models.PROTECT,
+        related_name="subscriptions",
+        null=True,
+        blank=True,
     )
 
     # Denormalised season for constraints/queries

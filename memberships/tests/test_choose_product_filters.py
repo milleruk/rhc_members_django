@@ -6,7 +6,12 @@ from django.urls import reverse
 
 @pytest.mark.django_db
 def test_senior_player_sees_only_senior_products(
-    client, user, player_senior, product_senior_current, product_junior_current, monkeypatch
+    client,
+    user,
+    player_senior,
+    product_senior_current,
+    product_junior_current,
+    monkeypatch,
 ):
     client.login(username="alice", password="pw")
 
@@ -25,7 +30,12 @@ def test_senior_player_sees_only_senior_products(
 
 @pytest.mark.django_db
 def test_junior_player_sees_only_junior_products(
-    client, user, player_junior, product_senior_current, product_junior_current, monkeypatch
+    client,
+    user,
+    player_junior,
+    product_senior_current,
+    product_junior_current,
+    monkeypatch,
 ):
     client.login(username="alice", password="pw")
     monkeypatch.setattr("memberships.views.localdate", lambda: date(2024, 12, 1))

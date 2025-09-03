@@ -1,7 +1,13 @@
 # members/urls.py
 from django.urls import path
 
-from .views import PlayerCreateView, PlayerUpdateView, answer_view, dashboard, player_delete
+from .views import (
+    PlayerCreateView,
+    PlayerUpdateView,
+    answer_view,
+    dashboard,
+    player_delete,
+)
 
 urlpatterns = [
     # Member-facing (UUIDs)

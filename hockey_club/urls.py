@@ -34,7 +34,10 @@ urlpatterns = [
     # ---- Apps (namespaced) ----
     path("tasks/", include(("tasks.urls", "tasks"), namespace="tasks")),
     path("resources/", include(("resources.urls", "resources"), namespace="resources")),
-    path("memberships/", include(("memberships.urls", "memberships"), namespace="memberships")),
+    path(
+        "memberships/",
+        include(("memberships.urls", "memberships"), namespace="memberships"),
+    ),
     path("spond/", include(("spond_integration.urls", "spond"), namespace="spond")),
     path("players/", include(("members.urls", "members"), namespace="members")),
     path("staff/", include(("staff.urls", "staff"), namespace="staff")),

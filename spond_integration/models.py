@@ -55,7 +55,11 @@ class SpondGroup(models.Model):
     spond_group_id = models.CharField(max_length=64, unique=True)
     name = models.CharField(max_length=255)
     parent = models.ForeignKey(
-        "self", null=True, blank=True, on_delete=models.SET_NULL, related_name="children"
+        "self",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="children",
     )
     data = models.JSONField(default=dict, blank=True)
 
@@ -90,7 +94,11 @@ class SpondEvent(models.Model):
     scores_set = models.BooleanField(default=False)
     scores_set_ever = models.BooleanField(default=False)
     group = models.ForeignKey(
-        "SpondGroup", null=True, blank=True, on_delete=models.SET_NULL, related_name="events"
+        "SpondGroup",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="events",
     )
     subgroups = models.ManyToManyField("SpondGroup", blank=True, related_name="events_as_subgroup")
     data = models.JSONField(default=dict, blank=True)
@@ -157,14 +165,26 @@ class SpondTransaction(models.Model):
     settled_at = models.DateTimeField(null=True, blank=True)
 
     group = models.ForeignKey(
-        "SpondGroup", null=True, blank=True, on_delete=models.SET_NULL, related_name="transactions"
+        "SpondGroup",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="transactions",
     )
     event = models.ForeignKey(
-        "SpondEvent", null=True, blank=True, on_delete=models.SET_NULL, related_name="transactions"
+        "SpondEvent",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="transactions",
     )
 
     member = models.ForeignKey(
-        "SpondMember", null=True, blank=True, on_delete=models.SET_NULL, related_name="transactions"
+        "SpondMember",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="transactions",
     )
     player = models.ForeignKey(
         "members.Player",

@@ -27,7 +27,14 @@ def _incident_link(incident):
 
 
 def _create_task(
-    task_model, title, description, *, assigned_to=None, assignees=None, due_days=0, task_type=None
+    task_model,
+    title,
+    description,
+    *,
+    assigned_to=None,
+    assignees=None,
+    due_days=0,
+    task_type=None,
 ):
     due_date = (
         timezone.now().date()
@@ -124,7 +131,13 @@ def handle_transitions(sender, instance: Incident, created, **kwargs):
                 f"Open: {_incident_link(instance)}"
             )
             # ⬇️ EDIT HERE
-            _create_task(Task, title, desc, assignees=list(reviewers), task_type="incident_review")
+            _create_task(
+                Task,
+                title,
+                desc,
+                assignees=list(reviewers),
+                task_type="incident_review",
+            )
 
     old_status = getattr(instance, "_old_status", None)
 

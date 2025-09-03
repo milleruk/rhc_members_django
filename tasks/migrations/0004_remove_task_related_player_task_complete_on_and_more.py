@@ -71,7 +71,8 @@ class Migration(migrations.Migration):
         migrations.AddIndex(
             model_name="task",
             index=models.Index(
-                fields=["subject_ct", "subject_id", "status"], name="tasks_task_subject_89ff99_idx"
+                fields=["subject_ct", "subject_id", "status"],
+                name="tasks_task_subject_89ff99_idx",
             ),
         ),
         migrations.AddIndex(

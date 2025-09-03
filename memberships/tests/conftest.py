@@ -5,7 +5,12 @@ import pytest
 from django.contrib.auth import get_user_model
 
 from members.models import Player, PlayerType
-from memberships.models import MembershipCategory, MembershipProduct, PaymentPlan, Season
+from memberships.models import (
+    MembershipCategory,
+    MembershipProduct,
+    PaymentPlan,
+    Season,
+)
 
 User = get_user_model()
 
