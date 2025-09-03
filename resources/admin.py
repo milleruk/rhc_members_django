@@ -1,5 +1,6 @@
 from django.contrib import admin
-from .models import Policy, Document
+
+from .models import Document, Policy
 
 
 @admin.register(Policy)

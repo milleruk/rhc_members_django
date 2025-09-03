@@ -1,5 +1,6 @@
 # tasks/utils.py
-from django.urls import reverse, NoReverseMatch
+from django.urls import NoReverseMatch, reverse
+
 
 def reverse_first(candidates, *args, **kwargs):
     """

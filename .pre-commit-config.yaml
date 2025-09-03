@@ -1,0 +1,50 @@
+repos:
+  # Auto-remove unused imports/vars before flake8 complains
+  - repo: https://github.com/PyCQA/autoflake
+    rev: v2.3.1
+    hooks:
+      - id: autoflake
+        args:
+          - --in-place
+          - --remove-unused-variables
+          - --remove-all-unused-imports
+          - --ignore-init-module-imports
+
+  # Black: opinionated formatter (handles indents, tabs, spacing, many E*)
+  - repo: https://github.com/psf/black
+    rev: 25.1.0
+    hooks:
+      - id: black
+        args: [--line-length=100]
+
+  # isort: import sorting to match Black
+  - repo: https://github.com/pycqa/isort
+    rev: 6.0.1
+    hooks:
+      - id: isort
+        args: ["--profile=black", "--line-length=100"]
+
+  # Whitespace hygiene for all files (not just Python)
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+      - id: mixed-line-ending
+        args: [--fix=lf]
+      - id: check-merge-conflict
+
+  # Flake8: catch what auto-fixers can’t
+  - repo: https://github.com/pycqa/flake8
+    rev: 7.3.0
+    hooks:
+      - id: flake8
+        additional_dependencies: [flake8-bugbear]
+
+  # Refactor Templates
+  - repo: https://github.com/Riverside-Healthcare/djLint
+    rev: v1.36.4
+    hooks:
+      - id: djlint
+        args: [--profile=django, --reformat]
+        files: "\\.(html|jinja|j2|djhtml|tmpl)$"

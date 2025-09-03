@@ -6,18 +6,24 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('members', '0006_alter_player_options'),
+        ("members", "0006_alter_player_options"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='dynamicquestion',
-            name='choices_text',
-            field=models.TextField(blank=True, help_text='For dropdown questions, provide options separated by commas'),
+            model_name="dynamicquestion",
+            name="choices_text",
+            field=models.TextField(
+                blank=True, help_text="For dropdown questions, provide options separated by commas"
+            ),
         ),
         migrations.AlterField(
-            model_name='dynamicquestion',
-            name='question_type',
-            field=models.CharField(choices=[('text', 'Text'), ('boolean', 'Checkbox'), ('choice', 'Dropdown')], default='text', max_length=10),
+            model_name="dynamicquestion",
+            name="question_type",
+            field=models.CharField(
+                choices=[("text", "Text"), ("boolean", "Checkbox"), ("choice", "Dropdown")],
+                default="text",
+                max_length=10,
+            ),
         ),
     ]

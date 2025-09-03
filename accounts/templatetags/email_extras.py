@@ -3,6 +3,7 @@ from django import template
 
 register = template.Library()
 
+
 @register.filter
 def has_primary(emailaddresses) -> bool:
     """Return True if any EmailAddress in the iterable is marked primary."""

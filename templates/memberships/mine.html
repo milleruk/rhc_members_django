@@ -1,191 +1,184 @@
 {% extends "base.html" %}
 {% block title %}My Memberships{% endblock %}
-
 {% block content %}
-<div class="container py-3">
-
-  <!-- Header -->
-  <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
-    <h4 class="mb-0"><i class="fas fa-id-card-alt me-2"></i>My Memberships</h4>
-  </div>
-
-  <!-- Players quick actions -->
-  <div class="card mb-4">
-    <div class="card-header">
-      <h5 class="card-title mb-0"><i class="fas fa-user-friends me-2"></i>Players you manage</h5>
-    </div>
-    <div class="card-body p-0">
-      {% if players %}
-        <div class="list-group list-group-flush">
-          {% for p in players %}
-            <div class="list-group-item d-flex justify-content-between align-items-center flex-wrap gap-2">
-              <div class="d-flex align-items-center">
-                <div class="rounded-circle bg-light border text-center me-2"
-                     style="width:36px;height:36px;line-height:36px;">
-                  <span class="text-muted small fw-bold">
-                    {{ p.first_name|default:"?"|slice:":1" }}{{ p.last_name|default:""|slice:":1" }}
-                  </span>
-                </div>
-                <div class="min-w-0">
-                  <strong class="text-truncate d-block">{{ p.first_name }} {{ p.last_name }}</strong>
-                  {% if p.player_type %}
-                    <span class="badge bg-secondary">{{ p.player_type }}</span>
-                  {% endif %}
-                </div>
-              </div>
-              {% if not p.has_sub_this_season %}
-                <a class="btn btn-outline-primary btn-sm" href="{% url 'memberships:choose' p.id %}">
-                  <i class="fas fa-plus me-1"></i> Choose membership
-                </a>
-              {% endif %}
-            </div>
-          {% endfor %}
+    <div class="container py-3">
+        <!-- Header -->
+        <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+            <h4 class="mb-0">
+                <i class="fas fa-id-card-alt me-2"></i>My Memberships
+            </h4>
         </div>
-      {% else %}
-        <div class="p-3 text-muted">No players found.</div>
-      {% endif %}
-    </div>
-  </div>
-
-  <!-- Active & Pending -->
-  <div class="card mb-4">
-    <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
-      <h5 class="card-title mb-0"><i class="fas fa-check-circle me-2"></i>Active & Pending</h5>
-      {% if active_subs %}<span class="badge bg-light text-dark">{{ active_subs|length }}</span>{% endif %}
-    </div>
-
-    {% if active_subs %}
-    <div class="card-body">
-      <div class="row g-4">
-        {% for s in active_subs %}
-        <div class="col-12 col-md-6">
-          <div class="card shadow-sm h-100 d-flex flex-column border-0 membership-card">
-            <div class="card-body pb-2">
-              <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
-                <div>
-                  <div class="fw-semibold">{{ s.player.first_name }} {{ s.player.last_name }}</div>
-                  <div class="small text-muted">
-                    {{ s.product.name }} • {{ s.product.season.name }}
-                  </div>
-                </div>
-                <span class="badge
-                  {% if s.status == 'active' %}bg-success
-                  {% elif s.status == 'pending' %}bg-info
-                  {% elif s.status == 'on_hold' %}bg-warning
-                  {% else %}bg-secondary{% endif %}">
-                  {{ s.get_status_display }}
-                </span>
-              </div>
-
-              <!-- Plan -->
-              <div class="mt-3">
-                <div class="small text-uppercase text-muted mb-1">Plan</div>
-                <div class="d-flex flex-wrap gap-2 align-items-center">
-                  <span class="badge bg-light text-dark border">{{ s.plan.label|default:"—" }}</span>
-                  {% if s.plan.instalment_count and s.plan.frequency %}
-                    <span class="badge bg-light text-dark border">
-                      {{ s.plan.instalment_count }} × {{ s.plan.frequency }}
-                    </span>
-                  {% endif %}
-                  {% if s.plan.instalment_amount_gbp %}
-                    <span class="badge bg-primary">£{{ s.plan.instalment_amount_gbp }}</span>
-                  {% endif %}
-                </div>
-              </div>
-
-              <!-- Dates -->
-              <div class="mt-3 small text-muted">
-                {% if s.started_at %}
-                  <div><i class="far fa-calendar-check me-1"></i>Started: {{ s.started_at|date:"j M Y" }}</div>
+        <!-- Players quick actions -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-user-friends me-2"></i>Players you manage
+                </h5>
+            </div>
+            <div class="card-body p-0">
+                {% if players %}
+                    <div class="list-group list-group-flush">
+                        {% for p in players %}
+                            <div class="list-group-item d-flex justify-content-between align-items-center flex-wrap gap-2">
+                                <div class="d-flex align-items-center">
+                                    <div class="rounded-circle bg-light border text-center me-2"
+                                         style="width:36px;
+                                                height:36px;
+                                                line-height:36px">
+                                        <span class="text-muted small fw-bold">
+                                            {{ p.first_name|default:"?"|slice:":1" }}{{ p.last_name|default:""|slice:":1" }}
+                                        </span>
+                                    </div>
+                                    <div class="min-w-0">
+                                        <strong class="text-truncate d-block">{{ p.first_name }} {{ p.last_name }}</strong>
+                                        {% if p.player_type %}<span class="badge bg-secondary">{{ p.player_type }}</span>{% endif %}
+                                    </div>
+                                </div>
+                                {% if not p.has_sub_this_season %}
+                                    <a class="btn btn-outline-primary btn-sm"
+                                       href="{% url 'memberships:choose' p.id %}">
+                                        <i class="fas fa-plus me-1"></i> Choose membership
+                                    </a>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="p-3 text-muted">No players found.</div>
                 {% endif %}
-                {% if s.next_payment_at %}
-                  <div><i class="far fa-clock me-1"></i>Next payment: {{ s.next_payment_at|date:"D j M, H:i" }}</div>
-                {% endif %}
-              </div>
             </div>
-
-            <div class="card-footer bg-transparent mt-auto pt-2">
-              {% if s.status != 'active' %}
-                <div class="d-flex flex-wrap gap-2">
-                  <form method="post" action="{% url 'memberships:subscription_cancel' s.id %}" class="d-inline">
-                    {% csrf_token %}
-                    <button class="btn btn-outline-warning btn-sm"
-                            onclick="return confirm('Cancel this membership?');">
-                      <i class="fas fa-ban me-1"></i> Cancel
-                    </button>
-                  </form>
-                  <a class="btn btn-outline-danger btn-sm"
-                     href="{% url 'memberships:subscription_delete' s.id %}">
-                    <i class="fas fa-trash me-1"></i> Delete
-                  </a>
-                </div>
-              {% else %}
-                <div class="text-muted small">
-                  <i class="far fa-check-circle me-1"></i> Active Membership- Approved by club admin.
-                </div>
-              {% endif %}
-            </div>
-          </div>
         </div>
-        {% endfor %}
-      </div>
-    </div>
-    {% else %}
-      <div class="card-body text-muted">No active or pending memberships.</div>
-    {% endif %}
-  </div>
-
-  <!-- Cancelled / Old -->
-  <div class="card">
-    <div class="card-header bg-secondary text-white d-flex justify-content-between align-items-center">
-      <h5 class="card-title mb-0"><i class="fas fa-archive me-2"></i>Cancelled / Old</h5>
-      {% if old_subs %}<span class="badge bg-light text-dark">{{ old_subs|length }}</span>{% endif %}
-    </div>
-
-    {% if old_subs %}
-    <div class="card-body">
-      <div class="row g-4">
-        {% for s in old_subs %}
-        <div class="col-12 col-md-6">
-          <div class="card shadow-sm h-100 border-0 membership-card">
-            <div class="card-body pb-2">
-              <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
-                <div>
-                  <div class="fw-semibold">{{ s.player.first_name }} {{ s.player.last_name }}</div>
-                  <div class="small text-muted">
-                    {{ s.product.name }} • {{ s.product.season.name }}
-                  </div>
-                  {% if s.plan.label %}
-                    <div class="small mt-1">Plan: <span class="badge bg-light text-dark border">{{ s.plan.label }}</span></div>
-                  {% endif %}
-                </div>
-                <span class="badge
-                  {% if s.status == 'cancelled' %}bg-secondary
-                  {% elif s.status == 'paused' %}bg-warning
-                  {% else %}bg-dark{% endif %}">
-                  {{ s.get_status_display }}
-                </span>
-              </div>
-              {% if s.ended_at %}
-                <div class="small text-muted mt-2">
-                  <i class="far fa-calendar-times me-1"></i>Ended: {{ s.ended_at|date:"j M Y" }}
-                </div>
-              {% endif %}
+        <!-- Active & Pending -->
+        <div class="card mb-4">
+            <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-check-circle me-2"></i>Active & Pending
+                </h5>
+                {% if active_subs %}<span class="badge bg-light text-dark">{{ active_subs|length }}</span>{% endif %}
             </div>
-          </div>
+            {% if active_subs %}
+                <div class="card-body">
+                    <div class="row g-4">
+                        {% for s in active_subs %}
+                            <div class="col-12 col-md-6">
+                                <div class="card shadow-sm h-100 d-flex flex-column border-0 membership-card">
+                                    <div class="card-body pb-2">
+                                        <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+                                            <div>
+                                                <div class="fw-semibold">{{ s.player.first_name }} {{ s.player.last_name }}</div>
+                                                <div class="small text-muted">{{ s.product.name }} • {{ s.product.season.name }}</div>
+                                            </div>
+                                            <span class="badge {% if s.status == 'active' %}bg-success {% elif s.status == 'pending' %}bg-info {% elif s.status == 'on_hold' %}bg-warning {% else %}bg-secondary{% endif %}">
+                                                {{ s.get_status_display }}
+                                            </span>
+                                        </div>
+                                        <!-- Plan -->
+                                        <div class="mt-3">
+                                            <div class="small text-uppercase text-muted mb-1">Plan</div>
+                                            <div class="d-flex flex-wrap gap-2 align-items-center">
+                                                <span class="badge bg-light text-dark border">{{ s.plan.label|default:"—" }}</span>
+                                                {% if s.plan.instalment_count and s.plan.frequency %}
+                                                    <span class="badge bg-light text-dark border">{{ s.plan.instalment_count }} × {{ s.plan.frequency }}</span>
+                                                {% endif %}
+                                                {% if s.plan.instalment_amount_gbp %}
+                                                    <span class="badge bg-primary">£{{ s.plan.instalment_amount_gbp }}</span>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                        <!-- Dates -->
+                                        <div class="mt-3 small text-muted">
+                                            {% if s.started_at %}
+                                                <div>
+                                                    <i class="far fa-calendar-check me-1"></i>Started: {{ s.started_at|date:"j M Y" }}
+                                                </div>
+                                            {% endif %}
+                                            {% if s.next_payment_at %}
+                                                <div>
+                                                    <i class="far fa-clock me-1"></i>Next payment: {{ s.next_payment_at|date:"D j M, H:i" }}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="card-footer bg-transparent mt-auto pt-2">
+                                        {% if s.status != 'active' %}
+                                            <div class="d-flex flex-wrap gap-2">
+                                                <form method="post"
+                                                      action="{% url 'memberships:subscription_cancel' s.id %}"
+                                                      class="d-inline">
+                                                    {% csrf_token %}
+                                                    <button class="btn btn-outline-warning btn-sm"
+                                                            onclick="return confirm('Cancel this membership?');">
+                                                        <i class="fas fa-ban me-1"></i> Cancel
+                                                    </button>
+                                                </form>
+                                                <a class="btn btn-outline-danger btn-sm"
+                                                   href="{% url 'memberships:subscription_delete' s.id %}">
+                                                    <i class="fas fa-trash me-1"></i> Delete
+                                                </a>
+                                            </div>
+                                        {% else %}
+                                            <div class="text-muted small">
+                                                <i class="far fa-check-circle me-1"></i> Active Membership- Approved by club admin.
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% else %}
+                <div class="card-body text-muted">No active or pending memberships.</div>
+            {% endif %}
         </div>
-        {% endfor %}
-      </div>
+        <!-- Cancelled / Old -->
+        <div class="card">
+            <div class="card-header bg-secondary text-white d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-archive me-2"></i>Cancelled / Old
+                </h5>
+                {% if old_subs %}<span class="badge bg-light text-dark">{{ old_subs|length }}</span>{% endif %}
+            </div>
+            {% if old_subs %}
+                <div class="card-body">
+                    <div class="row g-4">
+                        {% for s in old_subs %}
+                            <div class="col-12 col-md-6">
+                                <div class="card shadow-sm h-100 border-0 membership-card">
+                                    <div class="card-body pb-2">
+                                        <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+                                            <div>
+                                                <div class="fw-semibold">{{ s.player.first_name }} {{ s.player.last_name }}</div>
+                                                <div class="small text-muted">{{ s.product.name }} • {{ s.product.season.name }}</div>
+                                                {% if s.plan.label %}
+                                                    <div class="small mt-1">
+                                                        Plan: <span class="badge bg-light text-dark border">{{ s.plan.label }}</span>
+                                                    </div>
+                                                {% endif %}
+                                            </div>
+                                            <span class="badge {% if s.status == 'cancelled' %}bg-secondary {% elif s.status == 'paused' %}bg-warning {% else %}bg-dark{% endif %}">
+                                                {{ s.get_status_display }}
+                                            </span>
+                                        </div>
+                                        {% if s.ended_at %}
+                                            <div class="small text-muted mt-2">
+                                                <i class="far fa-calendar-times me-1"></i>Ended: {{ s.ended_at|date:"j M Y" }}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% else %}
+                <div class="card-body text-muted">No cancelled or old memberships.</div>
+            {% endif %}
+        </div>
     </div>
-    {% else %}
-      <div class="card-body text-muted">No cancelled or old memberships.</div>
-    {% endif %}
-  </div>
-</div>
-
-<style>
+    <style>
 .membership-card .card-footer { border-top: 1px solid rgba(0,0,0,.06); }
 .membership-card .card-body { padding-bottom: .5rem; }
 .membership-card .card-footer { padding-top: .75rem; }
-</style>
+    </style>
 {% endblock %}

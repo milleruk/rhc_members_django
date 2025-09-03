@@ -1,88 +1,85 @@
 {% extends "base.html" %}
 {% load static %}
-
 {% block title %}My Players{% endblock %}
-
 {% block content_header %}
-<div class="container-fluid">
-  <div class="row mb-2">
-    <div class="col-sm-6"><h1 class="m-0">Select a Player</h1></div>
-    <div class="col-sm-6">
-      <ol class="breadcrumb float-sm-right">
-        <li class="breadcrumb-item"><a href="{% url 'home' %}">Home</a></li>
-        <li class="breadcrumb-item active">Players</li>
-      </ol>
-    </div>
-  </div>
-</div>
-{% endblock %}
-
-{% block content %}
-<div class="row">
-  {% if cards %}
-    {% for c in cards %}
-      <div class="col-12 col-sm-6 col-lg-4">
-        <div class="card card-primary card-outline h-100">
-          <div class="card-body box-profile d-flex flex-column">
-            <div class="text-center mb-2">
-              {% with full=c.name|urlencode %}
-              <img class="profile-user-img img-fluid img-circle"
-                   src="{{ c.avatar_url|default:'https://ui-avatars.com/api/?name='|add:full }}"
-                   alt="Avatar">
-              {% endwith %}
+    <div class="container-fluid">
+        <div class="row mb-2">
+            <div class="col-sm-6">
+                <h1 class="m-0">Select a Player</h1>
             </div>
-
-            <h3 class="profile-username text-center">{{ c.name }}</h3>
-            <p class="text-muted text-center">{{ c.player_type }}</p>
-
-            <ul class="list-group list-group-unbordered mb-3 flex-grow-1">
-              <li class="list-group-item d-flex justify-content-between align-items-center">
-                <span>Teams</span>
-                <span>
-                  {% if c.teams %}
-                    {% for t in c.teams %}<span class="badge bg-info mr-1">{{ t }}</span>{% endfor %}
-                  {% else %}
-                    <em>—</em>
-                  {% endif %}
-                </span>
-              </li>
-              <li class="list-group-item d-flex justify-content-between align-items-center">
-                <span>Forms Outstanding</span>
-                <span class="badge {{ c.outstanding|yesno:'bg-warning text-dark,bg-success' }}">
-                  {{ c.outstanding }}
-                </span>
-              </li>
-              <li class="list-group-item d-flex justify-content-between align-items-center">
-                <span>Last Updated</span>
-                <span>{{ c.updated_at|date:"d M Y"|default:"—" }}</span>
-              </li>
-            </ul>
-
-            <div class="d-grid gap-2">
-              <a href="{% url 'members:player_dashboard' c.id %}" class="btn btn-primary">
-                <i class="fas fa-user mr-1"></i> Open Dashboard
-              </a>
-              {% if c.id != current_player_id %}
-              <a href="{% url 'members:switch_player' c.id %}" class="btn btn-outline-secondary">
-                <i class="fas fa-exchange-alt mr-1"></i> Set as Current
-              </a>
-              {% else %}
-              <button class="btn btn-outline-success" disabled>
-                <i class="fas fa-check mr-1"></i> Current Player
-              </button>
-              {% endif %}
+            <div class="col-sm-6">
+                <ol class="breadcrumb float-sm-right">
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'home' %}">Home</a>
+                    </li>
+                    <li class="breadcrumb-item active">Players</li>
+                </ol>
             </div>
-
-          </div>
         </div>
-      </div>
-    {% endfor %}
-  {% else %}
-    <div class="col-12">
-      <div class="alert alert-info">
-        No players yet. <a href="{% url 'players:create' %}">Add your first player</a>.
-      </div>
     </div>
-  {% endif %}
-</div>
+{% endblock %}
+{% block content %}
+    <div class="row">
+        {% if cards %}
+            {% for c in cards %}
+                <div class="col-12 col-sm-6 col-lg-4">
+                    <div class="card card-primary card-outline h-100">
+                        <div class="card-body box-profile d-flex flex-column">
+                            <div class="text-center mb-2">
+                                {% with full=c.name|urlencode %}
+                                    <img class="profile-user-img img-fluid img-circle"
+                                         src="{{ c.avatar_url|default:'https://ui-avatars.com/api/?name='|add:full }}"
+                                         alt="Avatar">
+                                {% endwith %}
+                            </div>
+                            <h3 class="profile-username text-center">{{ c.name }}</h3>
+                            <p class="text-muted text-center">{{ c.player_type }}</p>
+                            <ul class="list-group list-group-unbordered mb-3 flex-grow-1">
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    <span>Teams</span>
+                                    <span>
+                                        {% if c.teams %}
+                                            {% for t in c.teams %}<span class="badge bg-info mr-1">{{ t }}</span>{% endfor %}
+                                        {% else %}
+                                            <em>—</em>
+                                        {% endif %}
+                                    </span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    <span>Forms Outstanding</span>
+                                    <span class="badge {{ c.outstanding|yesno:'bg-warning text-dark,bg-success' }}">{{ c.outstanding }}</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    <span>Last Updated</span>
+                                    <span>{{ c.updated_at|date:"d M Y"|default:"—" }}</span>
+                                </li>
+                            </ul>
+                            <div class="d-grid gap-2">
+                                <a href="{% url 'members:player_dashboard' c.id %}"
+                                   class="btn btn-primary">
+                                    <i class="fas fa-user mr-1"></i> Open Dashboard
+                                </a>
+                                {% if c.id != current_player_id %}
+                                    <a href="{% url 'members:switch_player' c.id %}"
+                                       class="btn btn-outline-secondary">
+                                        <i class="fas fa-exchange-alt mr-1"></i> Set as Current
+                                    </a>
+                                {% else %}
+                                    <button class="btn btn-outline-success" disabled>
+                                        <i class="fas fa-check mr-1"></i> Current Player
+                                    </button>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        {% else %}
+            <div class="col-12">
+                <div class="alert alert-info">
+                    No players yet. <a href="{% url 'players:create' %}">Add your first player</a>.
+                </div>
+            </div>
+        {% endif %}
+    </div>
 {% endblock %}

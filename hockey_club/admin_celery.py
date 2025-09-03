@@ -2,19 +2,21 @@
 from __future__ import annotations
 
 import json
+
 from django.contrib import admin, messages
-from django.urls import path
-from django.shortcuts import redirect
 from django.core.management import call_command
-from hockey_club.celery import app as celery_app
+from django.shortcuts import redirect
+from django.urls import path
 from django.utils.html import format_html
 
+from hockey_club.celery import app as celery_app
+
 from .models_celery import (
-    BeatPeriodicTask,
+    BeatClockedSchedule,
     BeatCrontabSchedule,
     BeatIntervalSchedule,
+    BeatPeriodicTask,
     BeatSolarSchedule,
-    BeatClockedSchedule,
 )
 
 
@@ -24,6 +26,7 @@ class SyncFromSettingsMixin:
     Adds a 'Sync from settings' link in the admin changelist toolbar.
     This calls the management command that mirrors settings.py -> django-celery-beat.
     """
+
     def get_urls(self):
         urls = super().get_urls()
         custom = [
@@ -97,6 +100,7 @@ class BeatPeriodicTaskAdmin(SyncFromSettingsMixin, admin.ModelAdmin):
                 messages.error(request, f"Failed to enqueue '{pt.name}': {e}")
         if sent:
             messages.success(request, f"Enqueued {sent} task(s).")
+
     run_selected_now.short_description = "Run selected now"
 
 
@@ -174,12 +178,17 @@ try:
         def get_urls(self):
             urls = super().get_urls()
             custom = [
-                path("run/<int:pk>/", self.admin_site.admin_view(self.run_now_view), name="hockeyclub_spond_run_now"),
+                path(
+                    "run/<int:pk>/",
+                    self.admin_site.admin_view(self.run_now_view),
+                    name="hockeyclub_spond_run_now",
+                ),
             ]
             return custom + urls
 
         def run_now_view(self, request, pk):
             from django.shortcuts import redirect
+
             try:
                 row = SpondTaskStatus.objects.get(pk=pk)
             except SpondTaskStatus.DoesNotExist:

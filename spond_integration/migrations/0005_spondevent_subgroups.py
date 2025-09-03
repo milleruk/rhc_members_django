@@ -6,13 +6,15 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('spond_integration', '0004_spondevent_description_spondevent_location_lat_and_more'),
+        ("spond_integration", "0004_spondevent_description_spondevent_location_lat_and_more"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='spondevent',
-            name='subgroups',
-            field=models.ManyToManyField(blank=True, related_name='events_as_subgroup', to='spond_integration.spondgroup'),
+            model_name="spondevent",
+            name="subgroups",
+            field=models.ManyToManyField(
+                blank=True, related_name="events_as_subgroup", to="spond_integration.spondgroup"
+            ),
         ),
     ]

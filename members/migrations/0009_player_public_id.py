@@ -1,5 +1,6 @@
-from django.db import migrations, models
 import uuid
+
+from django.db import migrations, models
 
 
 def populate_public_ids(apps, schema_editor):
@@ -29,10 +30,8 @@ class Migration(migrations.Migration):
             name="public_id",
             field=models.UUIDField(null=True, editable=False),
         ),
-
         # 2) Populate existing rows
         migrations.RunPython(populate_public_ids, reverse_code=noop),
-
         # 3) Enforce NOT NULL + UNIQUE (and keep default for future rows)
         migrations.AlterField(
             model_name="player",

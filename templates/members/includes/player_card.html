@@ -1,37 +1,49 @@
 {% load static %}
 <div class="card h-100 shadow-sm">
-  <div class="card-body d-flex gap-3 align-items-start">
-    {% with src=player.avatar_url|default:'' %}
-      {% if src %}
-        <img src="{{ src }}" class="rounded-circle flex-shrink-0" alt="{{ player.full_name|default:player }} avatar"
-             width="64" height="64" style="object-fit: cover;" />
-      {% else %}
-        <img src="{% static 'img/avatar_placeholder.svg' %}" class="rounded-circle flex-shrink-0" alt="avatar"
-             width="64" height="64" style="object-fit: cover;" />
-      {% endif %}
-    {% endwith %}
-
-    <div class="w-100">
-      <div class="d-flex justify-content-between align-items-start">
-        <div>
-          <div class="fw-semibold">{{ player.full_name|default:player }}</div>
-          <div class="small text-muted">
-            {{ player.get_player_type_display|default:"Player" }}{% if player.team %} • {{ player.team.name }}{% endif %}
-          </div>
+    <div class="card-body d-flex gap-3 align-items-start">
+        {% with src=player.avatar_url|default:'' %}
+            {% if src %}
+                <img src="{{ src }}"
+                     class="rounded-circle flex-shrink-0"
+                     alt="{{ player.full_name|default:player }} avatar"
+                     width="64"
+                     height="64"
+                     style="object-fit: cover" />
+            {% else %}
+                <img src="{% static 'img/avatar_placeholder.svg' %}"
+                     class="rounded-circle flex-shrink-0"
+                     alt="avatar"
+                     width="64"
+                     height="64"
+                     style="object-fit: cover" />
+            {% endif %}
+        {% endwith %}
+        <div class="w-100">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <div class="fw-semibold">{{ player.full_name|default:player }}</div>
+                    <div class="small text-muted">
+                        {{ player.get_player_type_display|default:"Player" }}
+                        {% if player.team %}• {{ player.team.name }}{% endif %}
+                    </div>
+                </div>
+                <span class="badge {% if player.membership_active %}text-bg-success{% else %}text-bg-secondary{% endif %}">
+                    {% if player.membership_active %}
+                        Active
+                    {% else %}
+                        Inactive
+                    {% endif %}
+                </span>
+            </div>
+            {% if player.position %}
+                <div class="mt-2 small">
+                    <strong>Position:</strong> {{ player.position }}
+                </div>
+            {% endif %}
+            <div class="mt-3 d-flex flex-wrap gap-2">
+                <!-- <a href="#" class="btn btn-sm btn-outline-secondary">View Profile</a> -->
+                <a href="{% url 'answer' player.id %}" class="btn btn-sm btn-primary">Update Details</a>
+            </div>
         </div>
-        <span class="badge {% if player.membership_active %}text-bg-success{% else %}text-bg-secondary{% endif %}">
-          {% if player.membership_active %}Active{% else %}Inactive{% endif %}
-        </span>
-      </div>
-
-      {% if player.position %}
-        <div class="mt-2 small"><strong>Position:</strong> {{ player.position }}</div>
-      {% endif %}
-
-      <div class="mt-3 d-flex flex-wrap gap-2">
-        <!-- <a href="#" class="btn btn-sm btn-outline-secondary">View Profile</a> -->
-        <a href="{% url 'answer' player.id %}" class="btn btn-sm btn-primary">Update Details</a>
-      </div>
     </div>
-  </div>
 </div>

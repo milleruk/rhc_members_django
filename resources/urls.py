@@ -1,6 +1,7 @@
 from django.urls import path
-from . import views
 from django.views.generic import TemplateView
+
+from . import views
 
 urlpatterns = [
     path("policies/", views.PolicyListView.as_view(), name="policy_list"),

@@ -1,12 +1,11 @@
 # tests/conftest.py
-import pytest
 from datetime import date
+
+import pytest
 from django.contrib.auth import get_user_model
 
 from members.models import Player, PlayerType
-from memberships.models import (
-    Season, MembershipCategory, MembershipProduct, PaymentPlan
-)
+from memberships.models import MembershipCategory, MembershipProduct, PaymentPlan, Season
 
 User = get_user_model()
 
@@ -14,20 +13,14 @@ User = get_user_model()
 @pytest.fixture
 def user(db):
     # ✅ unique email
-    return User.objects.create_user(
-        username="alice",
-        email="alice@example.test",
-        password="pw"
-    )
+    return User.objects.create_user(username="alice", email="alice@example.test", password="pw")
 
 
 @pytest.fixture
 def admin_user(db):
     # ✅ unique email & superuser
     return User.objects.create_superuser(
-        username="admin",
-        email="admin@example.test",
-        password="pw"
+        username="admin", email="admin@example.test", password="pw"
     )
 
 

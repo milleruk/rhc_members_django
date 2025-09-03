@@ -8,55 +8,83 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('members', '0017_team_staff'),
-        ('tasks', '0002_move_contenttypes_permissions'),
+        ("members", "0017_team_staff"),
+        ("tasks", "0002_move_contenttypes_permissions"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
         migrations.AlterModelOptions(
-            name='task',
-            options={'ordering': ('status', 'due_at', '-created_at'), 'permissions': [('view_all_tasks', 'Can view all tasks')]},
+            name="task",
+            options={
+                "ordering": ("status", "due_at", "-created_at"),
+                "permissions": [("view_all_tasks", "Can view all tasks")],
+            },
         ),
         migrations.RemoveField(
-            model_name='task',
-            name='completed_at',
+            model_name="task",
+            name="completed_at",
         ),
         migrations.RemoveField(
-            model_name='task',
-            name='due_date',
+            model_name="task",
+            name="due_date",
         ),
         migrations.RemoveField(
-            model_name='task',
-            name='priority',
+            model_name="task",
+            name="priority",
         ),
         migrations.AddField(
-            model_name='task',
-            name='due_at',
+            model_name="task",
+            name="due_at",
             field=models.DateTimeField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='task',
-            name='related_player',
-            field=models.ForeignKey(blank=True, help_text='If relevant, link this task to a player record', null=True, on_delete=django.db.models.deletion.CASCADE, related_name='tasks', to='members.player'),
+            model_name="task",
+            name="related_player",
+            field=models.ForeignKey(
+                blank=True,
+                help_text="If relevant, link this task to a player record",
+                null=True,
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="tasks",
+                to="members.player",
+            ),
         ),
         migrations.AlterField(
-            model_name='task',
-            name='assigned_to',
-            field=models.ForeignKey(blank=True, help_text='The user responsible for completing the task', null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='tasks_assigned', to=settings.AUTH_USER_MODEL),
+            model_name="task",
+            name="assigned_to",
+            field=models.ForeignKey(
+                blank=True,
+                help_text="The user responsible for completing the task",
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                related_name="tasks_assigned",
+                to=settings.AUTH_USER_MODEL,
+            ),
         ),
         migrations.AlterField(
-            model_name='task',
-            name='created_by',
-            field=models.ForeignKey(blank=True, help_text='The user who created the task', null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='tasks_created', to=settings.AUTH_USER_MODEL),
+            model_name="task",
+            name="created_by",
+            field=models.ForeignKey(
+                blank=True,
+                help_text="The user who created the task",
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                related_name="tasks_created",
+                to=settings.AUTH_USER_MODEL,
+            ),
         ),
         migrations.AlterField(
-            model_name='task',
-            name='status',
-            field=models.CharField(choices=[('open', 'Open'), ('done', 'Done'), ('dismissed', 'Dismissed')], default='open', max_length=12),
+            model_name="task",
+            name="status",
+            field=models.CharField(
+                choices=[("open", "Open"), ("done", "Done"), ("dismissed", "Dismissed")],
+                default="open",
+                max_length=12,
+            ),
         ),
         migrations.AlterModelTable(
-            name='task',
-            table='tasks_task',
+            name="task",
+            table="tasks_task",
         ),
     ]

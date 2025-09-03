@@ -1,6 +1,7 @@
 # tasks/tasks.py
 from celery import shared_task
 from django.conf import settings
+
 from .emailing import _build_user_task_map, _send_digest
 
 

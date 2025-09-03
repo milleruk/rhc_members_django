@@ -6,28 +6,28 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('spond_integration', '0003_spondevent_spondattendance'),
+        ("spond_integration", "0003_spondevent_spondattendance"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='spondevent',
-            name='description',
+            model_name="spondevent",
+            name="description",
             field=models.TextField(blank=True),
         ),
         migrations.AddField(
-            model_name='spondevent',
-            name='location_lat',
+            model_name="spondevent",
+            name="location_lat",
             field=models.FloatField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='spondevent',
-            name='location_lng',
+            model_name="spondevent",
+            name="location_lng",
             field=models.FloatField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='spondevent',
-            name='meetup_at',
+            model_name="spondevent",
+            name="meetup_at",
             field=models.DateTimeField(blank=True, null=True),
         ),
     ]

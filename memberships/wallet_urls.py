@@ -1,7 +1,7 @@
 # memberships/wallet_urls.py
 from django.urls import path
-from .views_wallet import apple_wallet_preview, apple_wallet_pkpass
 
+from .views_wallet import apple_wallet_pkpass, apple_wallet_preview
 
 app_name = "wallet"
 urlpatterns = [

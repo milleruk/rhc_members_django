@@ -1,35 +1,39 @@
 {% extends "base.html" %}
 {% block title %}Delete Subscription{% endblock %}
 {% block content %}
-<div class="container py-4">
-  <div class="card border-danger">
-    <div class="card-header bg-danger text-white">
-      <strong>Delete Subscription</strong>
+    <div class="container py-4">
+        <div class="card border-danger">
+            <div class="card-header bg-danger text-white">
+                <strong>Delete Subscription</strong>
+            </div>
+            <div class="card-body">
+                <p class="mb-3">
+                    You are about to <strong>permanently delete</strong> this subscription. This action cannot be undone.
+                </p>
+                <dl class="row">
+                    <dt class="col-sm-3">Player</dt>
+                    <dd class="col-sm-9">
+                        {{ sub.player.first_name }} {{ sub.player.last_name }}
+                    </dd>
+                    <dt class="col-sm-3">Product</dt>
+                    <dd class="col-sm-9">
+                        {{ sub.product.name }}
+                    </dd>
+                    <dt class="col-sm-3">Season</dt>
+                    <dd class="col-sm-9">
+                        {{ sub.season.name }}
+                    </dd>
+                    <dt class="col-sm-3">Status</dt>
+                    <dd class="col-sm-9">
+                        {{ sub.get_status_display }}
+                    </dd>
+                </dl>
+                <form method="post">
+                    {% csrf_token %}
+                    <a href="{% url 'memberships:mine' %}" class="btn btn-secondary">Back</a>
+                    <button type="submit" class="btn btn-danger">Yes, delete it</button>
+                </form>
+            </div>
+        </div>
     </div>
-    <div class="card-body">
-      <p class="mb-3">
-        You are about to <strong>permanently delete</strong> this subscription. This action cannot be undone.
-      </p>
-      <dl class="row">
-        <dt class="col-sm-3">Player</dt>
-        <dd class="col-sm-9">{{ sub.player.first_name }} {{ sub.player.last_name }}</dd>
-
-        <dt class="col-sm-3">Product</dt>
-        <dd class="col-sm-9">{{ sub.product.name }}</dd>
-
-        <dt class="col-sm-3">Season</dt>
-        <dd class="col-sm-9">{{ sub.season.name }}</dd>
-
-        <dt class="col-sm-3">Status</dt>
-        <dd class="col-sm-9">{{ sub.get_status_display }}</dd>
-      </dl>
-
-      <form method="post">
-        {% csrf_token %}
-        <a href="{% url 'memberships:mine' %}" class="btn btn-secondary">Back</a>
-        <button type="submit" class="btn btn-danger">Yes, delete it</button>
-      </form>
-    </div>
-  </div>
-</div>
 {% endblock %}

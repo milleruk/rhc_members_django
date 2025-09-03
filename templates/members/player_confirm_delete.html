@@ -1,18 +1,15 @@
 {% extends "base.html" %}
 {% block title %}Delete Player{% endblock %}
-
 {% block content %}
-<div class="container py-4">
-  <h1 class="h5 mb-3">Delete player</h1>
-
-  <div class="alert alert-warning">
-    <strong>Are you sure?</strong> This will remove <em>{{ player.full_name|default:player }}</em> and their related data.
-  </div>
-
-  <form method="post" class="d-inline">
-    {% csrf_token %}
-    <button type="submit" class="btn btn-danger">Yes, delete</button>
-    <a href="{% url 'dashboard' %}" class="btn btn-secondary ms-2">Cancel</a>
-  </form>
-</div>
+    <div class="container py-4">
+        <h1 class="h5 mb-3">Delete player</h1>
+        <div class="alert alert-warning">
+            <strong>Are you sure?</strong> This will remove <em>{{ player.full_name|default:player }}</em> and their related data.
+        </div>
+        <form method="post" class="d-inline">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-danger">Yes, delete</button>
+            <a href="{% url 'dashboard' %}" class="btn btn-secondary ms-2">Cancel</a>
+        </form>
+    </div>
 {% endblock %}

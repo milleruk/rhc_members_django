@@ -1,14 +1,14 @@
 # tasks/forms.py
 from django import forms
-from django.contrib.contenttypes.models import ContentType
-from django.contrib.auth import get_user_model
-from .models import Task
-
 from django.apps import apps
+from django.contrib.auth import get_user_model
+
+from .models import Task
 
 User = get_user_model()
 
 ALLOWED_SUBJECT_APPS = ["members", "memberships", "spond_integration", "resources", "tasks"]
+
 
 class TaskCreateForm(forms.ModelForm):
     assigned_to = forms.ModelChoiceField(
@@ -16,25 +16,26 @@ class TaskCreateForm(forms.ModelForm):
         required=False,
         label="Assign to",
         empty_label="",  # avoids "----------" and lets TS placeholder show
-        widget=forms.Select(attrs={"style": "width:100%;"})
+        widget=forms.Select(attrs={"style": "width:100%;"}),
     )
 
     # hide and force True (all manual tasks)
     allow_manual_complete = forms.BooleanField(
-        required=False,
-        initial=True,
-        widget=forms.HiddenInput()
+        required=False, initial=True, widget=forms.HiddenInput()
     )
 
     class Meta:
         model = Task
         fields = ["title", "description", "assigned_to", "due_at", "allow_manual_complete"]
         widgets = {
-            "due_at": forms.DateTimeInput(attrs={"type": "datetime-local", "class": "form-control"}),
+            "due_at": forms.DateTimeInput(
+                attrs={"type": "datetime-local", "class": "form-control"}
+            ),
         }
 
     def clean_due_at(self):
         return self.cleaned_data.get("due_at") or None
+
 
 class TaskBulkGenerateForm(forms.Form):
     # Task fields
@@ -50,19 +51,21 @@ class TaskBulkGenerateForm(forms.Form):
     complete_on = forms.DateField(
         required=False,
         widget=forms.DateInput(attrs={"type": "date"}),
-        help_text="Optional date this task auto-completes on."
+        help_text="Optional date this task auto-completes on.",
     )
 
     allow_manual_complete = forms.BooleanField(required=False, initial=True)
 
     # 🔧 Assignment behavior
     assign_to_creator = forms.BooleanField(
-        required=False, initial=True,
-        help_text="Assign each task to the player’s creator (recommended)."
+        required=False,
+        initial=True,
+        help_text="Assign each task to the player’s creator (recommended).",
     )
     fallback_assignee = forms.ModelChoiceField(
-        queryset=User.objects.all(), required=False,
-        help_text="Used only when a player has no creator."
+        queryset=User.objects.all(),
+        required=False,
+        help_text="Used only when a player has no creator.",
     )
 
     # Selection controls (as you already added)
@@ -88,7 +91,7 @@ class TaskBulkGenerateForm(forms.Form):
             season_qs = Season.objects.none()
         self.fields["season"].queryset = season_qs
 
-        chosen_season_id = (self.data.get("season") or self.initial.get("season") or None)
+        chosen_season_id = self.data.get("season") or self.initial.get("season") or None
         product_qs = MembershipProduct.objects.select_related("season").order_by("name")
         if chosen_season_id:
             product_qs = product_qs.filter(season_id=chosen_season_id)
@@ -99,5 +102,7 @@ class TaskBulkGenerateForm(forms.Form):
     def clean(self):
         cleaned = super().clean()
         if not (cleaned.get("player_types") or cleaned.get("teams") or cleaned.get("products")):
-            raise forms.ValidationError("Pick at least one selection: Player Types, Teams, or Products.")
+            raise forms.ValidationError(
+                "Pick at least one selection: Player Types, Teams, or Products."
+            )
         return cleaned

@@ -6,28 +6,27 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.core.exceptions import PermissionDenied
-from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.db import transaction
-from django.db.models import Count, OuterRef, Subquery, Q
+from django.db.models import Count, OuterRef, Q, Subquery
 from django.http import HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect
 from django.utils.timezone import now
 from django.views.decorators.http import require_POST
 from django.views.generic import DetailView, ListView, TemplateView
 
-from accounts.mixins import RequireMFAMixin
-
 # import from other apps (no circulars)
 from members.forms import TeamAssignmentForm
 from members.models import (
     DynamicQuestion,
     Player,
-    PlayerType,
-    TeamMembership,
     PlayerAccessLog,
+    PlayerType,
     Team,
+    TeamMembership,
 )
 from memberships.models import Subscription
+
 try:
     from memberships.models import Product, Season
 except Exception:
@@ -41,6 +40,7 @@ COACH_GROUPS = ["Full Access", "Committee", "Coach"]  # keep in one place if you
 #  Helpers
 # ──────────────────────────────────────────────────────────────────────────────
 
+
 def _players_in_scope(request):
     """
     Players visible to this staff user.
@@ -48,7 +48,9 @@ def _players_in_scope(request):
     Others only see players on teams where they are in Team.staff.
     """
     user = request.user
-    players = Player.objects.select_related("player_type").prefetch_related("team_memberships__team")
+    players = Player.objects.select_related("player_type").prefetch_related(
+        "team_memberships__team"
+    )
     if user.is_superuser or user.has_perm("members.view_all_players"):
         return players
     team_ids = Team.objects.filter(staff=user).values_list("id", flat=True)
@@ -57,11 +59,9 @@ def _players_in_scope(request):
 
 def _current_subqs():
     """Subqueries to annotate a player's latest active/pending subscription."""
-    current_qs = (
-        Subscription.objects
-        .filter(player=OuterRef("pk"), status__in=["active", "pending"])
-        .order_by("-started_at")
-    )
+    current_qs = Subscription.objects.filter(
+        player=OuterRef("pk"), status__in=["active", "pending"]
+    ).order_by("-started_at")
     return {
         "curr_status": Subquery(current_qs.values("status")[:1]),
         "curr_product": Subquery(current_qs.values("product__name")[:1]),
@@ -86,12 +86,12 @@ def _season_product_options(players_qs):
         else:
             raise Exception("Season model not available")
     except Exception:
-        seasons = (
-            base_subs.values("season_id", "season__name")
-            .distinct()
-            .order_by("season__name")
-        )
-        seasons = [{"id": row["season_id"], "name": row["season__name"] or "—"} for row in seasons if row["season_id"]]
+        seasons = base_subs.values("season_id", "season__name").distinct().order_by("season__name")
+        seasons = [
+            {"id": row["season_id"], "name": row["season__name"] or "—"}
+            for row in seasons
+            if row["season_id"]
+        ]
 
     # Products
     try:
@@ -101,11 +101,13 @@ def _season_product_options(players_qs):
             raise Exception("Product model not available")
     except Exception:
         products = (
-            base_subs.values("product_id", "product__name")
-            .distinct()
-            .order_by("product__name")
+            base_subs.values("product_id", "product__name").distinct().order_by("product__name")
         )
-        products = [{"id": row["product_id"], "name": row["product__name"] or "—"} for row in products if row["product_id"]]
+        products = [
+            {"id": row["product_id"], "name": row["product__name"] or "—"}
+            for row in products
+            if row["product_id"]
+        ]
 
     # Normalize to simple lists of dicts in both cases
     seasons = [{"id": s["id"], "name": s["name"]} for s in seasons]
@@ -126,6 +128,7 @@ def _update_subscription_status(sub, new_status, user):
 # Admin/Staff: Player list
 # ──────────────────────────────────────────────────────────────────────────────
 
+
 class PlayerListView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
     model = Player
     template_name = "staff/player_list.html"
@@ -135,8 +138,7 @@ class PlayerListView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
 
     def _base_qs(self):
         return (
-            Player.objects
-            .select_related("player_type", "created_by")
+            Player.objects.select_related("player_type", "created_by")
             .prefetch_related("team_memberships__team", "team_memberships__positions")
             .distinct()
         )
@@ -181,17 +183,17 @@ class PlayerListView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
         elif sub_status == "none":
             qs = qs.exclude(subscriptions__status__in=["active", "pending"])
 
-        active_sub_qs = (
-            Subscription.objects
-            .filter(player=OuterRef("pk"), status__in=["active", "pending"])
-            .order_by("-started_at")
-        )
+        active_sub_qs = Subscription.objects.filter(
+            player=OuterRef("pk"), status__in=["active", "pending"]
+        ).order_by("-started_at")
         qs = qs.annotate(
             active_sub_product=Subquery(active_sub_qs.values("product__name")[:1]),
             active_sub_status=Subquery(active_sub_qs.values("status")[:1]),
             active_sub_season=Subquery(active_sub_qs.values("season__name")[:1]),
         ).annotate(
-            active_spond_count=Count("spond_links", filter=Q(spond_links__active=True), distinct=True)
+            active_spond_count=Count(
+                "spond_links", filter=Q(spond_links__active=True), distinct=True
+            )
         )
 
         return qs.distinct()
@@ -243,9 +245,17 @@ class PlayerListView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
         }
         ctx["membership_types"] = membership_qs
 
-        age_ranges = {"U10": (0, 9), "U12": (10, 11), "U14": (12, 13), "U16": (14, 15), "Adults": (16, 200)}
+        age_ranges = {
+            "U10": (0, 9),
+            "U12": (10, 11),
+            "U14": (12, 13),
+            "U16": (14, 15),
+            "Adults": (16, 200),
+        }
         ctx["age_distribution"] = {
-            label: sum(1 for p in players if getattr(p, "age", None) is not None and lo <= p.age <= hi)
+            label: sum(
+                1 for p in players if getattr(p, "age", None) is not None and lo <= p.age <= hi
+            )
             for label, (lo, hi) in age_ranges.items()
         }
 
@@ -253,9 +263,11 @@ class PlayerListView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
 
         total_players = ctx["total_players"]
         answered_players = players.filter(answers__isnull=False).distinct().count()
-        ctx["questionnaire_completion"] = round((answered_players / total_players) * 100, 1) if total_players else 0
+        ctx["questionnaire_completion"] = (
+            round((answered_players / total_players) * 100, 1) if total_players else 0
+        )
 
-        debug_mode = (self.request.GET.get("debug") == "1")
+        debug_mode = self.request.GET.get("debug") == "1"
         ctx["debug_mode"] = debug_mode
         if debug_mode:
             team_ids = "ALL" if is_admin_all else list(self._get_user_team_ids(user))
@@ -269,13 +281,15 @@ class PlayerListView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
                 ids = set()
                 for tm in p.team_memberships.all():
                     ids.add(tm.team_id)
-                    tm_summary.append({
-                        "team_id": tm.team_id,
-                        "team_name": getattr(tm.team, "name", None),
-                        "positions": [pos.name for pos in tm.positions.all()],
-                    })
-                setattr(p, "debug_teams", sorted(ids))
-                setattr(p, "debug_memberships", tm_summary)
+                    tm_summary.append(
+                        {
+                            "team_id": tm.team_id,
+                            "team_name": getattr(tm.team, "name", None),
+                            "positions": [pos.name for pos in tm.positions.all()],
+                        }
+                    )
+                user.is_flagged = True
+                user.flag_reason = "manual"
 
         return ctx
 
@@ -284,13 +298,14 @@ class PlayerListView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
 # Admin/Staff: Player detail
 # ──────────────────────────────────────────────────────────────────────────────
 
-#class PlayerDetailView(RequireMFAMixin, LoginRequiredMixin, PermissionRequiredMixin, DetailView):
+
+# class PlayerDetailView(RequireMFAMixin, LoginRequiredMixin, PermissionRequiredMixin, DetailView):
 #
 #    def dispatch(self, request, *args, **kwargs):
 #        # Debug: see what MFA check returns for this user
 #        print("MFA CHECK:", self.user_has_mfa(request.user))
 #        return super().dispatch(request, *args, **kwargs)
-#    
+#
 class PlayerDetailView(LoginRequiredMixin, PermissionRequiredMixin, DetailView):
     model = Player
     pk_url_kwarg = "player_id"
@@ -326,10 +341,8 @@ class PlayerDetailView(LoginRequiredMixin, PermissionRequiredMixin, DetailView):
         return mapping
 
     def get_queryset(self):
-        return (
-            Player.objects
-            .select_related("player_type", "created_by")
-            .prefetch_related("team_memberships__team", "team_memberships__positions")
+        return Player.objects.select_related("player_type", "created_by").prefetch_related(
+            "team_memberships__team", "team_memberships__positions"
         )
 
     def get_object(self, queryset=None):
@@ -356,13 +369,15 @@ class PlayerDetailView(LoginRequiredMixin, PermissionRequiredMixin, DetailView):
         player: Player = ctx["player"]
 
         is_super = user.is_superuser
-        ctx.update({
-            "can_edit_player": is_super,
-            "can_delete_player": is_super,
-            "show_team_actions": is_super,
-            "can_hijack": is_super,
-            "player_created_by": getattr(player, "created_by", None),
-        })
+        ctx.update(
+            {
+                "can_edit_player": is_super,
+                "can_delete_player": is_super,
+                "show_team_actions": is_super,
+                "can_hijack": is_super,
+                "player_created_by": getattr(player, "created_by", None),
+            }
+        )
 
         questions = (
             DynamicQuestion.objects.filter(active=True, applies_to=player.player_type)
@@ -391,7 +406,13 @@ class PlayerDetailView(LoginRequiredMixin, PermissionRequiredMixin, DetailView):
                 display = "Yes" if bv else "No"
             elif qtype == "number":
                 val = None
-                for name in ("number_answer", "numeric_answer", "int_answer", "float_answer", "text_answer"):
+                for name in (
+                    "number_answer",
+                    "numeric_answer",
+                    "int_answer",
+                    "float_answer",
+                    "text_answer",
+                ):
                     if ans is not None and hasattr(ans, name):
                         val = getattr(ans, name)
                         if val not in (None, ""):
@@ -415,16 +436,22 @@ class PlayerDetailView(LoginRequiredMixin, PermissionRequiredMixin, DetailView):
             if key not in grouped:
                 grouped[key] = {
                     "name": cat.name if cat else "General",
-                    "description": (getattr(cat, "description", None) or getattr(cat, "discription", "")) if cat else "",
+                    "description": (
+                        (getattr(cat, "description", None) or getattr(cat, "discription", ""))
+                        if cat
+                        else ""
+                    ),
                     "items": [],
                 }
-            grouped[key]["items"].append({
-                "label": q.label,
-                "description": getattr(q, "description", ""),
-                "type": qtype,
-                "display": display,
-                "detail": detail,
-            })
+            grouped[key]["items"].append(
+                {
+                    "label": q.label,
+                    "description": getattr(q, "description", ""),
+                    "type": qtype,
+                    "display": display,
+                    "detail": detail,
+                }
+            )
 
         ctx["readonly_answers"] = grouped
         ctx["memberships"] = player.team_memberships.select_related("team").all()
@@ -439,7 +466,9 @@ class PlayerDetailView(LoginRequiredMixin, PermissionRequiredMixin, DetailView):
 
         attendances_qs = None
         if ctx["spond_member"]:
-            attendances_qs = ctx["spond_member"].attendances.select_related("event").order_by("-event__start_at")
+            attendances_qs = (
+                ctx["spond_member"].attendances.select_related("event").order_by("-event__start_at")
+            )
 
         page_number = self.request.GET.get("spond_page", 1)
         if attendances_qs is not None:
@@ -486,13 +515,16 @@ class PlayerDetailView(LoginRequiredMixin, PermissionRequiredMixin, DetailView):
 # Mutations
 # ──────────────────────────────────────────────────────────────────────────────
 
+
 @login_required
 @require_POST
 def remove_membership(request, membership_id):
     """Remove a team membership — allowed for superusers and select coach groups."""
     membership = get_object_or_404(TeamMembership, id=membership_id)
 
-    if not (request.user.is_superuser or request.user.groups.filter(name__in=COACH_GROUPS).exists()):
+    if not (
+        request.user.is_superuser or request.user.groups.filter(name__in=COACH_GROUPS).exists()
+    ):
         return HttpResponseForbidden("Not allowed")
 
     player_id = membership.player_id
@@ -506,6 +538,7 @@ class StaffHomeView(LoginRequiredMixin, PermissionRequiredMixin, TemplateView):
     Lightweight staff dashboard. Keeps dependencies minimal so it won't explode
     if optional apps aren't installed.
     """
+
     permission_required = "members.view_staff_area"
     raise_exception = True
     template_name = "staff/home.html"
@@ -516,10 +549,8 @@ class StaffHomeView(LoginRequiredMixin, PermissionRequiredMixin, TemplateView):
         is_admin_all = user.has_perm("members.view_all_players")
 
         # Scope players
-        players = (
-            Player.objects
-            .select_related("player_type")
-            .prefetch_related("team_memberships__team")
+        players = Player.objects.select_related("player_type").prefetch_related(
+            "team_memberships__team"
         )
         if not is_admin_all:
             # visible via Team.staff
@@ -527,7 +558,7 @@ class StaffHomeView(LoginRequiredMixin, PermissionRequiredMixin, TemplateView):
             players = players.filter(team_memberships__team_id__in=team_ids).distinct()
 
         # Headline metrics
-        last_30 = now() - timedelta(days=30)
+        # last_30 = now() - timedelta(days=30)
         twelve_months = now() - timedelta(days=365)
 
         total_players = players.count()
@@ -536,12 +567,13 @@ class StaffHomeView(LoginRequiredMixin, PermissionRequiredMixin, TemplateView):
 
         # Questionnaire completion
         answered_players = players.filter(answers__isnull=False).distinct().count()
-        questionnaire_completion = round((answered_players / total_players) * 100, 1) if total_players else 0
+        questionnaire_completion = (
+            round((answered_players / total_players) * 100, 1) if total_players else 0
+        )
 
         # Subscriptions snapshot (only if memberships app hooked up)
         sub_breakdown = (
-            Subscription.objects
-            .filter(player__in=players)
+            Subscription.objects.filter(player__in=players)
             .values("status")
             .annotate(total=Count("id"))
             .order_by("status")
@@ -591,19 +623,21 @@ class StaffHomeView(LoginRequiredMixin, PermissionRequiredMixin, TemplateView):
                 upcoming.append((p, next_bd))
         upcoming = sorted(upcoming, key=lambda t: t[1])[:10]
 
-        ctx.update({
-            "is_admin_all": is_admin_all,
-            "total_players": total_players,
-            "recent_updates": recent_updates,
-            "inactive_players": inactive_players,
-            "questionnaire_completion": questionnaire_completion,
-            "active_subs": active_subs,
-            "pending_subs": pending_subs,
-            "player_types": player_types,
-            "teams_with_counts": teams_with_counts,
-            "today_access_logs": today_access_logs,
-            "upcoming_birthdays": upcoming,
-        })
+        ctx.update(
+            {
+                "is_admin_all": is_admin_all,
+                "total_players": total_players,
+                "recent_updates": recent_updates,
+                "inactive_players": inactive_players,
+                "questionnaire_completion": questionnaire_completion,
+                "active_subs": active_subs,
+                "pending_subs": pending_subs,
+                "player_types": player_types,
+                "teams_with_counts": teams_with_counts,
+                "today_access_logs": today_access_logs,
+                "upcoming_birthdays": upcoming,
+            }
+        )
         return ctx
 
 
@@ -637,16 +671,18 @@ class MembershipOverviewView(LoginRequiredMixin, PermissionRequiredMixin, Templa
             "cancelled": kpi.get("cancelled", 0),
         }
 
-        ctx["by_product"] = subs.values("product__name").annotate(total=Count("id")).order_by("product__name")
-        ctx["by_season"]  = subs.values("season__name").annotate(total=Count("id")).order_by("season__name")
+        ctx["by_product"] = (
+            subs.values("product__name").annotate(total=Count("id")).order_by("product__name")
+        )
+        ctx["by_season"] = (
+            subs.values("season__name").annotate(total=Count("id")).order_by("season__name")
+        )
 
         players_annotated = players.annotate(**_current_subqs())
         if season_id and season_id.isdigit():
-            season_filtered_current = (
-                Subscription.objects
-                .filter(player=OuterRef("pk"), status__in=["active", "pending"], season_id=int(season_id))
-                .order_by("-started_at")
-            )
+            season_filtered_current = Subscription.objects.filter(
+                player=OuterRef("pk"), status__in=["active", "pending"], season_id=int(season_id)
+            ).order_by("-started_at")
             players_annotated = players.annotate(
                 curr_status=Subquery(season_filtered_current.values("status")[:1]),
                 curr_product=Subquery(season_filtered_current.values("product__name")[:1]),
@@ -655,7 +691,9 @@ class MembershipOverviewView(LoginRequiredMixin, PermissionRequiredMixin, Templa
                 curr_id=Subquery(season_filtered_current.values("id")[:1]),
             )
 
-        no_current = players_annotated.filter(Q(curr_status__isnull=True) | ~Q(curr_status__in=["active", "pending"]))
+        no_current = players_annotated.filter(
+            Q(curr_status__isnull=True) | ~Q(curr_status__in=["active", "pending"])
+        )
         ctx["no_current_count"] = no_current.count()
         ctx["no_current_players"] = no_current.order_by("last_name", "first_name")[:25]
 
@@ -677,10 +715,11 @@ class SubscriptionListView(LoginRequiredMixin, PermissionRequiredMixin, ListView
         players = _players_in_scope(self.request)
 
         qs = (
-            Subscription.objects
-            .select_related("player", "player__player_type", "product", "season")
+            Subscription.objects.select_related(
+                "player", "player__player_type", "product", "season"
+            )
             .filter(player__in=players)
-            .order_by("-started_at", "-id")   # ← replace "-created_at" with "-id"
+            .order_by("-started_at", "-id")  # ← replace "-created_at" with "-id"
         )
 
         status = (self.request.GET.get("status") or "").strip().lower()
@@ -706,9 +745,9 @@ class SubscriptionListView(LoginRequiredMixin, PermissionRequiredMixin, ListView
         q = (self.request.GET.get("q") or "").strip()
         if q:
             qs = qs.filter(
-                Q(player__first_name__icontains=q) |
-                Q(player__last_name__icontains=q)  |
-                Q(product__name__icontains=q)
+                Q(player__first_name__icontains=q)
+                | Q(player__last_name__icontains=q)
+                | Q(product__name__icontains=q)
             ).distinct()
 
         return qs.distinct()
@@ -717,7 +756,7 @@ class SubscriptionListView(LoginRequiredMixin, PermissionRequiredMixin, ListView
         ctx = super().get_context_data(**kwargs)
         ctx["statuses"] = ["active", "pending", "paused", "cancelled"]
         ctx["seasons"], ctx["products"] = _season_product_options(_players_in_scope(self.request))
-        ctx["teams"]    = Team.objects.filter(active=True)
+        ctx["teams"] = Team.objects.filter(active=True)
         ctx["player_types"] = PlayerType.objects.all()
 
         g = self.request.GET
@@ -735,6 +774,7 @@ class SubscriptionListView(LoginRequiredMixin, PermissionRequiredMixin, ListView
 # ──────────────────────────────────────────────────────────────────────────────
 # Subscription status mutations
 # ──────────────────────────────────────────────────────────────────────────────
+
 
 @login_required
 @permission_required("memberships.activate_subscription", raise_exception=True)

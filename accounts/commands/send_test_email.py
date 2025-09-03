@@ -1,6 +1,6 @@
-from django.core.management.base import BaseCommand
-from django.core.mail import send_mail
 from django.conf import settings
+from django.core.mail import send_mail
+from django.core.management.base import BaseCommand
 
 
 class Command(BaseCommand):
@@ -24,9 +24,7 @@ class Command(BaseCommand):
         try:
             send_mail(subject, message, sender, recipients)
             self.stdout.write(
-                self.style.SUCCESS(
-                    f"✅ Test email sent to {recipient} (from {sender})"
-                )
+                self.style.SUCCESS(f"✅ Test email sent to {recipient} (from {sender})")
             )
         except Exception as e:
             self.stderr.write(self.style.ERROR(f"❌ Failed to send email: {e}"))

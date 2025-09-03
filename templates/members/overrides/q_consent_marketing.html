@@ -1,35 +1,30 @@
 {% load widget_tweaks %}
-
 <div class="card border mb-3 shadow-sm" id="group-{{ field.name }}">
-  <div class="card-header bg-light d-flex align-items-center py-2">
-    <i class="fas fa-bullhorn mr-2"></i>
-    <strong>Marketing Consent</strong>
-  </div>
-
-  <div class="card-body">
-    {% if item.desc_html %}
-      <div class="prose text-muted small mb-3" style="max-height: 220px; overflow:auto; padding-right:.5rem;">
-        {{ item.desc_html|safe }}
-      </div>
-    {% endif %}
-
-    <div class="custom-control custom-checkbox">
-      {% if field.errors %}
-        {{ field|add_class:"custom-control-input is-invalid" }}
-      {% else %}
-        {{ field|add_class:"custom-control-input" }}
-      {% endif %}
-      <label class="custom-control-label" for="{{ field.id_for_label }}">
-        {{ item.label }}{% if field.field.required %}<span class="text-danger">*</span>{% endif %}
-      </label>
+    <div class="card-header bg-light d-flex align-items-center py-2">
+        <i class="fas fa-bullhorn mr-2"></i>
+        <strong>Marketing Consent</strong>
     </div>
-
-    {% if field.errors %}
-      <div class="invalid-feedback d-block mt-1">{{ field.errors|striptags }}</div>
-    {% endif %}
-  </div>
+    <div class="card-body">
+        {% if item.desc_html %}
+            <div class="prose text-muted small mb-3"
+                 style="max-height: 220px;
+                        overflow:auto;
+                        padding-right:.5rem">{{ item.desc_html|safe }}</div>
+        {% endif %}
+        <div class="custom-control custom-checkbox">
+            {% if field.errors %}
+                {{ field|add_class:"custom-control-input is-invalid" }}
+            {% else %}
+                {{ field|add_class:"custom-control-input" }}
+            {% endif %}
+            <label class="custom-control-label" for="{{ field.id_for_label }}">
+                {{ item.label }}
+                {% if field.field.required %}<span class="text-danger">*</span>{% endif %}
+            </label>
+        </div>
+        {% if field.errors %}<div class="invalid-feedback d-block mt-1">{{ field.errors|striptags }}</div>{% endif %}
+    </div>
 </div>
-
 <style>
 .prose ul { margin-left: 1.25rem; }
 .prose h4, .prose h5 { margin:.25rem 0 .5rem; }

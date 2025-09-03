@@ -1,33 +1,34 @@
-from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
-from django.views.generic import ListView, DetailView, CreateView, UpdateView
-from django.shortcuts import get_object_or_404, redirect
 from django.contrib import messages
-from django.urls import reverse_lazy
-from django.db.models import Q
-from django.views import View
-from django.http import HttpResponseForbidden
-
-from django.utils import timezone
-
-from .models import Incident, IncidentRouting
-from .forms import IncidentForm, IncidentActionForm
-
-from .mixins import AppAccessRequiredMixin, CanSeeListMixin
-
 from django.contrib.auth import get_user_model
+from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
+from django.db.models import Q
+from django.http import HttpResponseForbidden
+from django.shortcuts import get_object_or_404, redirect
+from django.urls import reverse_lazy
+from django.utils import timezone
+from django.views import View
+from django.views.generic import CreateView, DetailView, ListView, UpdateView
+
+from .forms import IncidentActionForm, IncidentForm
+from .models import Incident, IncidentRouting
+
 
 def _get_task_model():
     try:
         from tasks.models import Task
+
         return Task
     except Exception:
         return None
+
 
 def _create_team_review_tasks(incident):
     Task = _get_task_model()
     if not Task:
         return
-    reviewer_ids = IncidentRouting.objects.filter(is_active=True).values_list("reviewers__id", flat=True)
+    reviewer_ids = IncidentRouting.objects.filter(is_active=True).values_list(
+        "reviewers__id", flat=True
+    )
     reviewers = get_user_model().objects.filter(id__in=reviewer_ids).distinct()
     if not reviewers:
         return
@@ -81,26 +82,27 @@ class IncidentListView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
 
         # If user lacks 'view_sensitive', hide others' sensitive items.
         if not u.has_perm("incidents.view_sensitive"):
-            qs = qs.exclude(is_sensitive=True).union(
-                Incident.objects.filter(is_sensitive=True, reported_by=u)
-            ).union(
-                Incident.objects.filter(is_sensitive=True, assigned_to=u)
+            qs = (
+                qs.exclude(is_sensitive=True)
+                .union(Incident.objects.filter(is_sensitive=True, reported_by=u))
+                .union(Incident.objects.filter(is_sensitive=True, assigned_to=u))
             )
 
-        # Non-assigners cannot see incidents they didn't report or aren't assigned to? 
+        # Non-assigners cannot see incidents they didn't report or aren't assigned to?
         # (Optional) leave list permission to govern visibility only via sensitive filter above.
 
         search = self.request.GET.get("q")
         status = self.request.GET.get("status")
         if search:
             qs = qs.filter(
-                Q(summary__icontains=search) |
-                Q(description__icontains=search) |
-                Q(location__icontains=search)
+                Q(summary__icontains=search)
+                | Q(description__icontains=search)
+                | Q(location__icontains=search)
             )
         if status:
             qs = qs.filter(status=status)
         return qs.select_related("team", "primary_player", "reported_by", "assigned_to")
+
 
 class IncidentDetailView(LoginRequiredMixin, PermissionRequiredMixin, DetailView):
     permission_required = "incidents.view_incident"
@@ -112,12 +114,17 @@ class IncidentDetailView(LoginRequiredMixin, PermissionRequiredMixin, DetailView
         u = self.request.user
         qs = super().get_queryset()
         if not u.has_perm("incidents.view_sensitive"):
-            qs = qs.exclude(is_sensitive=True).union(
-                Incident.objects.filter(pk=self.kwargs["pk"], is_sensitive=True, reported_by=u)
-            ).union(
-                Incident.objects.filter(pk=self.kwargs["pk"], is_sensitive=True, assigned_to=u)
+            qs = (
+                qs.exclude(is_sensitive=True)
+                .union(
+                    Incident.objects.filter(pk=self.kwargs["pk"], is_sensitive=True, reported_by=u)
+                )
+                .union(
+                    Incident.objects.filter(pk=self.kwargs["pk"], is_sensitive=True, assigned_to=u)
+                )
             )
         return qs
+
 
 class IncidentCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateView):
     permission_required = "incidents.submit_incident"
@@ -136,6 +143,7 @@ class IncidentCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateView
         messages.success(self.request, "Incident submitted and routed to reviewers.")
         return res
 
+
 class IncidentUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
     permission_required = "incidents.submit_incident"
     model = Incident
@@ -148,13 +156,18 @@ class IncidentUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView
         if obj.status == Incident.Status.CLOSED:
             return HttpResponseForbidden("Closed incidents cannot be edited.")
         # if assigned, only assignee may edit (even if can_action_incident)
-        if obj.status in (Incident.Status.ASSIGNED, Incident.Status.ACTION_REQUIRED) and obj.assigned_to_id:
+        if (
+            obj.status in (Incident.Status.ASSIGNED, Incident.Status.ACTION_REQUIRED)
+            and obj.assigned_to_id
+        ):
             if obj.assigned_to_id != request.user.id:
                 return HttpResponseForbidden("Only the assignee can edit this incident.")
         return super().dispatch(request, *args, **kwargs)
 
+
 class IncidentActionView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
     """For reviewers/safeguarding officers to move workflow forward."""
+
     permission_required = "incidents.can_action_incident"
     model = Incident
     form_class = IncidentActionForm
@@ -211,7 +224,8 @@ class CloseIncidentView(LoginRequiredMixin, PermissionRequiredMixin, View):
         incident.save(update_fields=["status", "last_updated"])
         messages.success(request, "Incident closed.")
         return redirect(incident.get_absolute_url())
-    
+
+
 class UnassignView(LoginRequiredMixin, PermissionRequiredMixin, View):
     permission_required = "incidents.assign_incident"
 

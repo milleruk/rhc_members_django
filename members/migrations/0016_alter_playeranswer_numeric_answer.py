@@ -6,13 +6,18 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('members', '0015_alter_playeranswer_numeric_answer'),
+        ("members", "0015_alter_playeranswer_numeric_answer"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='playeranswer',
-            name='numeric_answer',
-            field=models.CharField(blank=True, help_text='For numeric-style answers (mobile, ID, etc.), stored as string to preserve leading zeros.', max_length=32, null=True),
+            model_name="playeranswer",
+            name="numeric_answer",
+            field=models.CharField(
+                blank=True,
+                help_text="For numeric-style answers (mobile, ID, etc.), stored as string to preserve leading zeros.",
+                max_length=32,
+                null=True,
+            ),
         ),
     ]

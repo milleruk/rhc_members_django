@@ -6,14 +6,14 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('members', '0018_clubnotice_quicklink'),
+        ("members", "0018_clubnotice_quicklink"),
     ]
 
     operations = [
         migrations.DeleteModel(
-            name='ClubNotice',
+            name="ClubNotice",
         ),
         migrations.DeleteModel(
-            name='QuickLink',
+            name="QuickLink",
         ),
     ]

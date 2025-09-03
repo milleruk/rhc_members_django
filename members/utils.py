@@ -1,6 +1,7 @@
 # members/utils.py
 from .models import Team
 
+
 def get_user_team_ids(user):
     """
     Return team IDs the user is allowed for.

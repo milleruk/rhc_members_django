@@ -1,44 +1,42 @@
 {% extends "base_auth.html" %}
 {% load i18n %}
-
-{% block title %}{% trans "Recovery Codes" %}{% endblock %}
-
+{% block title %}
+    {% trans "Recovery Codes" %}
+{% endblock %}
 {% block content %}
-<div class="container auth-wrap d-flex align-items-center justify-content-center py-5">
-  <div class="auth-card" style="max-width:600px; width:100%;">
-    <div class="card card-outline card-primary shadow-sm">
-      <div class="card-header">
-        <h3 class="card-title h6 mb-0">
-          <i class="fas fa-key mr-2"></i>{% trans "Recovery Codes" %}
-        </h3>
-      </div>
-      <div class="card-body">
-        <p class="text-muted">
-          {% trans "Use each code once if you ever lose access to your authenticator device. Store them securely." %}
-        </p>
-
-        {% if codes %}
-          <div class="bg-light p-3 rounded border">
-            <div class="row">
-              {% for code in codes %}
-                <div class="col-6 col-md-4 mb-2 text-monospace">{{ code }}</div>
-              {% endfor %}
+    <div class="container auth-wrap d-flex align-items-center justify-content-center py-5">
+        <div class="auth-card" style="max-width:600px; width:100%;">
+            <div class="card card-outline card-primary shadow-sm">
+                <div class="card-header">
+                    <h3 class="card-title h6 mb-0">
+                        <i class="fas fa-key mr-2"></i>{% trans "Recovery Codes" %}
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted">
+                        {% trans "Use each code once if you ever lose access to your authenticator device. Store them securely." %}
+                    </p>
+                    {% if codes %}
+                        <div class="bg-light p-3 rounded border">
+                            <div class="row">
+                                {% for code in codes %}<div class="col-6 col-md-4 mb-2 text-monospace">{{ code }}</div>{% endfor %}
+                            </div>
+                        </div>
+                    {% endif %}
+                    <form method="post" class="mt-3">
+                        {% csrf_token %}
+                        <button class="btn btn-outline-danger btn-sm"
+                                name="regenerate"
+                                value="1"
+                                type="submit">
+                            <i class="fas fa-sync-alt mr-1"></i>{% trans "Regenerate codes" %}
+                        </button>
+                    </form>
+                </div>
             </div>
-          </div>
-        {% endif %}
-
-        <form method="post" class="mt-3">
-          {% csrf_token %}
-          <button class="btn btn-outline-danger btn-sm" name="regenerate" value="1" type="submit">
-            <i class="fas fa-sync-alt mr-1"></i>{% trans "Regenerate codes" %}
-          </button>
-        </form>
-      </div>
+            <p class="text-center mt-3 mb-0">
+                <a href="/accounts/mfa/"><i class="fas fa-arrow-left mr-1"></i>{% trans "Back to MFA" %}</a>
+            </p>
+        </div>
     </div>
-
-    <p class="text-center mt-3 mb-0">
-      <a href="/accounts/mfa/"><i class="fas fa-arrow-left mr-1"></i>{% trans "Back to MFA" %}</a>
-    </p>
-  </div>
-</div>
 {% endblock %}

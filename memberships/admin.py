@@ -1,6 +1,16 @@
-from django.contrib import admin
-from .models import Season, MembershipCategory, MembershipProduct, PaymentPlan, AddOnFee, Subscription, MatchFeeTariff
 from django import forms
+from django.contrib import admin
+
+from .models import (
+    AddOnFee,
+    MatchFeeTariff,
+    MembershipCategory,
+    MembershipProduct,
+    PaymentPlan,
+    Season,
+    Subscription,
+)
+
 
 class SeasonForm(forms.ModelForm):
     class Meta:
@@ -16,24 +26,41 @@ class SeasonForm(forms.ModelForm):
         self.instance.full_clean()  # triggers Season.clean()
         return cleaned
 
+
 @admin.register(Season)
 class SeasonAdmin(admin.ModelAdmin):
-    form = SeasonForm    
+    form = SeasonForm
     list_display = ("name", "start", "end", "is_active")
     list_editable = ("is_active",)
     search_fields = ("name",)
     ordering = ("-start",)
 
+
 class PaymentPlanInline(admin.TabularInline):
     model = PaymentPlan
     extra = 1
-    fields = ("label", "instalment_amount_gbp", "instalment_count", "frequency",
-              "includes_match_fees", "active", "display_order")
+    fields = (
+        "label",
+        "instalment_amount_gbp",
+        "instalment_count",
+        "frequency",
+        "includes_match_fees",
+        "active",
+        "display_order",
+    )
+
 
 @admin.register(PaymentPlan)
 class PaymentPlanAdmin(admin.ModelAdmin):
-    list_display = ("label", "product", "instalment_amount_gbp", "instalment_count", "frequency", "active")
-    list_filter  = ("frequency", "active", "product__season", "product__category")
+    list_display = (
+        "label",
+        "product",
+        "instalment_amount_gbp",
+        "instalment_count",
+        "frequency",
+        "active",
+    )
+    list_filter = ("frequency", "active", "product__season", "product__category")
     search_fields = (
         "label",
         "product__name",
@@ -43,6 +70,7 @@ class PaymentPlanAdmin(admin.ModelAdmin):
     )
     autocomplete_fields = ("product",)
     list_select_related = ("product", "product__season", "product__category")
+
 
 @admin.register(MembershipCategory)
 class MembershipCategoryAdmin(admin.ModelAdmin):
@@ -59,16 +87,27 @@ class AddOnFeeAdmin(admin.ModelAdmin):
 
 @admin.register(MembershipProduct)
 class MembershipProductAdmin(admin.ModelAdmin):
-    list_display = ("name", "season", "category", "sku", "list_price_gbp", "requires_plan", "pay_per_match", "active")
+    list_display = (
+        "name",
+        "season",
+        "category",
+        "sku",
+        "list_price_gbp",
+        "requires_plan",
+        "pay_per_match",
+        "active",
+    )
     list_filter = ("season", "category", "active", "pay_per_match", "requires_plan")
     search_fields = ("name", "sku")
     inlines = [PaymentPlanInline]
+
 
 @admin.register(MatchFeeTariff)
 class MatchFeeTariffAdmin(admin.ModelAdmin):
     list_display = ("name", "season", "category", "product", "amount_gbp", "is_default", "active")
     list_filter = ("season", "category", "product", "active", "is_default")
     search_fields = ("name", "season__name", "category__label", "product__name")
+
 
 @admin.register(Subscription)
 class SubscriptionAdmin(admin.ModelAdmin):

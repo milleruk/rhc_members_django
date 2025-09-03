@@ -1,30 +1,39 @@
-from django.db.models.signals import pre_save, post_save
+from django.contrib.auth import get_user_model
+from django.db.models.signals import post_delete, post_save, pre_save
 from django.dispatch import receiver
 from django.utils import timezone
-from django.contrib.auth import get_user_model
-from django.db.models.signals import post_delete
 
 from .models import Incident, IncidentRouting
 
-
 # ---------- Helpers for tasks (adapt to your Task model if needed) ----------
+
 
 def _get_task_model():
     try:
         from tasks.models import Task
+
         return Task
     except Exception:
         return None
 
+
 def _task_title(prefix, incident):
     return f"[{prefix}] Incident #{incident.pk}: {incident.summary[:60]}"
+
 
 def _incident_link(incident):
     # If you have full domain, you could generate an absolute URL. Relative is fine inside site.
     return incident.get_absolute_url()
 
-def _create_task(task_model, title, description, *, assigned_to=None, assignees=None, due_days=0, task_type=None):
-    due_date = timezone.now().date() if due_days == 0 else (timezone.now().date() + timezone.timedelta(days=due_days))
+
+def _create_task(
+    task_model, title, description, *, assigned_to=None, assignees=None, due_days=0, task_type=None
+):
+    due_date = (
+        timezone.now().date()
+        if due_days == 0
+        else (timezone.now().date() + timezone.timedelta(days=due_days))
+    )
 
     base = {
         "title": title,
@@ -33,9 +42,9 @@ def _create_task(task_model, title, description, *, assigned_to=None, assignees=
     if hasattr(task_model, "due_date"):
         base["due_date"] = due_date
     if hasattr(task_model, "allow_manual_complete"):
-        base["allow_manual_complete"] = False   # <-- lock manual completion
+        base["allow_manual_complete"] = False  # <-- lock manual completion
     if hasattr(task_model, "is_auto"):
-        base["is_auto"] = True                  # <-- mark as auto/system task
+        base["is_auto"] = True  # <-- mark as auto/system task
     if hasattr(task_model, "task_type") and task_type:
         base["task_type"] = task_type
 
@@ -76,7 +85,9 @@ def _close_open_tasks_for_incident(task_model, incident, contains_tag):
                 except Exception:
                     pass
 
+
 # ---------- Track old values so we can detect transitions ----------
+
 
 @receiver(pre_save, sender=Incident)
 def cache_old_state(sender, instance: Incident, **kwargs):
@@ -91,6 +102,7 @@ def cache_old_state(sender, instance: Incident, **kwargs):
     except Incident.DoesNotExist:
         instance._old_status = None
         instance._old_assigned_to_id = None
+
 
 @receiver(post_save, sender=Incident)
 def handle_transitions(sender, instance: Incident, created, **kwargs):
@@ -117,19 +129,29 @@ def handle_transitions(sender, instance: Incident, created, **kwargs):
     old_status = getattr(instance, "_old_status", None)
 
     # SUBMITTED -> ASSIGNED
-    if (old_status in [None, Incident.Status.SUBMITTED]) and instance.status == Incident.Status.ASSIGNED:
+    if (
+        old_status in [None, Incident.Status.SUBMITTED]
+    ) and instance.status == Incident.Status.ASSIGNED:
         _close_open_tasks_for_incident(Task, instance, "[REVIEW]")
         if instance.assigned_to:
             title = _task_title("REVIEW (Assigned)", instance)
             desc = (
-                "You are assigned to review this incident.\n\n"
-                f"Open: {_incident_link(instance)}"
+                "You are assigned to review this incident.\n\n" f"Open: {_incident_link(instance)}"
             )
             # ⬇️ EDIT HERE
-            _create_task(Task, title, desc, assigned_to=instance.assigned_to, task_type="incident_review_assigned")
+            _create_task(
+                Task,
+                title,
+                desc,
+                assigned_to=instance.assigned_to,
+                task_type="incident_review_assigned",
+            )
 
     # ASSIGNED -> ACTION_REQUIRED
-    if old_status == Incident.Status.ASSIGNED and instance.status == Incident.Status.ACTION_REQUIRED:
+    if (
+        old_status == Incident.Status.ASSIGNED
+        and instance.status == Incident.Status.ACTION_REQUIRED
+    ):
         _close_open_tasks_for_incident(Task, instance, "[REVIEW (Assigned)]")
         if instance.assigned_to:
             title = _task_title("ACTION NEEDED", instance)
@@ -138,7 +160,13 @@ def handle_transitions(sender, instance: Incident, created, **kwargs):
                 f"Open: {_incident_link(instance)}"
             )
             # ⬇️ EDIT HERE
-            _create_task(Task, title, desc, assigned_to=instance.assigned_to, task_type="incident_action_needed")
+            _create_task(
+                Task,
+                title,
+                desc,
+                assigned_to=instance.assigned_to,
+                task_type="incident_action_needed",
+            )
 
     # (ASSIGNED or ACTION_REQUIRED) -> CLOSED
     if instance.status == Incident.Status.CLOSED and old_status != Incident.Status.CLOSED:

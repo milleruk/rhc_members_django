@@ -10,36 +10,25 @@ from collections import OrderedDict
 # ──────────────────────────────────────────────────────────────────────────────
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin, PermissionRequiredMixin
-from django.core.exceptions import PermissionDenied
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.db import transaction
 from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
+from django.template import TemplateDoesNotExist
+from django.template.loader import get_template
 from django.urls import reverse, reverse_lazy
 from django.utils import timezone
 from django.utils.safestring import mark_safe
-from django.views.decorators.http import require_POST
-from django.views.generic import CreateView, UpdateView, ListView, DetailView, TemplateView
-from django.template.loader import get_template
-from django.template import TemplateDoesNotExist
+from django.views.generic import CreateView, TemplateView, UpdateView
+
+from club.models import ClubNotice, QuickLink
+from tasks.events import emit
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Local apps
 # ──────────────────────────────────────────────────────────────────────────────
-from .forms import DynamicAnswerForm, PlayerForm, TeamAssignmentForm, PlayerEditForm
-from .models import (
-    DynamicQuestion,
-    Player,
-    PlayerAnswer,
-    PlayerType,
-    TeamMembership,
-    PlayerAccessLog,
-    Team,  # used in admin list view helpers
-)
-
-from club.models import ClubNotice, QuickLink
-from memberships.models import Subscription
-from tasks.events import emit
+from .forms import DynamicAnswerForm, PlayerEditForm, PlayerForm
+from .models import DynamicQuestion, Player, PlayerAnswer, PlayerType
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Third-party (optional)
@@ -63,6 +52,7 @@ class InGroupsRequiredMixin(UserPassesTestMixin):
     Require authenticated users to be in one of the allowed groups (or be superuser).
     Override `allowed_groups` per-view where needed.
     """
+
     allowed_groups = ALLOWED_GROUPS
 
     def test_func(self):
@@ -78,6 +68,7 @@ class InGroupsRequiredMixin(UserPassesTestMixin):
 # Utilities / helpers
 # =============================================================================
 
+
 def _profile_is_complete(player) -> bool:
     """Return True if all required active questions (for the player's type) are answered."""
     req_q_ids = list(
@@ -89,9 +80,9 @@ def _profile_is_complete(player) -> bool:
         return True
 
     answered_ids = set(
-        PlayerAnswer.objects.filter(
-            player=player, question_id__in=req_q_ids
-        ).values_list("question_id", flat=True)
+        PlayerAnswer.objects.filter(player=player, question_id__in=req_q_ids).values_list(
+            "question_id", flat=True
+        )
     )
     return set(req_q_ids).issubset(answered_ids)
 
@@ -106,6 +97,7 @@ def get_owned_player_or_404(user, **kwargs) -> Player:
         created_by=user,
         **kwargs,
     )
+
 
 def _md(text: str) -> str:
     """
@@ -123,6 +115,7 @@ def _md(text: str) -> str:
         return mark_safe(html)
     # fallback: escape + linebreaks
     from django.utils.html import escape, linebreaks
+
     return mark_safe(linebreaks(escape(text)))
 
 
@@ -130,12 +123,12 @@ def _md(text: str) -> str:
 # Member-facing views (owner-only)
 # =============================================================================
 
+
 @login_required
 def dashboard(request):
     """Show current user's players + tasks panel."""
     players = (
-        request.user.players
-        .select_related("player_type")
+        request.user.players.select_related("player_type")
         .prefetch_related("team_memberships__team")
         .all()
     )
@@ -188,7 +181,8 @@ def dashboard(request):
                     except Exception:
                         pass
 
-            setattr(t, "url", url)  # transient attribute for templates
+            # setattr(t, "url", url)  # transient attribute for templates
+
             pending.append(t)
 
         pending_tasks = pending
@@ -201,16 +195,26 @@ def dashboard(request):
         for p in players:
             answers_complete = None
             try:
-                answers_complete = p.answers_complete() if callable(getattr(p, "answers_complete", None)) else getattr(p, "answers_complete", None)
+                answers_complete = (
+                    p.answers_complete()
+                    if callable(getattr(p, "answers_complete", None))
+                    else getattr(p, "answers_complete", None)
+                )
             except Exception:
                 pass
 
             if answers_complete is False:
-                pending_tasks.append(type("T", (), {
-                    "title": f"Complete answers for {p.first_name} {p.last_name}",
-                    "due_at": None,
-                    "url": reverse("answer", args=[p.public_id]),
-                })())
+                pending_tasks.append(
+                    type(
+                        "T",
+                        (),
+                        {
+                            "title": f"Complete answers for {p.first_name} {p.last_name}",
+                            "due_at": None,
+                            "url": reverse("answer", args=[p.public_id]),
+                        },
+                    )()
+                )
 
             has_active_membership = None
             try:
@@ -220,11 +224,17 @@ def dashboard(request):
                 pass
 
             if has_active_membership is False:
-                pending_tasks.append(type("T", (), {
-                    "title": f"Choose membership for {p.first_name} {p.last_name}",
-                    "due_at": None,
-                    "url": reverse("memberships:choose", args=[p.id]),
-                })())
+                pending_tasks.append(
+                    type(
+                        "T",
+                        (),
+                        {
+                            "title": f"Choose membership for {p.first_name} {p.last_name}",
+                            "due_at": None,
+                            "url": reverse("memberships:choose", args=[p.id]),
+                        },
+                    )()
+                )
 
         pending_tasks = pending_tasks[:10]
 
@@ -233,6 +243,7 @@ def dashboard(request):
 
     def wallet_flags(request):
         from django.conf import settings
+
         return {"WALLET_APPLE_ENABLED": getattr(settings, "WALLET_APPLE_ENABLED", False)}
 
     return render(
@@ -251,8 +262,10 @@ def dashboard(request):
 # Create / Update / Delete (member-facing)
 # =============================================================================
 
+
 class PlayerCreateView(LoginRequiredMixin, CreateView):
     """Create a player profile that is automatically owned by the creator."""
+
     model = Player
     form_class = PlayerForm
     template_name = "members/player_form.html"
@@ -274,6 +287,7 @@ class PlayerCreateView(LoginRequiredMixin, CreateView):
 
 class PlayerUpdateView(LoginRequiredMixin, UpdateView):
     """Edit an existing player (owner/guardian/staff or superuser)."""
+
     model = Player
     form_class = PlayerEditForm
     template_name = "members/player_edit.html"
@@ -306,8 +320,10 @@ class PlayerUpdateView(LoginRequiredMixin, UpdateView):
         response = super().dispatch(request, *args, **kwargs)
         obj = getattr(self, "object", None)
         if obj is not None:
-            allowed = obj.can_edit(request.user) if hasattr(obj, "can_edit") else (
-                request.user.is_staff or request.user.has_perm("members.change_player")
+            allowed = (
+                obj.can_edit(request.user)
+                if hasattr(obj, "can_edit")
+                else (request.user.is_staff or request.user.has_perm("members.change_player"))
             )
             if not allowed:
                 messages.error(request, "You don’t have permission to edit this player.")
@@ -342,6 +358,7 @@ def answer_view(request, public_id):
             return mark_safe(html)
         # fallback: escape + <br>
         from django.utils.html import escape, linebreaks
+
         return mark_safe(linebreaks(escape(text)))
 
     if request.method == "POST":
@@ -351,7 +368,9 @@ def answer_view(request, public_id):
 
             # Mark profile complete → emit event
             if _profile_is_complete(player):
-                transaction.on_commit(lambda: emit("profile.completed", subject=player, actor=request.user))
+                transaction.on_commit(
+                    lambda: emit("profile.completed", subject=player, actor=request.user)
+                )
 
             messages.success(request, "Details saved.")
             return redirect("dashboard")
@@ -371,7 +390,11 @@ def answer_view(request, public_id):
         cat = q.category
         cat_key = cat.id if cat else "general"
         if cat_key not in grouped_fields:
-            raw_desc = (getattr(cat, "description", None) or getattr(cat, "discription", "")) if cat else ""
+            raw_desc = (
+                (getattr(cat, "description", None) or getattr(cat, "discription", ""))
+                if cat
+                else ""
+            )
             grouped_fields[cat_key] = {
                 "name": cat.name if cat else "General",
                 "description_html": _md(raw_desc),
@@ -381,7 +404,9 @@ def answer_view(request, public_id):
         main_name = q.get_field_name()
         detail_name = q.get_detail_field_name()
         main_bf = form[main_name] if main_name in form.fields else None
-        detail_bf = form[detail_name] if q.requires_detail_if_yes and detail_name in form.fields else None
+        detail_bf = (
+            form[detail_name] if q.requires_detail_if_yes and detail_name in form.fields else None
+        )
 
         # Per-question override template lookup: templates/members/overrides/q_<code>.html
         override_template = None
@@ -392,19 +417,23 @@ def answer_view(request, public_id):
             except TemplateDoesNotExist:
                 override_template = None
 
-        grouped_fields[cat_key]["items"].append({
-            "main": main_bf,
-            "detail": detail_bf,
-            "qid": q.id,
-            "code": q.code,
-            "label": q.label,
-            "desc_html": _md(getattr(q, "description", "") or ""),
-            "override_template": override_template,
-        })
+        grouped_fields[cat_key]["items"].append(
+            {
+                "main": main_bf,
+                "detail": detail_bf,
+                "qid": q.id,
+                "code": q.code,
+                "label": q.label,
+                "desc_html": _md(getattr(q, "description", "") or ""),
+                "override_template": override_template,
+            }
+        )
 
     # Team memberships (for sidebar)
     memberships = (
-        player.team_memberships.select_related("team").prefetch_related("positions").order_by("team__name")
+        player.team_memberships.select_related("team")
+        .prefetch_related("positions")
+        .order_by("team__name")
     )
 
     # ---------- Build error summary for the banner (template-friendly; no dict indexing) ----------
@@ -415,11 +444,13 @@ def answer_view(request, public_id):
             if name in form.fields:
                 bf = form[name]
                 msg = "; ".join([str(e) for e in errs])  # flatten ErrorList
-                error_summary.append({
-                    "name": name,                          # used for #group-<name> anchors
-                    "label": getattr(bf, "label", name),   # nice label (fallback to name)
-                    "message": msg,
-                })
+                error_summary.append(
+                    {
+                        "name": name,  # used for #group-<name> anchors
+                        "label": getattr(bf, "label", name),  # nice label (fallback to name)
+                        "message": msg,
+                    }
+                )
 
     return render(
         request,
@@ -447,9 +478,11 @@ def player_delete(request, public_id):
 
     return render(request, "members/player_confirm_delete.html", {"player": player})
 
+
 # =============================================================================
 # Legal pages
 # =============================================================================
+
 
 class TermsView(TemplateView):
     template_name = "legal/terms.html"

@@ -1,6 +1,8 @@
 # memberships/tasks.py (Celery)
 from django.utils.timezone import localdate
+
 from .models import Season
+
 
 def sync_season_is_active():
     today = localdate()

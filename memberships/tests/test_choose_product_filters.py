@@ -1,12 +1,13 @@
-import pytest
 from datetime import date
-from django.urls import reverse
 
-from memberships.views import _get_selectable_season
+import pytest
+from django.urls import reverse
 
 
 @pytest.mark.django_db
-def test_senior_player_sees_only_senior_products(client, user, player_senior, product_senior_current, product_junior_current, monkeypatch):
+def test_senior_player_sees_only_senior_products(
+    client, user, player_senior, product_senior_current, product_junior_current, monkeypatch
+):
     client.login(username="alice", password="pw")
 
     # Force today's selection inside current season
@@ -23,7 +24,9 @@ def test_senior_player_sees_only_senior_products(client, user, player_senior, pr
 
 
 @pytest.mark.django_db
-def test_junior_player_sees_only_junior_products(client, user, player_junior, product_senior_current, product_junior_current, monkeypatch):
+def test_junior_player_sees_only_junior_products(
+    client, user, player_junior, product_senior_current, product_junior_current, monkeypatch
+):
     client.login(username="alice", password="pw")
     monkeypatch.setattr("memberships.views.localdate", lambda: date(2024, 12, 1))
 

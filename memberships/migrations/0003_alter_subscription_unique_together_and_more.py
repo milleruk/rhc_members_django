@@ -8,28 +8,42 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('members', '0008_notice_dynamicquestion_description_directmessage'),
-        ('memberships', '0002_membershipproduct_pay_per_match_and_more'),
+        ("members", "0008_notice_dynamicquestion_description_directmessage"),
+        ("memberships", "0002_membershipproduct_pay_per_match_and_more"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
         migrations.AlterUniqueTogether(
-            name='subscription',
+            name="subscription",
             unique_together=set(),
         ),
         migrations.AddField(
-            model_name='subscription',
-            name='season',
-            field=models.ForeignKey(blank=True, editable=False, null=True, on_delete=django.db.models.deletion.PROTECT, related_name='subscriptions', to='memberships.season'),
+            model_name="subscription",
+            name="season",
+            field=models.ForeignKey(
+                blank=True,
+                editable=False,
+                null=True,
+                on_delete=django.db.models.deletion.PROTECT,
+                related_name="subscriptions",
+                to="memberships.season",
+            ),
         ),
         migrations.AlterField(
-            model_name='membershipproduct',
-            name='pay_per_match',
-            field=models.BooleanField(default=False, help_text='If true, a per-match fee also applies in addition to any membership payment.'),
+            model_name="membershipproduct",
+            name="pay_per_match",
+            field=models.BooleanField(
+                default=False,
+                help_text="If true, a per-match fee also applies in addition to any membership payment.",
+            ),
         ),
         migrations.AddConstraint(
-            model_name='subscription',
-            constraint=models.UniqueConstraint(condition=models.Q(('status__in', ['pending', 'active'])), fields=('player', 'season'), name='uniq_player_season_active_sub'),
+            model_name="subscription",
+            constraint=models.UniqueConstraint(
+                condition=models.Q(("status__in", ["pending", "active"])),
+                fields=("player", "season"),
+                name="uniq_player_season_active_sub",
+            ),
         ),
     ]

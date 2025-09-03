@@ -6,13 +6,17 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('members', '0021_player_membership_number'),
+        ("members", "0021_player_membership_number"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='player',
-            name='membership_number',
-            field=models.CharField(help_text='Automatically generated sequential membership number', max_length=10, unique=True),
+            model_name="player",
+            name="membership_number",
+            field=models.CharField(
+                help_text="Automatically generated sequential membership number",
+                max_length=10,
+                unique=True,
+            ),
         ),
     ]

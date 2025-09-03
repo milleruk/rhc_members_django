@@ -8,24 +8,39 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('incidents', '0002_remove_incident_parents_notified_and_more'),
+        ("incidents", "0002_remove_incident_parents_notified_and_more"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='incident',
-            name='assigned_at',
+            model_name="incident",
+            name="assigned_at",
             field=models.DateTimeField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='incident',
-            name='assigned_to',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='incidents_assigned', to=settings.AUTH_USER_MODEL),
+            model_name="incident",
+            name="assigned_to",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                related_name="incidents_assigned",
+                to=settings.AUTH_USER_MODEL,
+            ),
         ),
         migrations.AlterField(
-            model_name='incident',
-            name='status',
-            field=models.CharField(choices=[('submitted', 'Submitted (internal)'), ('assigned', 'Assigned'), ('action_required', 'Action Required'), ('closed', 'Closed')], default='submitted', max_length=20),
+            model_name="incident",
+            name="status",
+            field=models.CharField(
+                choices=[
+                    ("submitted", "Submitted (internal)"),
+                    ("assigned", "Assigned"),
+                    ("action_required", "Action Required"),
+                    ("closed", "Closed"),
+                ],
+                default="submitted",
+                max_length=20,
+            ),
         ),
     ]

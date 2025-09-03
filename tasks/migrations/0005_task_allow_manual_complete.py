@@ -6,13 +6,16 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('tasks', '0004_remove_task_related_player_task_complete_on_and_more'),
+        ("tasks", "0004_remove_task_related_player_task_complete_on_and_more"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='task',
-            name='allow_manual_complete',
-            field=models.BooleanField(default=True, help_text='If false, users cannot manually complete this task; completion must be automated (or by admin override).'),
+            model_name="task",
+            name="allow_manual_complete",
+            field=models.BooleanField(
+                default=True,
+                help_text="If false, users cannot manually complete this task; completion must be automated (or by admin override).",
+            ),
         ),
     ]

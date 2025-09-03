@@ -2,25 +2,30 @@
 {% load i18n %}
 {% block title %}Confirm your email{% endblock %}
 {% block content %}
-<div class="login-box">
-  {% include "partials/messages.html" %}
-  <div class="card card-outline card-success">
-    <div class="card-header text-center">
-      <span class="h1"><b>Redditch</b>HC</span>
+    <div class="login-box">
+        {% include "partials/messages.html" %}
+        <div class="card card-outline card-success">
+            <div class="card-header text-center">
+                <span class="h1"><b>Redditch</b>HC</span>
+            </div>
+            <div class="card-body">
+                <h5 class="text-success mb-2">Confirm your email</h5>
+                {% if confirmation %}
+                    <p>
+                        Please confirm that <strong>{{ confirmation.email_address.email }}</strong> belongs to you.
+                    </p>
+                    <form method="post"
+                          action="{% url 'account_confirm_email' confirmation.key %}">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-success btn-block">Confirm email</button>
+                    </form>
+                {% else %}
+                    <p class="text-danger">This confirmation link is invalid or has expired.</p>
+                    <p class="mb-0">
+                        Need a new one? <a href="{% url 'account_email' %}">Resend verification email</a>.
+                    </p>
+                {% endif %}
+            </div>
+        </div>
     </div>
-    <div class="card-body">
-      <h5 class="text-success mb-2">Confirm your email</h5>
-      {% if confirmation %}
-        <p>Please confirm that <strong>{{ confirmation.email_address.email }}</strong> belongs to you.</p>
-        <form method="post" action="{% url 'account_confirm_email' confirmation.key %}">
-          {% csrf_token %}
-          <button type="submit" class="btn btn-success btn-block">Confirm email</button>
-        </form>
-      {% else %}
-        <p class="text-danger">This confirmation link is invalid or has expired.</p>
-        <p class="mb-0">Need a new one? <a href="{% url 'account_email' %}">Resend verification email</a>.</p>
-      {% endif %}
-    </div>
-  </div>
-</div>
 {% endblock %}

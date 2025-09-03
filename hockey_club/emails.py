@@ -1,6 +1,7 @@
 # hockey_club/emails.py
 from allauth.account.models import EmailAddress, EmailConfirmationHMAC
 
+
 def send_activation_email(request, user):
     if not user.email:
         return

@@ -1,8 +1,10 @@
-from django.core.management.base import BaseCommand
 from django.contrib.auth.models import Group
-from members.models import PlayerType, DynamicQuestion
+from django.core.management.base import BaseCommand
+
+from members.models import DynamicQuestion, PlayerType
 
 GROUPS = ["Full Access", "Committee", "Captain", "Coach", "Helper"]
+
 
 class Command(BaseCommand):
     help = "Create default Groups and Player Types"
@@ -32,7 +34,9 @@ class Command(BaseCommand):
             q.applies_to.set([senior, junior])
             q.save()
             # Make it visible to Committee and Coach by default
-            q.visible_to_groups.set(Group.objects.filter(name__in=["Full Access", "Committee", "Coach"]))
+            q.visible_to_groups.set(
+                Group.objects.filter(name__in=["Full Access", "Committee", "Coach"])
+            )
             q.save()
             self.stdout.write(self.style.SUCCESS("Example question created."))
         else:

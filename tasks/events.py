@@ -1,7 +1,9 @@
 # tasks/events.py
 from django.contrib.contenttypes.models import ContentType
 from django.utils import timezone
+
 from .models import Task, TaskStatus
+
 
 def emit(event_name: str, *, subject, actor=None, **context) -> int:
     """

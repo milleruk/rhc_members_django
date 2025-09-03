@@ -3,32 +3,27 @@ from __future__ import annotations
 
 from typing import Optional
 
-from django.utils.timezone import localdate
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db import IntegrityError, transaction
-from django.db.models import Q, Exists, OuterRef, Value, BooleanField
+from django.db.models import BooleanField, Exists, OuterRef, Q, Value
 from django.http import Http404, HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
+from django.utils.timezone import localdate
 from django.views.decorators.http import require_POST
 
 from members.models import Player
-from .forms import ConfirmSubscriptionForm
-from .models import (
-    Season,
-    MembershipProduct,
-    PaymentPlan,
-    Subscription,
-    resolve_match_fee_for,
-)
-from .permissions import can_manage_player
 from tasks.events import emit
 
+from .forms import ConfirmSubscriptionForm
+from .models import MembershipProduct, PaymentPlan, Season, Subscription, resolve_match_fee_for
+from .permissions import can_manage_player
 
 # ---------------------------
 # Helpers / guards
 # ---------------------------
+
 
 def _get_selectable_season(today=None) -> Season:
     """
@@ -54,9 +49,10 @@ def _is_admin(user) -> bool:
     """True if user is superuser or in elevated groups."""
     if not user.is_authenticated:
         return False
-    return user.is_superuser or user.groups.filter(
-        name__in=["Coach", "Captain", "Club Admin"]
-    ).exists()
+    return (
+        user.is_superuser
+        or user.groups.filter(name__in=["Coach", "Captain", "Club Admin"]).exists()
+    )
 
 
 def _can_manage_subscription(user, sub: Subscription) -> bool:
@@ -73,9 +69,7 @@ def _can_manage_subscription(user, sub: Subscription) -> bool:
 
 def _existing_membership(player: Player, season: Season) -> Optional[Subscription]:
     return (
-        Subscription.objects.filter(
-            player=player, season=season, status__in=["pending", "active"]
-        )
+        Subscription.objects.filter(player=player, season=season, status__in=["pending", "active"])
         .select_related("product", "plan")
         .first()
     )
@@ -84,6 +78,7 @@ def _existing_membership(player: Player, season: Season) -> Optional[Subscriptio
 # ---------------------------
 # Choose product / plan / confirm
 # ---------------------------
+
 
 @login_required
 def choose_product(request: HttpRequest, player_id: int) -> HttpResponse:
@@ -138,7 +133,7 @@ def choose_plan(request: HttpRequest, player_id: int, product_id: int) -> HttpRe
     )
 
     # Only allow plan selection if the product is in the selectable season
-        # Ensure product is in the single selectable season BEFORE any other logic
+    # Ensure product is in the single selectable season BEFORE any other logic
     selectable = _get_selectable_season()
     if product.season_id != selectable.id:
         raise Http404("Product is not currently selectable.")
@@ -225,7 +220,7 @@ def confirm(request: HttpRequest, player_id: int, plan_id: int) -> HttpResponse:
                         created_by=request.user if request.user.is_authenticated else None,
                     )
                     sub.full_clean()  # validates requires_plan + season alignment
-                    sub.save()        # model.save() sets season from product
+                    sub.save()  # model.save() sets season from product
 
                     # Emit event after commit only
                     transaction.on_commit(
@@ -260,6 +255,7 @@ def confirm(request: HttpRequest, player_id: int, plan_id: int) -> HttpResponse:
 # My memberships
 # ---------------------------
 
+
 @login_required
 def my_memberships(request: HttpRequest) -> HttpResponse:
     """
@@ -285,21 +281,17 @@ def my_memberships(request: HttpRequest) -> HttpResponse:
             )
         )
     else:
-        players = players_qs.annotate(
-            has_sub_this_season=Value(False, output_field=BooleanField())
-        )
+        players = players_qs.annotate(has_sub_this_season=Value(False, output_field=BooleanField()))
     active_statuses = ["pending", "active"]
 
     active_subs = (
-        Subscription.objects
-        .filter(player__created_by=request.user, status__in=active_statuses)
+        Subscription.objects.filter(player__created_by=request.user, status__in=active_statuses)
         .select_related("player", "product", "product__season", "plan", "season")
         .order_by("player__last_name", "player__first_name", "-started_at")
     )
 
     old_subs = (
-        Subscription.objects
-        .filter(player__created_by=request.user)
+        Subscription.objects.filter(player__created_by=request.user)
         .exclude(status__in=active_statuses)
         .select_related("player", "product", "product__season", "plan", "season")
         .order_by("-started_at")
@@ -320,6 +312,7 @@ def my_memberships(request: HttpRequest) -> HttpResponse:
 # ---------------------------
 # Cancel / delete (state changes)
 # ---------------------------
+
 
 @login_required
 @require_POST

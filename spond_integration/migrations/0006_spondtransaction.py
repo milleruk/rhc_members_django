@@ -7,31 +7,61 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('members', '0012_alter_teammembership_options'),
-        ('spond_integration', '0005_spondevent_subgroups'),
+        ("members", "0012_alter_teammembership_options"),
+        ("spond_integration", "0005_spondevent_subgroups"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='SpondTransaction',
+            name="SpondTransaction",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('spond_txn_id', models.CharField(max_length=100, unique=True)),
-                ('amount_minor', models.IntegerField(help_text='Amount in minor units (e.g. pence)')),
-                ('currency', models.CharField(default='GBP', max_length=10)),
-                ('status', models.CharField(default='paid', max_length=40)),
-                ('description', models.CharField(blank=True, max_length=255)),
-                ('reference', models.CharField(blank=True, max_length=120)),
-                ('created_at', models.DateTimeField()),
-                ('paid_at', models.DateTimeField(blank=True, null=True)),
-                ('last_synced_at', models.DateTimeField(auto_now=True)),
-                ('raw', models.JSONField(blank=True, default=dict)),
-                ('player', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='spond_transactions', to='members.player')),
-                ('spond_member', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='transactions', to='spond_integration.spondmember')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                    ),
+                ),
+                ("spond_txn_id", models.CharField(max_length=100, unique=True)),
+                (
+                    "amount_minor",
+                    models.IntegerField(help_text="Amount in minor units (e.g. pence)"),
+                ),
+                ("currency", models.CharField(default="GBP", max_length=10)),
+                ("status", models.CharField(default="paid", max_length=40)),
+                ("description", models.CharField(blank=True, max_length=255)),
+                ("reference", models.CharField(blank=True, max_length=120)),
+                ("created_at", models.DateTimeField()),
+                ("paid_at", models.DateTimeField(blank=True, null=True)),
+                ("last_synced_at", models.DateTimeField(auto_now=True)),
+                ("raw", models.JSONField(blank=True, default=dict)),
+                (
+                    "player",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="spond_transactions",
+                        to="members.player",
+                    ),
+                ),
+                (
+                    "spond_member",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="transactions",
+                        to="spond_integration.spondmember",
+                    ),
+                ),
             ],
             options={
-                'ordering': ['-created_at'],
-                'indexes': [models.Index(fields=['status'], name='spond_integ_status_29737d_idx'), models.Index(fields=['created_at'], name='spond_integ_created_76d5b6_idx'), models.Index(fields=['paid_at'], name='spond_integ_paid_at_c3d9d1_idx')],
+                "ordering": ["-created_at"],
+                "indexes": [
+                    models.Index(fields=["status"], name="spond_integ_status_29737d_idx"),
+                    models.Index(fields=["created_at"], name="spond_integ_created_76d5b6_idx"),
+                    models.Index(fields=["paid_at"], name="spond_integ_paid_at_c3d9d1_idx"),
+                ],
             },
         ),
     ]

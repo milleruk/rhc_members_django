@@ -1,8 +1,7 @@
-from django.core.mail import send_mail
 from django.contrib import messages
-from django.contrib.auth import login, get_user_model
+from django.contrib.auth import get_user_model, login
 from django.contrib.auth.tokens import default_token_generator
-from django.http import HttpResponseBadRequest, HttpResponseForbidden, HttpResponse
+from django.http import HttpResponseBadRequest
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.encoding import force_str
 from django.utils.http import urlsafe_base64_decode
@@ -10,6 +9,7 @@ from django.utils.http import urlsafe_base64_decode
 from .emails import send_activation_email
 
 User = get_user_model()
+
 
 def custom_404(request, exception):
     return render(request, "404.html", status=404)

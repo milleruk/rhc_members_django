@@ -1,13 +1,16 @@
 # spond_integration/services/spond_api.py
 import datetime as dt
 import logging
+
 import requests
 from django.conf import settings
 
 log = logging.getLogger(__name__)
 
+
 class SpondAPIError(Exception):
     pass
+
 
 class SpondClient:
     BASE_URL = getattr(settings, "SPOND_API_BASE", "https://api.spond.com/v1")
@@ -24,7 +27,13 @@ class SpondClient:
             "Content-Type": "application/json",
         }
 
-    def list_transactions(self, since: dt.datetime | None = None, until: dt.datetime | None = None, page: int = 1, page_size: int = 100):
+    def list_transactions(
+        self,
+        since: dt.datetime | None = None,
+        until: dt.datetime | None = None,
+        page: int = 1,
+        page_size: int = 100,
+    ):
         """
         Return a list of transactions from Spond (shape depends on Spond API).
         Adjust endpoint/params to match your integration.

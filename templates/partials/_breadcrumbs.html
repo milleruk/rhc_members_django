@@ -1,25 +1,29 @@
 {# templates/partials/_breadcrumbs.html #}
 <div class="row mb-2">
-  <div class="col-sm-6">
-    <h1 class="m-0 h4">
-      {% block page_title %}
-        {% with lastcrumb=auto_breadcrumbs|last %}
-          {% if lastcrumb %}{{ lastcrumb.title }}{% else %}Page{% endif %}
-        {% endwith %}
-      {% endblock %}
-    </h1>
-  </div>
-  <div class="col-sm-6">
-    <ol class="breadcrumb float-sm-right mb-0">
-      {% for crumb in auto_breadcrumbs %}
-        {% if crumb.active %}
-          <li class="breadcrumb-item active">{{ crumb.title }}</li>
-        {% else %}
-          <li class="breadcrumb-item">
-            <a href="{{ crumb.url|default:'#' }}">{{ crumb.title }}</a>
-          </li>
-        {% endif %}
-      {% endfor %}
-    </ol>
-  </div>
+    <div class="col-sm-6">
+        <h1 class="m-0 h4">
+            {% block page_title %}
+                {% with lastcrumb=auto_breadcrumbs|last %}
+                    {% if lastcrumb %}
+                        {{ lastcrumb.title }}
+                    {% else %}
+                        Page
+                    {% endif %}
+                {% endwith %}
+            {% endblock %}
+        </h1>
+    </div>
+    <div class="col-sm-6">
+        <ol class="breadcrumb float-sm-right mb-0">
+            {% for crumb in auto_breadcrumbs %}
+                {% if crumb.active %}
+                    <li class="breadcrumb-item active">{{ crumb.title }}</li>
+                {% else %}
+                    <li class="breadcrumb-item">
+                        <a href="{{ crumb.url|default:'#' }}">{{ crumb.title }}</a>
+                    </li>
+                {% endif %}
+            {% endfor %}
+        </ol>
+    </div>
 </div>

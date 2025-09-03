@@ -1,62 +1,70 @@
 {% extends "base_auth.html" %}
 {% load i18n account %}
-{% block title %}{% trans "Login" %}{% endblock %}
+{% block title %}
+    {% trans "Login" %}
+{% endblock %}
 {% block content %}
-<div class="login-box">
-
-  <!-- Disclaimer -->
-  <div class="alert alert-info text-center mb-4">
-    <p class="mb-1">This portal is for <strong>playing members</strong> of Redditch Hockey Club.</p>
-    <p class="mb-2">Looking for the public club website?</p>
-    <a href="https://redditchhc.co.uk" class="btn btn-sm btn-outline-primary">Click here</a>
-  </div>
-
-  {% include "partials/messages.html" %}
-
-  <div class="card card-outline card-primary">
-    <div class="card-header text-center">
-      <a href="{% url 'dashboard' %}" class="h1"><b>Redditch</b>HC</a>
-    </div>
-    <div class="card-body">
-      <p class="login-box-msg">{% trans "Sign in to start your session" %}</p>
-
-      <form method="post" action="{% url 'account_login' %}" novalidate>
-        {% csrf_token %}
-        {% if form.non_field_errors %}
-          <div class="alert alert-danger mb-3">{{ form.non_field_errors|striptags }}</div>
-        {% endif %}
-
-        <div class="input-group mb-3">
-          {{ form.login }}
-          <div class="input-group-append"><div class="input-group-text"><span class="fas fa-envelope"></span></div></div>
+    <div class="login-box">
+        <!-- Disclaimer -->
+        <div class="alert alert-info text-center mb-4">
+            <p class="mb-1">
+                This portal is for <strong>playing members</strong> of Redditch Hockey Club.
+            </p>
+            <p class="mb-2">Looking for the public club website?</p>
+            <a href="https://redditchhc.co.uk"
+               class="btn btn-sm btn-outline-primary">Click here</a>
         </div>
-        {% if form.login.errors %}<div class="text-danger small mb-2">{{ form.login.errors|striptags }}</div>{% endif %}
-
-        <div class="input-group mb-3">
-          {{ form.password }}
-          <div class="input-group-append"><div class="input-group-text"><span class="fas fa-lock"></span></div></div>
-        </div>
-        {% if form.password.errors %}<div class="text-danger small mb-2">{{ form.password.errors|striptags }}</div>{% endif %}
-
-        <div class="row">
-          <div class="col-8">
-            <div class="icheck-primary">
-              {{ form.remember }} <label for="id_remember">{% trans "Remember Me" %}</label>
+        {% include "partials/messages.html" %}
+        <div class="card card-outline card-primary">
+            <div class="card-header text-center">
+                <a href="{% url 'dashboard' %}" class="h1"><b>Redditch</b>HC</a>
             </div>
-          </div>
-          <div class="col-4">
-            <button type="submit" class="btn btn-primary btn-block">{% trans "Sign In" %}</button>
-          </div>
+            <div class="card-body">
+                <p class="login-box-msg">{% trans "Sign in to start your session" %}</p>
+                <form method="post" action="{% url 'account_login' %}" novalidate>
+                    {% csrf_token %}
+                    {% if form.non_field_errors %}
+                        <div class="alert alert-danger mb-3">{{ form.non_field_errors|striptags }}</div>
+                    {% endif %}
+                    <div class="input-group mb-3">
+                        {{ form.login }}
+                        <div class="input-group-append">
+                            <div class="input-group-text">
+                                <span class="fas fa-envelope"></span>
+                            </div>
+                        </div>
+                    </div>
+                    {% if form.login.errors %}<div class="text-danger small mb-2">{{ form.login.errors|striptags }}</div>{% endif %}
+                    <div class="input-group mb-3">
+                        {{ form.password }}
+                        <div class="input-group-append">
+                            <div class="input-group-text">
+                                <span class="fas fa-lock"></span>
+                            </div>
+                        </div>
+                    </div>
+                    {% if form.password.errors %}<div class="text-danger small mb-2">{{ form.password.errors|striptags }}</div>{% endif %}
+                    <div class="row">
+                        <div class="col-8">
+                            <div class="icheck-primary">
+                                {{ form.remember }}
+                                <label for="id_remember">{% trans "Remember Me" %}</label>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <button type="submit" class="btn btn-primary btn-block">{% trans "Sign In" %}</button>
+                        </div>
+                    </div>
+                    {{ redirect_field }}
+                </form>
+                <p class="mb-1">
+                    <a href="{% url 'account_reset_password' %}">{% trans "I forgot my password" %}</a>
+                </p>
+                <p class="mb-0">
+                    <a href="{% url 'account_signup' %}" class="text-center">{% trans "Register a new membership" %}</a>
+                </p>
+                <a href="{% url 'account_resend_confirmation' %}">Resend confirmation email</a>
+            </div>
         </div>
-
-        {{ redirect_field }}
-      </form>
-
-      <p class="mb-1"><a href="{% url 'account_reset_password' %}">{% trans "I forgot my password" %}</a></p>
-      <p class="mb-0"><a href="{% url 'account_signup' %}" class="text-center">{% trans "Register a new membership" %}</a></p>
-      <a href="{% url 'account_resend_confirmation' %}">Resend confirmation email</a>
-
     </div>
-  </div>
-</div>
 {% endblock %}

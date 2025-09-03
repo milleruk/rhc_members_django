@@ -1,6 +1,7 @@
 # accounts/adapter.py
 from allauth.account.adapter import DefaultAccountAdapter
 
+
 class RHCAccountAdapter(DefaultAccountAdapter):
     """
     Custom adapter to activate accounts once the email is confirmed.

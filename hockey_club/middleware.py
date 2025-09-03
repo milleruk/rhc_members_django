@@ -1,9 +1,10 @@
 # hockey_club/middleware.py
 from django.conf import settings
-from django.shortcuts import redirect
-from django.urls import reverse, NoReverseMatch
 from django.contrib import messages
+from django.shortcuts import redirect
+from django.urls import NoReverseMatch, reverse
 from django.utils.deprecation import MiddlewareMixin
+
 
 class LoginRequiredMiddleware(MiddlewareMixin):
     """

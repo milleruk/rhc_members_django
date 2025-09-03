@@ -11,6 +11,7 @@ try:
 except admin.sites.NotRegistered:
     pass
 
+
 @admin.register(User)
 class UserAdmin(HijackUserAdminMixin, DjangoUserAdmin):
     # Show email first; keep username read-only so it's obvious it mirrors email

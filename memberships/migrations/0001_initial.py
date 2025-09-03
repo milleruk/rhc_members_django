@@ -10,98 +10,204 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
-        ('members', '0008_notice_dynamicquestion_description_directmessage'),
+        ("members", "0008_notice_dynamicquestion_description_directmessage"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='Season',
+            name="Season",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('name', models.CharField(max_length=32, unique=True)),
-                ('start', models.DateField()),
-                ('end', models.DateField()),
-                ('is_active', models.BooleanField(default=False)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                    ),
+                ),
+                ("name", models.CharField(max_length=32, unique=True)),
+                ("start", models.DateField()),
+                ("end", models.DateField()),
+                ("is_active", models.BooleanField(default=False)),
             ],
             options={
-                'ordering': ['-start'],
+                "ordering": ["-start"],
             },
         ),
         migrations.CreateModel(
-            name='MembershipCategory',
+            name="MembershipCategory",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('code', models.SlugField(unique=True)),
-                ('label', models.CharField(max_length=100)),
-                ('description', models.TextField(blank=True)),
-                ('is_selectable', models.BooleanField(default=True)),
-                ('applies_to', models.ManyToManyField(blank=True, to='members.playertype')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                    ),
+                ),
+                ("code", models.SlugField(unique=True)),
+                ("label", models.CharField(max_length=100)),
+                ("description", models.TextField(blank=True)),
+                ("is_selectable", models.BooleanField(default=True)),
+                ("applies_to", models.ManyToManyField(blank=True, to="members.playertype")),
             ],
         ),
         migrations.CreateModel(
-            name='MembershipProduct',
+            name="MembershipProduct",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('name', models.CharField(max_length=150)),
-                ('sku', models.SlugField(max_length=80)),
-                ('list_price_gbp', models.DecimalField(decimal_places=2, max_digits=8)),
-                ('active', models.BooleanField(default=True)),
-                ('notes', models.TextField(blank=True)),
-                ('category', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='products', to='memberships.membershipcategory')),
-                ('season', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='products', to='memberships.season')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                    ),
+                ),
+                ("name", models.CharField(max_length=150)),
+                ("sku", models.SlugField(max_length=80)),
+                ("list_price_gbp", models.DecimalField(decimal_places=2, max_digits=8)),
+                ("active", models.BooleanField(default=True)),
+                ("notes", models.TextField(blank=True)),
+                (
+                    "category",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.PROTECT,
+                        related_name="products",
+                        to="memberships.membershipcategory",
+                    ),
+                ),
+                (
+                    "season",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.PROTECT,
+                        related_name="products",
+                        to="memberships.season",
+                    ),
+                ),
             ],
             options={
-                'ordering': ['category__label', 'name'],
-                'unique_together': {('season', 'sku')},
+                "ordering": ["category__label", "name"],
+                "unique_together": {("season", "sku")},
             },
         ),
         migrations.CreateModel(
-            name='PaymentPlan',
+            name="PaymentPlan",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('label', models.CharField(max_length=120)),
-                ('instalment_amount_gbp', models.DecimalField(decimal_places=2, max_digits=8)),
-                ('instalment_count', models.PositiveIntegerField()),
-                ('frequency', models.CharField(choices=[('once', 'One-off'), ('monthly', 'Monthly'), ('weekly', 'Weekly')], default='monthly', max_length=16)),
-                ('includes_match_fees', models.BooleanField(default=True)),
-                ('active', models.BooleanField(default=True)),
-                ('display_order', models.PositiveIntegerField(default=0)),
-                ('product', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='plans', to='memberships.membershipproduct')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                    ),
+                ),
+                ("label", models.CharField(max_length=120)),
+                ("instalment_amount_gbp", models.DecimalField(decimal_places=2, max_digits=8)),
+                ("instalment_count", models.PositiveIntegerField()),
+                (
+                    "frequency",
+                    models.CharField(
+                        choices=[("once", "One-off"), ("monthly", "Monthly"), ("weekly", "Weekly")],
+                        default="monthly",
+                        max_length=16,
+                    ),
+                ),
+                ("includes_match_fees", models.BooleanField(default=True)),
+                ("active", models.BooleanField(default=True)),
+                ("display_order", models.PositiveIntegerField(default=0)),
+                (
+                    "product",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="plans",
+                        to="memberships.membershipproduct",
+                    ),
+                ),
             ],
             options={
-                'ordering': ['display_order', 'id'],
+                "ordering": ["display_order", "id"],
             },
         ),
         migrations.CreateModel(
-            name='AddOnFee',
+            name="AddOnFee",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('name', models.CharField(max_length=80)),
-                ('amount_gbp', models.DecimalField(decimal_places=2, max_digits=6)),
-                ('active', models.BooleanField(default=True)),
-                ('season', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='addons', to='memberships.season')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                    ),
+                ),
+                ("name", models.CharField(max_length=80)),
+                ("amount_gbp", models.DecimalField(decimal_places=2, max_digits=6)),
+                ("active", models.BooleanField(default=True)),
+                (
+                    "season",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.PROTECT,
+                        related_name="addons",
+                        to="memberships.season",
+                    ),
+                ),
             ],
             options={
-                'ordering': ['name'],
-                'unique_together': {('season', 'name')},
+                "ordering": ["name"],
+                "unique_together": {("season", "name")},
             },
         ),
         migrations.CreateModel(
-            name='Subscription',
+            name="Subscription",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('started_at', models.DateField(auto_now_add=True)),
-                ('status', models.CharField(choices=[('pending', 'Pending'), ('active', 'Active'), ('paused', 'Paused'), ('cancelled', 'Cancelled')], default='pending', max_length=20)),
-                ('external_ref', models.CharField(blank=True, max_length=120)),
-                ('created_by', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to=settings.AUTH_USER_MODEL)),
-                ('plan', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='subscriptions', to='memberships.paymentplan')),
-                ('player', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='subscriptions', to='members.player')),
-                ('product', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='subscriptions', to='memberships.membershipproduct')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                    ),
+                ),
+                ("started_at", models.DateField(auto_now_add=True)),
+                (
+                    "status",
+                    models.CharField(
+                        choices=[
+                            ("pending", "Pending"),
+                            ("active", "Active"),
+                            ("paused", "Paused"),
+                            ("cancelled", "Cancelled"),
+                        ],
+                        default="pending",
+                        max_length=20,
+                    ),
+                ),
+                ("external_ref", models.CharField(blank=True, max_length=120)),
+                (
+                    "created_by",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+                (
+                    "plan",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.PROTECT,
+                        related_name="subscriptions",
+                        to="memberships.paymentplan",
+                    ),
+                ),
+                (
+                    "player",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="subscriptions",
+                        to="members.player",
+                    ),
+                ),
+                (
+                    "product",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.PROTECT,
+                        related_name="subscriptions",
+                        to="memberships.membershipproduct",
+                    ),
+                ),
             ],
             options={
-                'ordering': ['-started_at'],
-                'unique_together': {('player', 'product')},
+                "ordering": ["-started_at"],
+                "unique_together": {("player", "product")},
             },
         ),
     ]

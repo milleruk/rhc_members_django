@@ -1,11 +1,13 @@
 # tasks/models.py
-from django.db import models
 from django.conf import settings
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
-from django.urls import reverse, NoReverseMatch
+from django.db import models
+from django.urls import NoReverseMatch, reverse
 from django.utils.html import format_html
+
 from .utils import reverse_first
+
 
 class TaskStatus(models.TextChoices):
     OPEN = "open", "Open"
@@ -19,10 +21,18 @@ class Task(models.Model):
     description = models.TextField(blank=True)
 
     created_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="tasks_created"
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="tasks_created",
     )
     assigned_to = models.ForeignKey(
-        settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="tasks_assigned"
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="tasks_assigned",
     )
     status = models.CharField(max_length=12, choices=TaskStatus.choices, default=TaskStatus.OPEN)
     due_at = models.DateTimeField(null=True, blank=True)
@@ -42,7 +52,7 @@ class Task(models.Model):
 
     allow_manual_complete = models.BooleanField(
         default=True,
-        help_text="If false, users cannot manually complete this task; completion must be automated (or by admin override)."
+        help_text="If false, users cannot manually complete this task; completion must be automated (or by admin override).",
     )
 
     # Timestamps
@@ -67,8 +77,9 @@ class Task(models.Model):
     @property
     def is_overdue(self):
         from django.utils import timezone
+
         return self.status == TaskStatus.OPEN and self.due_at and self.due_at < timezone.now()
-    
+
     @property
     def subject_frontend_url(self):
         """
@@ -124,7 +135,7 @@ class Task(models.Model):
             return reverse(f"admin:{app_label}_{model}_change", args=[self.subject_id])
         except NoReverseMatch:
             return None
-        
+
     def can_manual_complete(self, user) -> bool:
         """Who can manually complete this task?"""
         if self.status != "open":

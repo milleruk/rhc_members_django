@@ -8,14 +8,20 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('members', '0019_delete_clubnotice_delete_quicklink'),
+        ("members", "0019_delete_clubnotice_delete_quicklink"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='player',
-            name='updated_by',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='player_updates', to=settings.AUTH_USER_MODEL),
+            model_name="player",
+            name="updated_by",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                related_name="player_updates",
+                to=settings.AUTH_USER_MODEL,
+            ),
         ),
     ]

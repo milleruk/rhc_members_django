@@ -1,33 +1,59 @@
 # accounts/forms.py
+from allauth.account.adapter import get_adapter
+from allauth.account.forms import LoginForm, ResetPasswordForm, ResetPasswordKeyForm
+from allauth.account.forms import SignupForm as AllauthBaseSignup
 from django import forms
 from django.contrib.auth import get_user_model
-from allauth.account.forms import (
-    SignupForm as AllauthBaseSignup,
-    LoginForm,
-    ResetPasswordForm,
-    ResetPasswordKeyForm,
-)
-from allauth.account.adapter import get_adapter
 
 User = get_user_model()
 
 
 class AllauthSignupForm(AllauthBaseSignup):
-    first_name = forms.CharField(widget=forms.TextInput(attrs={
-        "class": "form-control", "placeholder": "First name", "autocomplete": "given-name",
-    }))
-    last_name = forms.CharField(widget=forms.TextInput(attrs={
-        "class": "form-control", "placeholder": "Last name", "autocomplete": "family-name",
-    }))
-    email = forms.EmailField(widget=forms.EmailInput(attrs={
-        "class": "form-control", "placeholder": "name@example.com", "autocomplete": "email",
-    }))
-    password1 = forms.CharField(widget=forms.PasswordInput(attrs={
-        "class": "form-control", "placeholder": "Password", "autocomplete": "new-password",
-    }))
-    password2 = forms.CharField(widget=forms.PasswordInput(attrs={
-        "class": "form-control", "placeholder": "Password (again)", "autocomplete": "new-password",
-    }))
+    first_name = forms.CharField(
+        widget=forms.TextInput(
+            attrs={
+                "class": "form-control",
+                "placeholder": "First name",
+                "autocomplete": "given-name",
+            }
+        )
+    )
+    last_name = forms.CharField(
+        widget=forms.TextInput(
+            attrs={
+                "class": "form-control",
+                "placeholder": "Last name",
+                "autocomplete": "family-name",
+            }
+        )
+    )
+    email = forms.EmailField(
+        widget=forms.EmailInput(
+            attrs={
+                "class": "form-control",
+                "placeholder": "name@example.com",
+                "autocomplete": "email",
+            }
+        )
+    )
+    password1 = forms.CharField(
+        widget=forms.PasswordInput(
+            attrs={
+                "class": "form-control",
+                "placeholder": "Password",
+                "autocomplete": "new-password",
+            }
+        )
+    )
+    password2 = forms.CharField(
+        widget=forms.PasswordInput(
+            attrs={
+                "class": "form-control",
+                "placeholder": "Password (again)",
+                "autocomplete": "new-password",
+            }
+        )
+    )
     agree_to_terms = forms.BooleanField(required=True, widget=forms.CheckboxInput())
 
     def clean_email(self):
@@ -51,31 +77,51 @@ class AllauthSignupForm(AllauthBaseSignup):
 class AllauthLoginForm(LoginForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields["login"].widget.attrs.update({
-            "class": "form-control", "placeholder": "Email address", "autocomplete": "email",
-        })
-        self.fields["password"].widget.attrs.update({
-            "class": "form-control", "placeholder": "Password", "autocomplete": "current-password",
-        })
+        self.fields["login"].widget.attrs.update(
+            {
+                "class": "form-control",
+                "placeholder": "Email address",
+                "autocomplete": "email",
+            }
+        )
+        self.fields["password"].widget.attrs.update(
+            {
+                "class": "form-control",
+                "placeholder": "Password",
+                "autocomplete": "current-password",
+            }
+        )
 
 
 class AllauthResetPasswordForm(ResetPasswordForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields["email"].widget.attrs.update({
-            "class": "form-control", "placeholder": "name@example.com", "autocomplete": "email",
-        })
+        self.fields["email"].widget.attrs.update(
+            {
+                "class": "form-control",
+                "placeholder": "name@example.com",
+                "autocomplete": "email",
+            }
+        )
 
 
 class AllauthResetPasswordKeyForm(ResetPasswordKeyForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields["password1"].widget.attrs.update({
-            "class": "form-control", "placeholder": "New password", "autocomplete": "new-password",
-        })
-        self.fields["password2"].widget.attrs.update({
-            "class": "form-control", "placeholder": "Confirm new password", "autocomplete": "new-password",
-        })
+        self.fields["password1"].widget.attrs.update(
+            {
+                "class": "form-control",
+                "placeholder": "New password",
+                "autocomplete": "new-password",
+            }
+        )
+        self.fields["password2"].widget.attrs.update(
+            {
+                "class": "form-control",
+                "placeholder": "Confirm new password",
+                "autocomplete": "new-password",
+            }
+        )
 
 
 class ProfileForm(forms.ModelForm):
@@ -83,7 +129,13 @@ class ProfileForm(forms.ModelForm):
         model = User
         fields = ["first_name", "last_name", "email"]
         widgets = {
-            "first_name": forms.TextInput(attrs={"class": "form-control", "placeholder": "First name"}),
-            "last_name":  forms.TextInput(attrs={"class": "form-control", "placeholder": "Last name"}),
-            "email":      forms.EmailInput(attrs={"class": "form-control", "placeholder": "name@example.com"}),
+            "first_name": forms.TextInput(
+                attrs={"class": "form-control", "placeholder": "First name"}
+            ),
+            "last_name": forms.TextInput(
+                attrs={"class": "form-control", "placeholder": "Last name"}
+            ),
+            "email": forms.EmailInput(
+                attrs={"class": "form-control", "placeholder": "name@example.com"}
+            ),
         }

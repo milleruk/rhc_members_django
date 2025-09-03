@@ -1,6 +1,7 @@
-from django.contrib.auth.mixins import PermissionRequiredMixin, LoginRequiredMixin
+from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.views.generic import ListView
-from .models import Policy, Document
+
+from .models import Document, Policy
 
 
 class PolicyListView(LoginRequiredMixin, PermissionRequiredMixin, ListView):

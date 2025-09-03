@@ -7,39 +7,85 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('spond_integration', '0002_spondgroup_spondmember_groups'),
+        ("spond_integration", "0002_spondgroup_spondmember_groups"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='SpondEvent',
+            name="SpondEvent",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('spond_event_id', models.CharField(max_length=64, unique=True)),
-                ('title', models.CharField(blank=True, max_length=255)),
-                ('start_at', models.DateTimeField(blank=True, null=True)),
-                ('end_at', models.DateTimeField(blank=True, null=True)),
-                ('timezone', models.CharField(blank=True, max_length=64)),
-                ('location_name', models.CharField(blank=True, max_length=255)),
-                ('location_addr', models.CharField(blank=True, max_length=512)),
-                ('data', models.JSONField(blank=True, default=dict)),
-                ('last_synced_at', models.DateTimeField(blank=True, null=True)),
-                ('group', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='events', to='spond_integration.spondgroup')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                    ),
+                ),
+                ("spond_event_id", models.CharField(max_length=64, unique=True)),
+                ("title", models.CharField(blank=True, max_length=255)),
+                ("start_at", models.DateTimeField(blank=True, null=True)),
+                ("end_at", models.DateTimeField(blank=True, null=True)),
+                ("timezone", models.CharField(blank=True, max_length=64)),
+                ("location_name", models.CharField(blank=True, max_length=255)),
+                ("location_addr", models.CharField(blank=True, max_length=512)),
+                ("data", models.JSONField(blank=True, default=dict)),
+                ("last_synced_at", models.DateTimeField(blank=True, null=True)),
+                (
+                    "group",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="events",
+                        to="spond_integration.spondgroup",
+                    ),
+                ),
             ],
         ),
         migrations.CreateModel(
-            name='SpondAttendance',
+            name="SpondAttendance",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('status', models.CharField(choices=[('going', 'Going'), ('maybe', 'Maybe'), ('declined', 'Not going'), ('attended', 'Attended / Checked-in'), ('unknown', 'Unknown')], default='unknown', max_length=16)),
-                ('responded_at', models.DateTimeField(blank=True, null=True)),
-                ('checked_in_at', models.DateTimeField(blank=True, null=True)),
-                ('data', models.JSONField(blank=True, default=dict)),
-                ('member', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='attendances', to='spond_integration.spondmember')),
-                ('event', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='attendances', to='spond_integration.spondevent')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                    ),
+                ),
+                (
+                    "status",
+                    models.CharField(
+                        choices=[
+                            ("going", "Going"),
+                            ("maybe", "Maybe"),
+                            ("declined", "Not going"),
+                            ("attended", "Attended / Checked-in"),
+                            ("unknown", "Unknown"),
+                        ],
+                        default="unknown",
+                        max_length=16,
+                    ),
+                ),
+                ("responded_at", models.DateTimeField(blank=True, null=True)),
+                ("checked_in_at", models.DateTimeField(blank=True, null=True)),
+                ("data", models.JSONField(blank=True, default=dict)),
+                (
+                    "member",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="attendances",
+                        to="spond_integration.spondmember",
+                    ),
+                ),
+                (
+                    "event",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="attendances",
+                        to="spond_integration.spondevent",
+                    ),
+                ),
             ],
             options={
-                'unique_together': {('event', 'member')},
+                "unique_together": {("event", "member")},
             },
         ),
     ]

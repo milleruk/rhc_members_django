@@ -1,40 +1,43 @@
-from django import forms
-from .models import Player, PlayerType, DynamicQuestion, PlayerAnswer, Team, Position, TeamMembership
-from django.db import transaction
-from django.contrib import messages
-from django.utils import timezone
 from datetime import date
 
-from django.utils.safestring import mark_safe
+from django import forms
+from django.contrib import messages
+from django.core.exceptions import ValidationError
+from django.utils import timezone
 from django.utils.html import escape, linebreaks
+from django.utils.safestring import mark_safe
+
+from .models import DynamicQuestion, Player, PlayerAnswer, PlayerType, Position, TeamMembership
+
 try:
     import markdown as md
 except Exception:
     md = None
+
 
 def _md(text: str) -> str:
     """Convert Markdown to HTML for help text/description."""
     if not text:
         return ""
     if md:
-        return mark_safe(md.markdown(
-            text,
-            extensions=["extra", "sane_lists", "tables", "nl2br"],
-            output_format="html5"
-        ))
+        return mark_safe(
+            md.markdown(
+                text, extensions=["extra", "sane_lists", "tables", "nl2br"], output_format="html5"
+            )
+        )
     return mark_safe(linebreaks(escape(text)))
+
 
 class PlayerForm(forms.ModelForm):
     class Meta:
         model = Player
         fields = ("first_name", "last_name", "date_of_birth", "gender", "relation", "player_type")
-        widgets = {
-            "date_of_birth": forms.DateInput(attrs={"type": "date"})
-        }
+        widgets = {"date_of_birth": forms.DateInput(attrs={"type": "date"})}
         error_messages = {
             "date_of_birth": {
                 "required": "Please enter a date of birth.",
-        }}
+            }
+        }
 
     def clean_date_of_birth(self):
         dob = self.cleaned_data.get("date_of_birth")
@@ -51,6 +54,7 @@ class PlayerForm(forms.ModelForm):
         if relation == "child" and ptype and ptype.name.lower() != "junior":
             self.add_error("player_type", "Child players must be 'Junior'.")
         return cleaned
+
 
 class DynamicAnswerForm(forms.Form):
     def __init__(self, *args, player: Player, request=None, **kwargs):
@@ -87,7 +91,7 @@ class DynamicAnswerForm(forms.Form):
                 field = forms.BooleanField(
                     label=q.label,
                     help_text=help_txt,
-                    required=q.required,   # ✅ now respects required flag
+                    required=q.required,  # ✅ now respects required flag
                 )
                 if q.id in self._existing and self._existing[q.id].boolean_answer is not None:
                     field.initial = self._existing[q.id].boolean_answer
@@ -195,9 +199,7 @@ class TeamAssignmentForm(forms.ModelForm):
         if player:
             # Exclude teams this player already belongs to
             existing = player.team_memberships.values_list("team_id", flat=True)
-            self.fields["team"].queryset = (
-                self.fields["team"].queryset.exclude(id__in=existing)
-            )
+            self.fields["team"].queryset = self.fields["team"].queryset.exclude(id__in=existing)
         self._player = player
 
     def save(self, user=None, commit=True):
@@ -212,7 +214,6 @@ class TeamAssignmentForm(forms.ModelForm):
         return obj
 
 
-
 class PlayerEditForm(forms.ModelForm):
     class Meta:
         model = Player
@@ -225,9 +226,7 @@ class PlayerEditForm(forms.ModelForm):
             "player_type",
         ]
         widgets = {
-            "date_of_birth": forms.DateInput(
-                attrs={"type": "date", "class": "form-control"}
-            ),
+            "date_of_birth": forms.DateInput(attrs={"type": "date", "class": "form-control"}),
             "first_name": forms.TextInput(attrs={"class": "form-control"}),
             "last_name": forms.TextInput(attrs={"class": "form-control"}),
             "gender": forms.Select(attrs={"class": "form-control"}),

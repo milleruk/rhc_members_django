@@ -6,11 +6,11 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('spond_integration', '0006_spondtransaction'),
+        ("spond_integration", "0006_spondtransaction"),
     ]
 
     operations = [
         migrations.DeleteModel(
-            name='SpondTransaction',
+            name="SpondTransaction",
         ),
     ]

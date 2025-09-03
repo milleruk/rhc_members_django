@@ -1,9 +1,10 @@
-from django.core.management.base import BaseCommand
 from django.conf import settings
+from django.core.management.base import BaseCommand
 
 # Import the helpers that build + send the emails
 # (create emailing.py as below if you haven't yet)
 from tasks.emailing import _build_user_task_map, _send_digest
+
 
 class Command(BaseCommand):
     help = "Send daily task digest emails to users with open tasks."
@@ -34,6 +35,10 @@ class Command(BaseCommand):
                 sent += _send_digest(user, tasks)
 
         if dry:
-            self.stdout.write(self.style.SUCCESS(f"[DRY] Built digests for {len(user_map)} user(s)."))
+            self.stdout.write(
+                self.style.SUCCESS(f"[DRY] Built digests for {len(user_map)} user(s).")
+            )
         else:
-            self.stdout.write(self.style.SUCCESS(f"Sent {sent} email(s) to {len(user_map)} user(s)."))
+            self.stdout.write(
+                self.style.SUCCESS(f"Sent {sent} email(s) to {len(user_map)} user(s).")
+            )

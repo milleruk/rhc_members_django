@@ -1,6 +1,7 @@
 # tasks/apps.py
 from django.apps import AppConfig
 
+
 class TasksConfig(AppConfig):
     default_auto_field = "django.db.models.BigAutoField"
     name = "tasks"
@@ -8,5 +9,6 @@ class TasksConfig(AppConfig):
 
     def ready(self):
         # Import signals only after the app registry is ready
+        pass
+
         from . import signals  # noqa: F401
-        import tasks.tasks

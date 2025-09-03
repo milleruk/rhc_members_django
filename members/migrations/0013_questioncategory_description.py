@@ -6,13 +6,16 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('members', '0012_alter_teammembership_options'),
+        ("members", "0012_alter_teammembership_options"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='questioncategory',
-            name='description',
-            field=models.TextField(blank=True, help_text='Optional detailed description or instructions (Markdown supported).'),
+            model_name="questioncategory",
+            name="description",
+            field=models.TextField(
+                blank=True,
+                help_text="Optional detailed description or instructions (Markdown supported).",
+            ),
         ),
     ]

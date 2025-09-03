@@ -6,12 +6,18 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('members', '0009_player_public_id'),
+        ("members", "0009_player_public_id"),
     ]
 
     operations = [
         migrations.AlterModelOptions(
-            name='player',
-            options={'ordering': ['last_name', 'first_name'], 'permissions': (('view_staff_area', 'Can view staff area'), ('view_all_players', 'Can view all players'))},
+            name="player",
+            options={
+                "ordering": ["last_name", "first_name"],
+                "permissions": (
+                    ("view_staff_area", "Can view staff area"),
+                    ("view_all_players", "Can view all players"),
+                ),
+            },
         ),
     ]

@@ -1,7 +1,9 @@
-from django.conf import settings
 from datetime import date
+
+from django.conf import settings
 from django.urls import resolve, reverse
 from django.utils.text import capfirst
+
 
 def portal_meta(request):
     return {
@@ -9,6 +11,7 @@ def portal_meta(request):
         "portal_version": getattr(settings, "PORTAL_VERSION", None),
         "portal_build": getattr(settings, "PORTAL_BUILD", None),
     }
+
 
 def portal_breadcrumbs(request):
     """
@@ -28,10 +31,12 @@ def portal_breadcrumbs(request):
             # Skip numeric IDs, UUIDs, etc.
             if part.isnumeric() or len(part) > 16:
                 continue
-            breadcrumbs.append({
-                "title": capfirst(part.replace("-", " ")),
-                "url": url_accum + "/",
-            })
+            breadcrumbs.append(
+                {
+                    "title": capfirst(part.replace("-", " ")),
+                    "url": url_accum + "/",
+                }
+            )
 
         # If there's a named view with kwargs, show "active" without URL
         if match.url_name:

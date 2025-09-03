@@ -6,12 +6,15 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('members', '0005_questioncategory_dynamicquestion_category'),
+        ("members", "0005_questioncategory_dynamicquestion_category"),
     ]
 
     operations = [
         migrations.AlterModelOptions(
-            name='player',
-            options={'ordering': ['last_name', 'first_name'], 'permissions': (('view_staff_area', 'Can view staff area'),)},
+            name="player",
+            options={
+                "ordering": ["last_name", "first_name"],
+                "permissions": (("view_staff_area", "Can view staff area"),),
+            },
         ),
     ]

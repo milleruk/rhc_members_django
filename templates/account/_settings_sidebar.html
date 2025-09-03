@@ -4,39 +4,35 @@ Shared sidebar for account settings / allauth manage pages.
 Highlights the active item by comparing request.path to each target URL.
 {% endcomment %}
 <div class="list-group">
-  {# Profile (your own settings page) #}
-  {% url 'accounts:settings' as _profile_url %}
-  <a class="list-group-item list-group-item-action {% if request.path|slice:":_profile_url|length" == _profile_url %}active{% endif %}"
-     href="{{ _profile_url }}">
-    <i class="fas fa-id-badge mr-2"></i> {% trans "Profile" %}
-  </a>
-
-  {# Email addresses #}
-  {% url 'account_email' as _email_url %}
-  <a class="list-group-item list-group-item-action {% if request.path|slice:":_email_url|length" == _email_url %}active{% endif %}"
-     href="{{ _email_url }}">
-    <i class="fas fa-envelope mr-2"></i> {% trans "Email Addresses" %}
-  </a>
-
-  {# Password #}
-  {% url 'account_change_password' as _pwd_url %}
-  <a class="list-group-item list-group-item-action {% if request.path|slice:":_pwd_url|length" == _pwd_url %}active{% endif %}"
-     href="{{ _pwd_url }}">
-    <i class="fas fa-key mr-2"></i> {% trans "Password" %}
-  </a>
-
-  {# MFA #}
-  {% with _mfa_url="/accounts/mfa/" %}
-    <a class="list-group-item list-group-item-action {% if request.path|slice:":_mfa_url|length" == _mfa_url %}active{% endif %}"
-       href="{{ _mfa_url }}">
-      <i class="fas fa-shield-alt mr-2"></i> {% trans "Two-Factor Auth (MFA)" %}
+    {# Profile (your own settings page) #}
+    {% url 'accounts:settings' as _profile_url %}
+    <a class="list-group-item list-group-item-action {% if request.path|slice:":_profile_url|length" == _profile_url %}active{% endif %}"
+       href="{{ _profile_url }}">
+        <i class="fas fa-id-badge mr-2"></i> {% trans "Profile" %}
     </a>
-  {% endwith %}
-
-  {# Social connections #}
-  {% url 'socialaccount_connections' as _social_url %}
-  <a class="list-group-item list-group-item-action {% if request.path|slice:":_social_url|length" == _social_url %}active{% endif %}"
-     href="{{ _social_url }}">
-    <i class="fas fa-link mr-2"></i> {% trans "Connected Accounts" %}
-  </a>
+    {# Email addresses #}
+    {% url 'account_email' as _email_url %}
+    <a class="list-group-item list-group-item-action {% if request.path|slice:":_email_url|length" == _email_url %}active{% endif %}"
+       href="{{ _email_url }}">
+        <i class="fas fa-envelope mr-2"></i> {% trans "Email Addresses" %}
+    </a>
+    {# Password #}
+    {% url 'account_change_password' as _pwd_url %}
+    <a class="list-group-item list-group-item-action {% if request.path|slice:":_pwd_url|length" == _pwd_url %}active{% endif %}"
+       href="{{ _pwd_url }}">
+        <i class="fas fa-key mr-2"></i> {% trans "Password" %}
+    </a>
+    {# MFA #}
+    {% with _mfa_url="/accounts/mfa/" %}
+        <a class="list-group-item list-group-item-action {% if request.path|slice:":_mfa_url|length" == _mfa_url %}active{% endif %}"
+           href="{{ _mfa_url }}">
+            <i class="fas fa-shield-alt mr-2"></i> {% trans "Two-Factor Auth (MFA)" %}
+        </a>
+    {% endwith %}
+    {# Social connections #}
+    {% url 'socialaccount_connections' as _social_url %}
+    <a class="list-group-item list-group-item-action {% if request.path|slice:":_social_url|length" == _social_url %}active{% endif %}"
+       href="{{ _social_url }}">
+        <i class="fas fa-link mr-2"></i> {% trans "Connected Accounts" %}
+    </a>
 </div>

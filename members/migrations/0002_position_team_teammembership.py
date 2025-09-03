@@ -8,47 +8,84 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('members', '0001_initial'),
+        ("members", "0001_initial"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='Position',
+            name="Position",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('name', models.CharField(max_length=40, unique=True)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                    ),
+                ),
+                ("name", models.CharField(max_length=40, unique=True)),
             ],
             options={
-                'ordering': ['name'],
+                "ordering": ["name"],
             },
         ),
         migrations.CreateModel(
-            name='Team',
+            name="Team",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('name', models.CharField(max_length=80, unique=True)),
-                ('description', models.CharField(blank=True, max_length=255)),
-                ('active', models.BooleanField(default=True)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                    ),
+                ),
+                ("name", models.CharField(max_length=80, unique=True)),
+                ("description", models.CharField(blank=True, max_length=255)),
+                ("active", models.BooleanField(default=True)),
             ],
             options={
-                'ordering': ['name'],
+                "ordering": ["name"],
             },
         ),
         migrations.CreateModel(
-            name='TeamMembership',
+            name="TeamMembership",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('assigned_at', models.DateTimeField(auto_now_add=True)),
-                ('assigned_by', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to=settings.AUTH_USER_MODEL)),
-                ('player', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='team_memberships', to='members.player')),
-                ('positions', models.ManyToManyField(blank=True, to='members.position')),
-                ('team', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='memberships', to='members.team')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                    ),
+                ),
+                ("assigned_at", models.DateTimeField(auto_now_add=True)),
+                (
+                    "assigned_by",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+                (
+                    "player",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="team_memberships",
+                        to="members.player",
+                    ),
+                ),
+                ("positions", models.ManyToManyField(blank=True, to="members.position")),
+                (
+                    "team",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="memberships",
+                        to="members.team",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Team membership',
-                'verbose_name_plural': 'Team memberships',
-                'unique_together': {('team', 'player')},
+                "verbose_name": "Team membership",
+                "verbose_name_plural": "Team memberships",
+                "unique_together": {("team", "player")},
             },
         ),
     ]

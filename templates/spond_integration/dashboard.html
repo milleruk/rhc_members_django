@@ -1,245 +1,255 @@
 {% extends "base.html" %}
 {% block title %}Spond Dashboard{% endblock %}
-
 {% block content %}
-<div class="content-header pb-2">
-  <div class="container-fluid">
-    <div class="row mb-2 align-items-center">
-      <div class="col-sm-6">
-        <h1 class="m-0">Spond Dashboard</h1>
-      </div>
-      <div class="col-sm-6">
-        <ol class="breadcrumb float-sm-right">
-          <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
-          <li class="breadcrumb-item active">Spond</li>
-        </ol>
-      </div>
-    </div>
-  </div>
-</div>
-
-<section class="content">
-  <div class="container-fluid">
-
-    <!-- KPI cards -->
-    <div class="row">
-      <div class="col-12 col-sm-6 col-md-3">
-        <div class="info-box">
-          <span class="info-box-icon bg-info"><i class="fas fa-users"></i></span>
-          <div class="info-box-content">
-            <span class="info-box-text">Total Groups</span>
-            <span class="info-box-number">{{ kpi.total_groups }}</span>
-          </div>
-        </div>
-      </div>
-      <div class="col-12 col-sm-6 col-md-3">
-        <div class="info-box">
-          <span class="info-box-icon bg-primary"><i class="fas fa-user-friends"></i></span>
-          <div class="info-box-content">
-            <span class="info-box-text">Spond Members</span>
-            <span class="info-box-number">{{ kpi.total_members }}</span>
-          </div>
-        </div>
-      </div>
-      <div class="col-12 col-sm-6 col-md-3">
-        <div class="info-box">
-          <span class="info-box-icon bg-success"><i class="fas fa-link"></i></span>
-          <div class="info-box-content">
-            <span class="info-box-text">Linked</span>
-            <span class="info-box-number">{{ kpi.linked_members }}</span>
-          </div>
-        </div>
-      </div>
-      <div class="col-12 col-sm-6 col-md-3">
-        <div class="info-box">
-          <span class="info-box-icon bg-warning"><i class="fas fa-unlink"></i></span>
-          <div class="info-box-content">
-            <span class="info-box-text">Unlinked</span>
-            <span class="info-box-number">{{ kpi.unlinked_members }}</span>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Filters -->
-    <div class="card card-outline card-secondary">
-      <div class="card-body">
-        <form method="get" class="row g-2 align-items-end">
-          <div class="col-md-5">
-            <label class="form-label">Search members</label>
-            <input type="text" class="form-control" name="q" value="{{ q }}" placeholder="Name or email...">
-          </div>
-          <div class="col-md-5">
-            <label class="form-label">Filter by group</label>
-            <select name="group" class="form-control">
-              <option value="">All groups</option>
-              {% for g in groups %}
-                <option value="{{ g.id }}" {% if selected_group == g.id %}selected{% endif %}>
-                  {{ g.name }} ({{ g.member_count }})
-                </option>
-              {% endfor %}
-            </select>
-          </div>
-          <div class="col-md-2">
-            <button class="btn btn-primary w-100" type="submit">
-              <i class="fas fa-search mr-1"></i> Apply
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-
-    <div class="row">
-      <!-- Left: Groups + Events -->
-      <div class="col-lg-4">
-        <div class="card">
-          <div class="card-header">
-            <h3 class="card-title"><i class="fas fa-users mr-1"></i> Groups / Teams</h3>
-          </div>
-          <div class="card-body p-0">
-            <ul class="list-group list-group-flush">
-              {% for g in groups %}
-                <li class="list-group-item d-flex justify-content-between align-items-center">
-                  <div><strong>{{ g.name }}</strong></div>
-                  <span class="badge bg-secondary">{{ g.member_count }}</span>
-                </li>
-              {% empty %}
-                <li class="list-group-item text-muted">No groups found.</li>
-              {% endfor %}
-            </ul>
-          </div>
-        </div>
-
-        {% if has_events %}
-        <div class="card">
-          <div class="card-header">
-            <h3 class="card-title"><i class="fas fa-calendar-alt mr-1"></i> Upcoming Events</h3>
-          </div>
-          <div class="card-body p-0">
-            <table class="table table-sm mb-0">
-              <thead>
-                <tr>
-                  <th>When</th>
-                  <th>Title</th>
-                </tr>
-              </thead>
-              <tbody>
-                {% for e in events %}
-                  {% if e.start_at >= now %}
-                  <tr>
-                    <td>{{ e.start_at|date:"D d M H:i" }}</td>
-                    <td>{{ e.title }}</td>
-                  </tr>
-                  {% endif %}
-                {% empty %}
-                  <tr><td colspan="2" class="text-muted">No events.</td></tr>
-                {% endfor %}
-              </tbody>
-            </table>
-          </div>
-        </div>
-        {% endif %}
-
-      </div>
-
-      <!-- Right: Members + links to members.Player -->
-      <div class="col-lg-8">
-        <div class="card">
-          <div class="card-header d-flex align-items-center">
-            <h3 class="card-title"><i class="fas fa-user mr-1"></i> Members</h3>
-          </div>
-          <div class="card-body p-0">
-            <table class="table table-hover mb-0">
-              <thead class="thead-light">
-                <tr>
-                  <th>Name</th>
-                  <th>Email</th>
-                  <th>Groups</th>
-                  <th>Linked Player</th>
-                </tr>
-              </thead>
-              <tbody>
-                {% for m in members_page.object_list %}
-                  <tr>
-                    <td>{{ m.full_name }}</td>
-                    <td class="text-monospace small">{{ m.email|default:"—" }}</td>
-                    <td class="small">
-                      {% for g in m.groups.all %}
-                        <span class="badge bg-light text-dark border">{{ g.name }}</span>
-                      {% empty %}
-                        <span class="text-muted">—</span>
-                      {% endfor %}
-                    </td>
-                    <td>
-                      {% with first_link=m.player_links.all|first %}
-                        {% if first_link and first_link.player %}
-                          <a class="btn btn-sm btn-outline-primary"
-                             href="{% url 'staff:player_detail' player_id=first_link.player.id %}">
-                            {{ first_link.player.first_name }} {{ first_link.player.last_name }}
-                          </a>
-                        {% else %}
-                          <span class="badge bg-warning text-dark">Unlinked</span>
-                        {% endif %}
-                      {% endwith %}
-                    </td>
-                  </tr>
-                {% empty %}
-                  <tr>
-                    <td colspan="4" class="text-muted">No members match your filters.</td>
-                  </tr>
-                {% endfor %}
-              </tbody>
-            </table>
-          </div>
-
-          <!-- Pagination footer -->
-          <div class="card-footer d-flex justify-content-between align-items-center">
-            <div class="text-muted">
-              Showing page {{ members_page.number }} of {{ members_page.paginator.num_pages }}
-              · {{ members_page.paginator.count }} total
+    <div class="content-header pb-2">
+        <div class="container-fluid">
+            <div class="row mb-2 align-items-center">
+                <div class="col-sm-6">
+                    <h1 class="m-0">Spond Dashboard</h1>
+                </div>
+                <div class="col-sm-6">
+                    <ol class="breadcrumb float-sm-right">
+                        <li class="breadcrumb-item">
+                            <a href="{% url 'dashboard' %}">Home</a>
+                        </li>
+                        <li class="breadcrumb-item active">Spond</li>
+                    </ol>
+                </div>
             </div>
-            <nav>
-              <ul class="pagination mb-0">
-                {% if members_page.has_previous %}
-                  <li class="page-item">
-                    <a class="page-link"
-                       href="?{% if q %}q={{ q|urlencode }}&amp;{% endif %}{% if selected_group %}group={{ selected_group }}&amp;{% endif %}page={{ members_page.previous_page_number }}"
-                       aria-label="Previous">&laquo;</a>
-                  </li>
-                {% else %}
-                  <li class="page-item disabled"><span class="page-link">&laquo;</span></li>
-                {% endif %}
-
-                {# Simple windowed pagination (1 around current) #}
-                {% for p in members_page.paginator.page_range %}
-                  {% if p >= members_page.number|add:'-1' and p <= members_page.number|add:'1' %}
-                    {% if p == members_page.number %}
-                      <li class="page-item active"><span class="page-link">{{ p }}</span></li>
-                    {% else %}
-                      <li class="page-item">
-                        <a class="page-link"
-                           href="?{% if q %}q={{ q|urlencode }}&amp;{% endif %}{% if selected_group %}group={{ selected_group }}&amp;{% endif %}page={{ p }}">{{ p }}</a>
-                      </li>
-                    {% endif %}
-                  {% endif %}
-                {% endfor %}
-
-                {% if members_page.has_next %}
-                  <li class="page-item">
-                    <a class="page-link"
-                       href="?{% if q %}q={{ q|urlencode }}&amp;{% endif %}{% if selected_group %}group={{ selected_group }}&amp;{% endif %}page={{ members_page.next_page_number }}"
-                       aria-label="Next">&raquo;</a>
-                  </li>
-                {% else %}
-                  <li class="page-item disabled"><span class="page-link">&raquo;</span></li>
-                {% endif %}
-              </ul>
-            </nav>
-          </div>
         </div>
-      </div>
     </div>
-
-  </div>
-</section>
+    <section class="content">
+        <div class="container-fluid">
+            <!-- KPI cards -->
+            <div class="row">
+                <div class="col-12 col-sm-6 col-md-3">
+                    <div class="info-box">
+                        <span class="info-box-icon bg-info"><i class="fas fa-users"></i></span>
+                        <div class="info-box-content">
+                            <span class="info-box-text">Total Groups</span>
+                            <span class="info-box-number">{{ kpi.total_groups }}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12 col-sm-6 col-md-3">
+                    <div class="info-box">
+                        <span class="info-box-icon bg-primary"><i class="fas fa-user-friends"></i></span>
+                        <div class="info-box-content">
+                            <span class="info-box-text">Spond Members</span>
+                            <span class="info-box-number">{{ kpi.total_members }}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12 col-sm-6 col-md-3">
+                    <div class="info-box">
+                        <span class="info-box-icon bg-success"><i class="fas fa-link"></i></span>
+                        <div class="info-box-content">
+                            <span class="info-box-text">Linked</span>
+                            <span class="info-box-number">{{ kpi.linked_members }}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12 col-sm-6 col-md-3">
+                    <div class="info-box">
+                        <span class="info-box-icon bg-warning"><i class="fas fa-unlink"></i></span>
+                        <div class="info-box-content">
+                            <span class="info-box-text">Unlinked</span>
+                            <span class="info-box-number">{{ kpi.unlinked_members }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Filters -->
+            <div class="card card-outline card-secondary">
+                <div class="card-body">
+                    <form method="get" class="row g-2 align-items-end">
+                        <div class="col-md-5">
+                            <label class="form-label">Search members</label>
+                            <input type="text"
+                                   class="form-control"
+                                   name="q"
+                                   value="{{ q }}"
+                                   placeholder="Name or email...">
+                        </div>
+                        <div class="col-md-5">
+                            <label class="form-label">Filter by group</label>
+                            <select name="group" class="form-control">
+                                <option value="">All groups</option>
+                                {% for g in groups %}
+                                    <option value="{{ g.id }}" {% if selected_group == g.id %}selected{% endif %}>
+                                        {{ g.name }} ({{ g.member_count }})
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <button class="btn btn-primary w-100" type="submit">
+                                <i class="fas fa-search mr-1"></i> Apply
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <div class="row">
+                <!-- Left: Groups + Events -->
+                <div class="col-lg-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">
+                                <i class="fas fa-users mr-1"></i> Groups / Teams
+                            </h3>
+                        </div>
+                        <div class="card-body p-0">
+                            <ul class="list-group list-group-flush">
+                                {% for g in groups %}
+                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <strong>{{ g.name }}</strong>
+                                        </div>
+                                        <span class="badge bg-secondary">{{ g.member_count }}</span>
+                                    </li>
+                                {% empty %}
+                                    <li class="list-group-item text-muted">No groups found.</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                    {% if has_events %}
+                        <div class="card">
+                            <div class="card-header">
+                                <h3 class="card-title">
+                                    <i class="fas fa-calendar-alt mr-1"></i> Upcoming Events
+                                </h3>
+                            </div>
+                            <div class="card-body p-0">
+                                <table class="table table-sm mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th>When</th>
+                                            <th>Title</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for e in events %}
+                                            {% if e.start_at >= now %}
+                                                <tr>
+                                                    <td>{{ e.start_at|date:"D d M H:i" }}</td>
+                                                    <td>{{ e.title }}</td>
+                                                </tr>
+                                            {% endif %}
+                                        {% empty %}
+                                            <tr>
+                                                <td colspan="2" class="text-muted">No events.</td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+                <!-- Right: Members + links to members.Player -->
+                <div class="col-lg-8">
+                    <div class="card">
+                        <div class="card-header d-flex align-items-center">
+                            <h3 class="card-title">
+                                <i class="fas fa-user mr-1"></i> Members
+                            </h3>
+                        </div>
+                        <div class="card-body p-0">
+                            <table class="table table-hover mb-0">
+                                <thead class="thead-light">
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Email</th>
+                                        <th>Groups</th>
+                                        <th>Linked Player</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for m in members_page.object_list %}
+                                        <tr>
+                                            <td>{{ m.full_name }}</td>
+                                            <td class="text-monospace small">{{ m.email|default:"—" }}</td>
+                                            <td class="small">
+                                                {% for g in m.groups.all %}
+                                                    <span class="badge bg-light text-dark border">{{ g.name }}</span>
+                                                {% empty %}
+                                                    <span class="text-muted">—</span>
+                                                {% endfor %}
+                                            </td>
+                                            <td>
+                                                {% with first_link=m.player_links.all|first %}
+                                                    {% if first_link and first_link.player %}
+                                                        <a class="btn btn-sm btn-outline-primary"
+                                                           href="{% url 'staff:player_detail' player_id=first_link.player.id %}">
+                                                            {{ first_link.player.first_name }} {{ first_link.player.last_name }}
+                                                        </a>
+                                                    {% else %}
+                                                        <span class="badge bg-warning text-dark">Unlinked</span>
+                                                    {% endif %}
+                                                {% endwith %}
+                                            </td>
+                                        </tr>
+                                    {% empty %}
+                                        <tr>
+                                            <td colspan="4" class="text-muted">No members match your filters.</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        <!-- Pagination footer -->
+                        <div class="card-footer d-flex justify-content-between align-items-center">
+                            <div class="text-muted">
+                                Showing page {{ members_page.number }} of {{ members_page.paginator.num_pages }}
+                                · {{ members_page.paginator.count }} total
+                            </div>
+                            <nav>
+                                <ul class="pagination mb-0">
+                                    {% if members_page.has_previous %}
+                                        <li class="page-item">
+                                            <a class="page-link"
+                                               href="?{% if q %}q={{ q|urlencode }}&amp;{% endif %}{% if selected_group %}group={{ selected_group }}&amp;{% endif %}page={{ members_page.previous_page_number }}"
+                                               aria-label="Previous">&laquo;</a>
+                                        </li>
+                                    {% else %}
+                                        <li class="page-item disabled">
+                                            <span class="page-link">&laquo;</span>
+                                        </li>
+                                    {% endif %}
+                                    {# Simple windowed pagination (1 around current) #}
+                                    {% for p in members_page.paginator.page_range %}
+                                        {% if p >= members_page.number|add:'-1' and p <= members_page.number|add:'1' %}
+                                            {% if p == members_page.number %}
+                                                <li class="page-item active">
+                                                    <span class="page-link">{{ p }}</span>
+                                                </li>
+                                            {% else %}
+                                                <li class="page-item">
+                                                    <a class="page-link"
+                                                       href="?{% if q %}q={{ q|urlencode }}&amp;{% endif %}{% if selected_group %}group={{ selected_group }}&amp;{% endif %}page={{ p }}">{{ p }}</a>
+                                                </li>
+                                            {% endif %}
+                                        {% endif %}
+                                    {% endfor %}
+                                    {% if members_page.has_next %}
+                                        <li class="page-item">
+                                            <a class="page-link"
+                                               href="?{% if q %}q={{ q|urlencode }}&amp;{% endif %}{% if selected_group %}group={{ selected_group }}&amp;{% endif %}page={{ members_page.next_page_number }}"
+                                               aria-label="Next">&raquo;</a>
+                                        </li>
+                                    {% else %}
+                                        <li class="page-item disabled">
+                                            <span class="page-link">&raquo;</span>
+                                        </li>
+                                    {% endif %}
+                                </ul>
+                            </nav>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
 {% endblock %}

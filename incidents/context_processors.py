@@ -1,5 +1,6 @@
 from .models import Incident
 
+
 def incident_badge(request):
     if not request.user.is_authenticated:
         return {}

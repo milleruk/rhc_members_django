@@ -1,7 +1,9 @@
 # members/management/commands/backfill_membership_numbers.py
 from django.core.management.base import BaseCommand
 from django.db import transaction
+
 from members.models import Player
+
 
 class Command(BaseCommand):
     help = (

@@ -7,23 +7,39 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('spond_integration', '0001_initial'),
+        ("spond_integration", "0001_initial"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='SpondGroup',
+            name="SpondGroup",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('spond_group_id', models.CharField(max_length=64, unique=True)),
-                ('name', models.CharField(max_length=255)),
-                ('data', models.JSONField(blank=True, default=dict)),
-                ('parent', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='children', to='spond_integration.spondgroup')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                    ),
+                ),
+                ("spond_group_id", models.CharField(max_length=64, unique=True)),
+                ("name", models.CharField(max_length=255)),
+                ("data", models.JSONField(blank=True, default=dict)),
+                (
+                    "parent",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="children",
+                        to="spond_integration.spondgroup",
+                    ),
+                ),
             ],
         ),
         migrations.AddField(
-            model_name='spondmember',
-            name='groups',
-            field=models.ManyToManyField(blank=True, related_name='members', to='spond_integration.spondgroup'),
+            model_name="spondmember",
+            name="groups",
+            field=models.ManyToManyField(
+                blank=True, related_name="members", to="spond_integration.spondgroup"
+            ),
         ),
     ]

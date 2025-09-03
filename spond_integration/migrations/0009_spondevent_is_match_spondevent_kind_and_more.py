@@ -6,63 +6,63 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('spond_integration', '0008_spondtransaction'),
+        ("spond_integration", "0008_spondtransaction"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='spondevent',
-            name='is_match',
+            model_name="spondevent",
+            name="is_match",
             field=models.BooleanField(default=False),
         ),
         migrations.AddField(
-            model_name='spondevent',
-            name='kind',
-            field=models.CharField(default='EVENT', max_length=20),
+            model_name="spondevent",
+            name="kind",
+            field=models.CharField(default="EVENT", max_length=20),
         ),
         migrations.AddField(
-            model_name='spondevent',
-            name='match_home_away',
+            model_name="spondevent",
+            name="match_home_away",
             field=models.CharField(blank=True, max_length=16),
         ),
         migrations.AddField(
-            model_name='spondevent',
-            name='opponent_name',
+            model_name="spondevent",
+            name="opponent_name",
             field=models.CharField(blank=True, max_length=120),
         ),
         migrations.AddField(
-            model_name='spondevent',
-            name='opponent_score',
+            model_name="spondevent",
+            name="opponent_score",
             field=models.IntegerField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='spondevent',
-            name='scores_final',
+            model_name="spondevent",
+            name="scores_final",
             field=models.BooleanField(default=False),
         ),
         migrations.AddField(
-            model_name='spondevent',
-            name='scores_public',
+            model_name="spondevent",
+            name="scores_public",
             field=models.BooleanField(default=False),
         ),
         migrations.AddField(
-            model_name='spondevent',
-            name='scores_set',
+            model_name="spondevent",
+            name="scores_set",
             field=models.BooleanField(default=False),
         ),
         migrations.AddField(
-            model_name='spondevent',
-            name='scores_set_ever',
+            model_name="spondevent",
+            name="scores_set_ever",
             field=models.BooleanField(default=False),
         ),
         migrations.AddField(
-            model_name='spondevent',
-            name='team_name',
+            model_name="spondevent",
+            name="team_name",
             field=models.CharField(blank=True, max_length=120),
         ),
         migrations.AddField(
-            model_name='spondevent',
-            name='team_score',
+            model_name="spondevent",
+            name="team_score",
             field=models.IntegerField(blank=True, null=True),
         ),
     ]

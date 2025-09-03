@@ -1,6 +1,7 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 
+
 class User(AbstractUser):
     # Enforce a unique, required email on the user account
     email = models.EmailField(unique=True)

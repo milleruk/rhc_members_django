@@ -2,14 +2,15 @@ from collections import defaultdict
 from datetime import timedelta
 
 from django.conf import settings
-from django.template.loader import render_to_string
 from django.core.mail import EmailMultiAlternatives
+from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils import timezone
 
 from .models import Task, TaskStatus
 
 DIGEST_LOOKAHEAD_DAYS = getattr(settings, "TASKS_DIGEST_LOOKAHEAD_DAYS", 7)
+
 
 def _build_user_task_map():
     """
@@ -18,9 +19,9 @@ def _build_user_task_map():
     now = timezone.now()
     soon = now + timedelta(days=DIGEST_LOOKAHEAD_DAYS)
 
-    qs = (Task.objects
-          .select_related("assigned_to")
-          .filter(status=TaskStatus.OPEN, assigned_to__isnull=False))
+    qs = Task.objects.select_related("assigned_to").filter(
+        status=TaskStatus.OPEN, assigned_to__isnull=False
+    )
 
     overdue = qs.filter(due_at__lt=now).order_by("due_at")
     due_soon = qs.filter(due_at__gte=now, due_at__lte=soon).order_by("due_at")
@@ -31,6 +32,7 @@ def _build_user_task_map():
         for t in bucket:
             user_map[t.assigned_to].append(t)
     return user_map
+
 
 def _send_digest(to_user, tasks):
     if not getattr(to_user, "email", None):

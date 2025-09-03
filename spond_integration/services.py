@@ -1,11 +1,11 @@
 # spond_integration/services.py
 import asyncio
-from datetime import datetime
-from typing import Any, Callable, Type
-
-
 import logging
+from datetime import datetime
+from typing import Any, Callable
+
 logger = logging.getLogger(__name__)
+
 
 def _looks_like_txn_list(val):
     """Return True if val looks like a list of transaction-like dicts."""
@@ -15,25 +15,39 @@ def _looks_like_txn_list(val):
         return False
     # common finance-ish keys we’ll accept any subset of
     keys_of_interest = {
-        "id", "type", "status", "amount", "currency", "description",
-        "createdTime", "created_at", "settledTime", "memberId", "member_id",
-        "groupId", "group_id", "eventId", "event_id", "reference"
+        "id",
+        "type",
+        "status",
+        "amount",
+        "currency",
+        "description",
+        "createdTime",
+        "created_at",
+        "settledTime",
+        "memberId",
+        "member_id",
+        "groupId",
+        "group_id",
+        "eventId",
+        "event_id",
+        "reference",
     }
     sample_keys = set()
     for x in val[:5]:
         sample_keys |= set(x.keys())
     return bool(sample_keys & keys_of_interest)
 
+
 def _filter_txns_by_created(txs, start, end):
     out = []
-    for t in (txs or []):
+    for t in txs or []:
         created = (
-            t.get("createdTime") or t.get("created_at")
-            or t.get("created") or t.get("timestamp")
+            t.get("createdTime") or t.get("created_at") or t.get("created") or t.get("timestamp")
         )
         if _in_range(created, start, end):
             out.append(t)
     return out
+
 
 def _resolve_client_factory() -> Callable[..., Any]:
     """
@@ -43,6 +57,7 @@ def _resolve_client_factory() -> Callable[..., Any]:
     # 1) Top-level module
     try:
         import spond as m
+
         # Class candidates
         for name in ("Spond", "SpondClient", "Client", "API"):
             cls = getattr(m, name, None)
@@ -59,6 +74,7 @@ def _resolve_client_factory() -> Callable[..., Any]:
     # 2) Submodule variant
     try:
         from spond import spond as sub
+
         for name in ("Spond", "SpondClient", "Client", "API"):
             cls = getattr(sub, name, None)
             if isinstance(cls, type):
@@ -73,6 +89,7 @@ def _resolve_client_factory() -> Callable[..., Any]:
     # Fallback diagnostics
     try:
         import spond as m
+
         available = ", ".join(sorted(dir(m)))
         src = getattr(m, "__file__", "unknown")
     except Exception:
@@ -95,6 +112,7 @@ class SpondClient:
     Async context manager that wraps the raw Spond client.
     Adds helper methods (transactions, events, generic get_json).
     """
+
     def __init__(self, username: str, password: str):
         self.username = username
         self.password = password
@@ -103,9 +121,7 @@ class SpondClient:
     def __getattr__(self, name):
         """Delegate to underlying session for unknown attrs."""
         if self._session is None:
-            raise AttributeError(
-                f"'SpondClient' not initialized yet while accessing {name!r}"
-            )
+            raise AttributeError(f"'SpondClient' not initialized yet while accessing {name!r}")
         return getattr(self._session, name)
 
     async def __aenter__(self):
@@ -129,9 +145,7 @@ class SpondClient:
                         return await fn("GET", path, params=params)
                     except TypeError:
                         pass
-        raise AttributeError(
-            "Underlying Spond session has no get/get_json/request method"
-        )
+        raise AttributeError("Underlying Spond session has no get/get_json/request method")
 
     async def fetch_transactions_between(self, start: datetime, end: datetime):
         """
@@ -141,12 +155,24 @@ class SpondClient:
         # 1) Obvious candidate method names that may take (start, end)
         candidates = [
             # common
-            "get_transactions_between", "get_transactions", "list_transactions", "fetch_transactions",
+            "get_transactions_between",
+            "get_transactions",
+            "list_transactions",
+            "fetch_transactions",
             # other libraries’ naming
-            "get_payments_between", "get_payments", "list_payments", "fetch_payments",
-            "get_finance_between", "get_finance", "finance",
-            "get_ledger_between", "get_ledger", "ledger",
-            "get_invoices_between", "get_invoices", "invoices",
+            "get_payments_between",
+            "get_payments",
+            "list_payments",
+            "fetch_payments",
+            "get_finance_between",
+            "get_finance",
+            "finance",
+            "get_ledger_between",
+            "get_ledger",
+            "ledger",
+            "get_invoices_between",
+            "get_invoices",
+            "invoices",
         ]
         tried = []
 
@@ -282,8 +308,8 @@ async def fetch_events_between(session, start, end):
 
 def _as_dt(val):
     """Best-effort parse of datetime-like values."""
-    from django.utils.dateparse import parse_datetime
     from django.utils import timezone
+    from django.utils.dateparse import parse_datetime
 
     if not val:
         return None
@@ -302,20 +328,16 @@ def _as_dt(val):
 
 def _filter_events_by_range(events, start, end):
     out = []
-    for ev in (events or []):
-        s = _as_dt(
-            ev.get("startTime")
-            or ev.get("start")
-            or (ev.get("time") or {}).get("start")
-        )
-        e = _as_dt(
-            ev.get("endTime") or ev.get("end") or (ev.get("time") or {}).get("end")
-        )
+    for ev in events or []:
+        s = _as_dt(ev.get("startTime") or ev.get("start") or (ev.get("time") or {}).get("start"))
+        e = _as_dt(ev.get("endTime") or ev.get("end") or (ev.get("time") or {}).get("end"))
         if not s and not e:
             out.append(ev)
             continue
-        if (not e and s <= end) or (not s and e >= start) or (
-            s and e and not (e < start or s > end)
+        if (
+            (not e and s <= end)
+            or (not s and e >= start)
+            or (s and e and not (e < start or s > end))
         ):
             out.append(ev)
     return out
@@ -323,16 +345,14 @@ def _filter_events_by_range(events, start, end):
 
 def _in_range(created_val, start, end):
     """Check if created_val is within [start, end]."""
-    from django.utils.dateparse import parse_datetime
     from django.utils import timezone
+    from django.utils.dateparse import parse_datetime
 
     if not created_val:
         return False
     if isinstance(created_val, (int, float)):
         dt = timezone.make_aware(
-            datetime.fromtimestamp(
-                created_val / 1000.0 if created_val > 10**12 else created_val
-            )
+            datetime.fromtimestamp(created_val / 1000.0 if created_val > 10**12 else created_val)
         )
     else:
         dt = parse_datetime(created_val)

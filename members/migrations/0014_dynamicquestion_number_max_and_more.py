@@ -6,33 +6,60 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('members', '0013_questioncategory_description'),
+        ("members", "0013_questioncategory_description"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='dynamicquestion',
-            name='number_max',
-            field=models.DecimalField(blank=True, decimal_places=2, help_text='Maximum allowed value (optional, numeric questions only).', max_digits=12, null=True),
+            model_name="dynamicquestion",
+            name="number_max",
+            field=models.DecimalField(
+                blank=True,
+                decimal_places=2,
+                help_text="Maximum allowed value (optional, numeric questions only).",
+                max_digits=12,
+                null=True,
+            ),
         ),
         migrations.AddField(
-            model_name='dynamicquestion',
-            name='number_min',
-            field=models.DecimalField(blank=True, decimal_places=2, help_text='Minimum allowed value (optional, numeric questions only).', max_digits=12, null=True),
+            model_name="dynamicquestion",
+            name="number_min",
+            field=models.DecimalField(
+                blank=True,
+                decimal_places=2,
+                help_text="Minimum allowed value (optional, numeric questions only).",
+                max_digits=12,
+                null=True,
+            ),
         ),
         migrations.AddField(
-            model_name='dynamicquestion',
-            name='number_step',
-            field=models.DecimalField(blank=True, decimal_places=2, help_text='UI step for HTML number input (optional).', max_digits=12, null=True),
+            model_name="dynamicquestion",
+            name="number_step",
+            field=models.DecimalField(
+                blank=True,
+                decimal_places=2,
+                help_text="UI step for HTML number input (optional).",
+                max_digits=12,
+                null=True,
+            ),
         ),
         migrations.AddField(
-            model_name='playeranswer',
-            name='numeric_answer',
+            model_name="playeranswer",
+            name="numeric_answer",
             field=models.DecimalField(blank=True, decimal_places=4, max_digits=14, null=True),
         ),
         migrations.AlterField(
-            model_name='dynamicquestion',
-            name='question_type',
-            field=models.CharField(choices=[('text', 'Text'), ('boolean', 'Checkbox'), ('choice', 'Dropdown'), ('number', 'Number')], default='text', max_length=10),
+            model_name="dynamicquestion",
+            name="question_type",
+            field=models.CharField(
+                choices=[
+                    ("text", "Text"),
+                    ("boolean", "Checkbox"),
+                    ("choice", "Dropdown"),
+                    ("number", "Number"),
+                ],
+                default="text",
+                max_length=10,
+            ),
         ),
     ]

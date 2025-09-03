@@ -6,12 +6,19 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('spond_integration', '0009_spondevent_is_match_spondevent_kind_and_more'),
+        ("spond_integration", "0009_spondevent_is_match_spondevent_kind_and_more"),
     ]
 
     operations = [
         migrations.AlterModelOptions(
-            name='spondaccessanchor',
-            options={'default_permissions': (), 'managed': False, 'permissions': (('access_spond_app', 'Has Access to Spond App'), ('link_spond_app', 'Has Access to Link player to Spond App'))},
+            name="spondaccessanchor",
+            options={
+                "default_permissions": (),
+                "managed": False,
+                "permissions": (
+                    ("access_spond_app", "Has Access to Spond App"),
+                    ("link_spond_app", "Has Access to Link player to Spond App"),
+                ),
+            },
         ),
     ]

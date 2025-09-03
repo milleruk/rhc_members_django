@@ -6,12 +6,20 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('members', '0011_alter_teammembership_options'),
+        ("members", "0011_alter_teammembership_options"),
     ]
 
     operations = [
         migrations.AlterModelOptions(
-            name='teammembership',
-            options={'permissions': (('view_team_assignment', 'Can View Team Assignments'), ('edit_team_assignment', 'Can Edit Team Assignments'), ('view_access_logs', 'Can View Access logs of a player')), 'verbose_name': 'Team membership', 'verbose_name_plural': 'Team memberships'},
+            name="teammembership",
+            options={
+                "permissions": (
+                    ("view_team_assignment", "Can View Team Assignments"),
+                    ("edit_team_assignment", "Can Edit Team Assignments"),
+                    ("view_access_logs", "Can View Access logs of a player"),
+                ),
+                "verbose_name": "Team membership",
+                "verbose_name_plural": "Team memberships",
+            },
         ),
     ]

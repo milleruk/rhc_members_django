@@ -1,8 +1,7 @@
 {% extends "base_auth.html" %}
 {% block title %}Terms & Conditions{% endblock %}
-
 {% block extra_css %}
-<style>
+    <style>
   /* Improve readability on small screens */
   .legal-wrap { line-height: 1.6; word-break: break-word; hyphens: auto; }
   .legal-wrap h5 { margin-top: 1rem; font-weight: 600; }
@@ -12,92 +11,87 @@
     .register-box { width: 100%; margin: 1rem auto; }
     .register-card-body { padding: 1rem !important; }
   }
-</style>
+    </style>
 {% endblock %}
-
 {% block content %}
-<div class="container my-4">
-  <div class="row justify-content-center">
-    <div class="col-12 col-md-10 col-lg-8 col-xl-7">
-
-      <div class="text-center mb-3 register-logo">
-        <b>Redditch Hockey Club</b><br>Terms &amp; Conditions
-      </div>
-
-      <div class="card shadow-sm">
-        <div class="card-body register-card-body">
-          <p class="login-box-msg">Please read these terms carefully before using the registration portal</p>
-
-          <div class="content text-sm legal-wrap">
-            <h5>1. Introduction</h5>
-            <p>
-              By creating an account on the Redditch Hockey Club Registration Portal, you agree to these
-              Terms &amp; Conditions. The portal is provided to enable club members, players, coaches,
-              and captains to securely register and manage player information. Use of the portal is
-              subject to the rules of Redditch Hockey Club and relevant governing body regulations.
-            </p>
-
-            <h5>2. Membership</h5>
-            <p>
-              The portal is available to registered members of Redditch Hockey Club. Players (senior and junior)
-              must ensure their details are accurate and up to date. Parents or guardians are responsible for
-              registering players under the age of 18 and for ensuring the accuracy of their details.
-            </p>
-            <p>
-              Coaches and captains may be granted additional access rights to view player details for the
-              purposes of training, team selection, and match administration only.
-            </p>
-
-            <h5>3. Conduct &amp; Responsibilities</h5>
-            <p>
-              You agree to use the portal responsibly and for legitimate club purposes only. Misuse of
-              login credentials, unauthorised sharing of player information, or attempts to gain access
-              beyond your allocated permissions may result in disciplinary action and removal of access.
-            </p>
-
-            <h5>4. Data Protection &amp; Privacy</h5>
-            <p>
-              All information provided will be stored securely and used only for the administration of
-              Redditch Hockey Club activities. Data will not be shared with third parties without consent,
-              except where required by law or by hockey governing bodies for competition compliance.
-            </p>
-            <p>
-              By registering, you consent to the collection and use of your information in line with our
-              <a href="{% url 'privacy_policy' %}">Privacy Policy</a>.
-            </p>
-
-            <h5>5. Access Levels</h5>
-            <ul class="mb-2">
-              <li><b>Players/Parents:</b> Register and update their own details.</li>
-              <li><b>Captains:</b> Access relevant player details to support team management.</li>
-              <li><b>Coaches:</b> Access relevant player details to support training and development.</li>
-            </ul>
-            <p class="mb-0">Access is restricted to club-related purposes only.</p>
-
-            <h5>6. Amendments</h5>
-            <p>
-              Redditch Hockey Club may update these Terms &amp; Conditions. Members will be notified of significant changes.
-            </p>
-
-            <h5>7. Contact</h5>
-            <p>
-              Questions? Contact the Club Committee at
-              <a href="mailto:info@redditchhc.co.uk">info@redditchhc.co.uk</a>.
-            </p>
-          </div>
-
-          <div class="mt-3 d-flex flex-column flex-md-row gap-2 justify-content-between">
-            <a href="{% url 'signup' %}" class="btn btn-outline-secondary w-100 w-md-auto">
-              <i class="fas fa-arrow-left mr-1"></i> Back to Signup
-            </a>
-            <span class="text-muted small text-center text-md-right mt-2 mt-md-0">
-              Last updated: {{ last_updated|default:"–" }}
-            </span>
-          </div>
+    <div class="container my-4">
+        <div class="row justify-content-center">
+            <div class="col-12 col-md-10 col-lg-8 col-xl-7">
+                <div class="text-center mb-3 register-logo">
+                    <b>Redditch Hockey Club</b>
+                    <br>
+                    Terms &amp; Conditions
+                </div>
+                <div class="card shadow-sm">
+                    <div class="card-body register-card-body">
+                        <p class="login-box-msg">Please read these terms carefully before using the registration portal</p>
+                        <div class="content text-sm legal-wrap">
+                            <h5>1. Introduction</h5>
+                            <p>
+                                By creating an account on the Redditch Hockey Club Registration Portal, you agree to these
+                                Terms &amp; Conditions. The portal is provided to enable club members, players, coaches,
+                                and captains to securely register and manage player information. Use of the portal is
+                                subject to the rules of Redditch Hockey Club and relevant governing body regulations.
+                            </p>
+                            <h5>2. Membership</h5>
+                            <p>
+                                The portal is available to registered members of Redditch Hockey Club. Players (senior and junior)
+                                must ensure their details are accurate and up to date. Parents or guardians are responsible for
+                                registering players under the age of 18 and for ensuring the accuracy of their details.
+                            </p>
+                            <p>
+                                Coaches and captains may be granted additional access rights to view player details for the
+                                purposes of training, team selection, and match administration only.
+                            </p>
+                            <h5>3. Conduct &amp; Responsibilities</h5>
+                            <p>
+                                You agree to use the portal responsibly and for legitimate club purposes only. Misuse of
+                                login credentials, unauthorised sharing of player information, or attempts to gain access
+                                beyond your allocated permissions may result in disciplinary action and removal of access.
+                            </p>
+                            <h5>4. Data Protection &amp; Privacy</h5>
+                            <p>
+                                All information provided will be stored securely and used only for the administration of
+                                Redditch Hockey Club activities. Data will not be shared with third parties without consent,
+                                except where required by law or by hockey governing bodies for competition compliance.
+                            </p>
+                            <p>
+                                By registering, you consent to the collection and use of your information in line with our
+                                <a href="{% url 'privacy_policy' %}">Privacy Policy</a>.
+                            </p>
+                            <h5>5. Access Levels</h5>
+                            <ul class="mb-2">
+                                <li>
+                                    <b>Players/Parents:</b> Register and update their own details.
+                                </li>
+                                <li>
+                                    <b>Captains:</b> Access relevant player details to support team management.
+                                </li>
+                                <li>
+                                    <b>Coaches:</b> Access relevant player details to support training and development.
+                                </li>
+                            </ul>
+                            <p class="mb-0">Access is restricted to club-related purposes only.</p>
+                            <h5>6. Amendments</h5>
+                            <p>Redditch Hockey Club may update these Terms &amp; Conditions. Members will be notified of significant changes.</p>
+                            <h5>7. Contact</h5>
+                            <p>
+                                Questions? Contact the Club Committee at
+                                <a href="mailto:info@redditchhc.co.uk">info@redditchhc.co.uk</a>.
+                            </p>
+                        </div>
+                        <div class="mt-3 d-flex flex-column flex-md-row gap-2 justify-content-between">
+                            <a href="{% url 'signup' %}"
+                               class="btn btn-outline-secondary w-100 w-md-auto">
+                                <i class="fas fa-arrow-left mr-1"></i> Back to Signup
+                            </a>
+                            <span class="text-muted small text-center text-md-right mt-2 mt-md-0">
+                                Last updated: {{ last_updated|default:"–" }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
-      </div>
-
     </div>
-  </div>
-</div>
 {% endblock %}

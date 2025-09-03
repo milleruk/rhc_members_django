@@ -1,92 +1,85 @@
 {% extends "base.html" %}
 {% load i18n widget_tweaks %}
-
-{% block title %}{% trans "Set up Authenticator App" %}{% endblock %}
-
+{% block title %}
+    {% trans "Set up Authenticator App" %}
+{% endblock %}
 {% block content %}
-<div class="container auth-wrap d-flex align-items-center justify-content-center py-5">
-  <div class="auth-card" style="max-width:600px; width:100%;">
-    <div class="card card-outline card-primary shadow-sm">
-      <div class="card-header">
-        <h3 class="card-title h6 mb-0">
-          <i class="fas fa-mobile-alt mr-2"></i>{% trans "Set up Two-Factor (TOTP)" %}
-        </h3>
-      </div>
-
-      <div class="card-body">
-        <p class="text-muted mb-3">
-          {% blocktrans %}Scan the QR code with your authenticator app (Google Authenticator, 1Password, Authy, etc.), then enter the 6-digit code to confirm.{% endblocktrans %}
-        </p>
-
-        {# QR — support multiple possible context keys across allauth versions #}
-        {% if qr_svg %}
-          <div class="text-center mb-3">{{ qr_svg|safe }}</div>
-        {% elif qrcode_svg %}
-          <div class="text-center mb-3">{{ qrcode_svg|safe }}</div>
-        {% elif qr_code %}
-          <div class="text-center mb-3">{{ qr_code|safe }}</div>
-        {% elif qrcode_data_url %}
-          <div class="text-center mb-3">
-            <img src="{{ qrcode_data_url }}" alt="{% trans 'TOTP QR code' %}" style="max-width:220px;">
-          </div>
-        {% elif qr_uri %}
-          <div class="alert alert-light text-break mb-3"><code>{{ qr_uri }}</code></div>
-        {% endif %}
-
-        {# Manual entry, if provided #}
-        {% if secret %}
-          <div class="alert alert-secondary small">
-            <strong>{% trans "Manual key:" %}</strong>
-            <span class="text-monospace">{{ secret }}</span>
-          </div>
-        {% endif %}
-        {% if setup_uri or otpauth_url %}
-          <details class="mb-3">
-            <summary class="small text-muted">{% trans "Show setup URI" %}</summary>
-            <div class="mt-2 text-break"><code>{{ setup_uri|default:otpauth_url }}</code></div>
-          </details>
-        {% endif %}
-
-        <form method="post" novalidate>
-          {% csrf_token %}
-
-          {# Render any form errors #}
-          {% if form.non_field_errors %}
-            <div class="alert alert-danger">
-              {% for e in form.non_field_errors %}<div>{{ e }}</div>{% endfor %}
+    <div class="container auth-wrap d-flex align-items-center justify-content-center py-5">
+        <div class="auth-card" style="max-width:600px; width:100%;">
+            <div class="card card-outline card-primary shadow-sm">
+                <div class="card-header">
+                    <h3 class="card-title h6 mb-0">
+                        <i class="fas fa-mobile-alt mr-2"></i>{% trans "Set up Two-Factor (TOTP)" %}
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted mb-3">
+                        {% blocktrans %}Scan the QR code with your authenticator app (Google Authenticator, 1Password, Authy, etc.), then enter the 6-digit code to confirm.{% endblocktrans %}
+                    </p>
+                    {# QR — support multiple possible context keys across allauth versions #}
+                    {% if qr_svg %}
+                        <div class="text-center mb-3">{{ qr_svg|safe }}</div>
+                    {% elif qrcode_svg %}
+                        <div class="text-center mb-3">{{ qrcode_svg|safe }}</div>
+                    {% elif qr_code %}
+                        <div class="text-center mb-3">{{ qr_code|safe }}</div>
+                    {% elif qrcode_data_url %}
+                        <div class="text-center mb-3">
+                            <img src="{{ qrcode_data_url }}"
+                                 alt="{% trans 'TOTP QR code' %}"
+                                 style="max-width:220px">
+                        </div>
+                    {% elif qr_uri %}
+                        <div class="alert alert-light text-break mb-3">
+                            <code>{{ qr_uri }}</code>
+                        </div>
+                    {% endif %}
+                    {# Manual entry, if provided #}
+                    {% if secret %}
+                        <div class="alert alert-secondary small">
+                            <strong>{% trans "Manual key:" %}</strong>
+                            <span class="text-monospace">{{ secret }}</span>
+                        </div>
+                    {% endif %}
+                    {% if setup_uri or otpauth_url %}
+                        <details class="mb-3">
+                            <summary class="small text-muted">{% trans "Show setup URI" %}</summary>
+                            <div class="mt-2 text-break">
+                                <code>{{ setup_uri|default:otpauth_url }}</code>
+                            </div>
+                        </details>
+                    {% endif %}
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+                        {# Render any form errors #}
+                        {% if form.non_field_errors %}
+                            <div class="alert alert-danger">
+                                {% for e in form.non_field_errors %}<div>{{ e }}</div>{% endfor %}
+                            </div>
+                        {% endif %}
+                        {# Render fields generically, keep styles consistent #}
+                        {% for field in form %}
+                            <div class="form-group">
+                                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                                {% if field.errors %}
+                                    {% render_field field class="form-control is-invalid" %}
+                                    {% for e in field.errors %}<div class="invalid-feedback d-block">{{ e }}</div>{% endfor %}
+                                {% else %}
+                                    {% render_field field class="form-control" %}
+                                {% endif %}
+                                {% if field.help_text %}<small class="form-text text-muted">{{ field.help_text }}</small>{% endif %}
+                            </div>
+                        {% endfor %}
+                        <button type="submit" class="btn btn-primary btn-block">
+                            <i class="fas fa-check mr-1"></i>{% trans "Enable 2FA" %}
+                        </button>
+                    </form>
+                    <p class="small text-muted mt-3 mb-0">{% trans "Once enabled, store your recovery codes somewhere safe." %}</p>
+                </div>
             </div>
-          {% endif %}
-
-          {# Render fields generically, keep styles consistent #}
-          {% for field in form %}
-            <div class="form-group">
-              <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-              {% if field.errors %}
-                {% render_field field class="form-control is-invalid" %}
-                {% for e in field.errors %}<div class="invalid-feedback d-block">{{ e }}</div>{% endfor %}
-              {% else %}
-                {% render_field field class="form-control" %}
-              {% endif %}
-              {% if field.help_text %}
-                <small class="form-text text-muted">{{ field.help_text }}</small>
-              {% endif %}
-            </div>
-          {% endfor %}
-
-          <button type="submit" class="btn btn-primary btn-block">
-            <i class="fas fa-check mr-1"></i>{% trans "Enable 2FA" %}
-          </button>
-        </form>
-
-        <p class="small text-muted mt-3 mb-0">
-          {% trans "Once enabled, store your recovery codes somewhere safe." %}
-        </p>
-      </div>
+            <p class="text-center mt-3 mb-0">
+                <a href="/accounts/mfa/"><i class="fas fa-arrow-left mr-1"></i>{% trans "Back to MFA" %}</a>
+            </p>
+        </div>
     </div>
-
-    <p class="text-center mt-3 mb-0">
-      <a href="/accounts/mfa/"><i class="fas fa-arrow-left mr-1"></i>{% trans "Back to MFA" %}</a>
-    </p>
-  </div>
-</div>
 {% endblock %}

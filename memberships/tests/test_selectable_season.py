@@ -1,6 +1,6 @@
-import pytest
 from datetime import date
-from django.test import override_settings
+
+import pytest
 
 from memberships.views import _get_selectable_season
 

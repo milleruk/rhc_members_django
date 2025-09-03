@@ -1,112 +1,107 @@
 {% extends "base.html" %}
 {% load crispy_forms_tags %}
-
 {% block title %}Edit Player · {{ player.first_name }} {{ player.last_name }}{% endblock %}
-
 {% block content %}
-<div class="content-header pb-0">
-  <div class="container-fluid">
-    <div class="row mb-2 align-items-center">
-      <div class="col">
-        <h1 class="h4 mb-1">
-          <i class="fas fa-user-cog me-2"></i>Edit Player
-          <small class="text-muted d-block mt-1">{{ player.first_name }} {{ player.last_name }}</small>
-        </h1>
-      </div>
-      <div class="col text-end">
-        <a href="{% url 'answer' player.public_id %}" class="btn btn-outline-secondary">
-          <i class="fas fa-arrow-left me-1"></i> Back to Profile
-        </a>
-      </div>
-    </div>
-  </div>
-</div>
-
-<div class="content">
-  <div class="container-fluid">
-    <div class="row">
-      <div class="col-lg-8">
-        <div class="card card-outline card-primary">
-          <div class="card-header py-2">
-            <h3 class="card-title mb-0">Core details</h3>
-          </div>
-          <div class="card-body">
-            <form method="post" novalidate>
-              {% csrf_token %}
-              {{ form|crispy }}
-
-              <div class="d-flex justify-content-between align-items-center mt-3">
-                <span class="text-muted small">
-                  <i class="far fa-save me-1"></i> Check details are correct before saving.
-                </span>
-                <div>
-                  <a href="{% url 'answer' player.public_id %}" class="btn btn-outline-secondary me-1">
-                    Cancel
-                  </a>
-                  <button type="submit" class="btn btn-primary">
-                    Save changes
-                  </button>
+    <div class="content-header pb-0">
+        <div class="container-fluid">
+            <div class="row mb-2 align-items-center">
+                <div class="col">
+                    <h1 class="h4 mb-1">
+                        <i class="fas fa-user-cog me-2"></i>Edit Player
+                        <small class="text-muted d-block mt-1">{{ player.first_name }} {{ player.last_name }}</small>
+                    </h1>
                 </div>
-              </div>
-            </form>
-          </div>
-        </div>
-
-        {% if team_memberships %}
-        <div class="card card-outline card-info">
-          <div class="card-header py-2">
-            <h3 class="card-title mb-0"><i class="fas fa-users me-1"></i> Teams</h3>
-          </div>
-          <div class="card-body p-0">
-            <ul class="list-group list-group-flush">
-              {% for m in team_memberships %}
-                <li class="list-group-item d-flex justify-content-between">
-                  <div>
-                    <strong>{{ m.team.name }}</strong>
-                    <div class="small text-muted">Assigned {{ m.assigned_at|date:"M j, Y" }}</div>
-                  </div>
-                  <div>
-                    {% for pos in m.positions.all %}
-                      <span class="badge bg-light text-dark border">{{ pos }}</span>
-                    {% endfor %}
-                  </div>
-                </li>
-              {% endfor %}
-            </ul>
-          </div>
-        </div>
-        {% endif %}
-      </div>
-
-      <div class="col-lg-4">
-        <div class="card card-outline">
-          <div class="card-body d-flex align-items-center">
-            <div class="rounded-circle bg-light border text-center me-3" style="width:64px;height:64px;line-height:64px;">
-              <span class="text-muted fw-bold">
-                {{ player.first_name|default:"?"|slice:":1" }}{{ player.last_name|default:""|slice:":1" }}
-              </span>
+                <div class="col text-end">
+                    <a href="{% url 'answer' player.public_id %}"
+                       class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-1"></i> Back to Profile
+                    </a>
+                </div>
             </div>
-            <div>
-              <div class="fw-semibold">{{ player.first_name }} {{ player.last_name }}</div>
-              {% if player.date_of_birth %}
-                <div class="small text-muted">DOB {{ player.date_of_birth|date:"Y-m-d" }}</div>
-              {% endif %}
-              {% if player.player_type %}
-                <div class="badge bg-secondary mt-1">{{ player.player_type }}</div>
-              {% endif %}
-            </div>
-          </div>
-          <div class="list-group list-group-flush">
-            <a class="list-group-item list-group-item-action" href="{% url 'answer' player.public_id %}">
-              <i class="fas fa-user-edit me-2"></i> Update profile answers
-            </a>
-            <a class="list-group-item list-group-item-action" href="{% url 'memberships:choose' player.id %}">
-              <i class="fas fa-id-badge me-2"></i> Manage membership
-            </a>
-          </div>
         </div>
-      </div>
     </div>
-  </div>
-</div>
+    <div class="content">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-lg-8">
+                    <div class="card card-outline card-primary">
+                        <div class="card-header py-2">
+                            <h3 class="card-title mb-0">Core details</h3>
+                        </div>
+                        <div class="card-body">
+                            <form method="post" novalidate>
+                                {% csrf_token %}
+                                {{ form|crispy }}
+                                <div class="d-flex justify-content-between align-items-center mt-3">
+                                    <span class="text-muted small">
+                                        <i class="far fa-save me-1"></i> Check details are correct before saving.
+                                    </span>
+                                    <div>
+                                        <a href="{% url 'answer' player.public_id %}"
+                                           class="btn btn-outline-secondary me-1">Cancel</a>
+                                        <button type="submit" class="btn btn-primary">Save changes</button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                    {% if team_memberships %}
+                        <div class="card card-outline card-info">
+                            <div class="card-header py-2">
+                                <h3 class="card-title mb-0">
+                                    <i class="fas fa-users me-1"></i> Teams
+                                </h3>
+                            </div>
+                            <div class="card-body p-0">
+                                <ul class="list-group list-group-flush">
+                                    {% for m in team_memberships %}
+                                        <li class="list-group-item d-flex justify-content-between">
+                                            <div>
+                                                <strong>{{ m.team.name }}</strong>
+                                                <div class="small text-muted">Assigned {{ m.assigned_at|date:"M j, Y" }}</div>
+                                            </div>
+                                            <div>
+                                                {% for pos in m.positions.all %}<span class="badge bg-light text-dark border">{{ pos }}</span>{% endfor %}
+                                            </div>
+                                        </li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="col-lg-4">
+                    <div class="card card-outline">
+                        <div class="card-body d-flex align-items-center">
+                            <div class="rounded-circle bg-light border text-center me-3"
+                                 style="width:64px;
+                                        height:64px;
+                                        line-height:64px">
+                                <span class="text-muted fw-bold">
+                                    {{ player.first_name|default:"?"|slice:":1" }}{{ player.last_name|default:""|slice:":1" }}
+                                </span>
+                            </div>
+                            <div>
+                                <div class="fw-semibold">{{ player.first_name }} {{ player.last_name }}</div>
+                                {% if player.date_of_birth %}
+                                    <div class="small text-muted">DOB {{ player.date_of_birth|date:"Y-m-d" }}</div>
+                                {% endif %}
+                                {% if player.player_type %}<div class="badge bg-secondary mt-1">{{ player.player_type }}</div>{% endif %}
+                            </div>
+                        </div>
+                        <div class="list-group list-group-flush">
+                            <a class="list-group-item list-group-item-action"
+                               href="{% url 'answer' player.public_id %}">
+                                <i class="fas fa-user-edit me-2"></i> Update profile answers
+                            </a>
+                            <a class="list-group-item list-group-item-action"
+                               href="{% url 'memberships:choose' player.id %}">
+                                <i class="fas fa-id-badge me-2"></i> Manage membership
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 {% endblock %}

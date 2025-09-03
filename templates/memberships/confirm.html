@@ -1,321 +1,348 @@
 {% extends "base.html" %}
 {% block title %}Confirm Membership{% endblock %}
-
 {% block content %}
-<div class="content-header pb-0">
-  <div class="container-fluid">
-    <div class="row mb-2 align-items-center">
-      <div class="col-sm-7 d-flex align-items-center">
-        <i class="fas fa-id-card-alt fa-lg text-primary mr-2"></i>
-        <h1 class="m-0 h4">Confirm Membership</h1>
-      </div>
-      <div class="col-sm-5">
-        <ol class="breadcrumb float-sm-right">
-          <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
-          <li class="breadcrumb-item"><a href="{% url 'memberships:choose' player.id %}">Choose</a></li>
-          <li class="breadcrumb-item active">Confirm</li>
-        </ol>
-      </div>
-    </div>
-  </div>
-</div>
-
-<div class="container-fluid">
-
-  {# Surface any form errors nicely #}
-  {% if form.errors or form.non_field_errors %}
-    <div class="alert alert-danger">
-      <h6 class="mb-2"><i class="icon fas fa-exclamation-triangle"></i> Please fix the issues below</h6>
-      {{ form.non_field_errors }}
-      <ul class="mb-0">
-        {% for field in form %}
-          {% for error in field.errors %}
-            <li><strong>{{ field.label }}:</strong> {{ error }}</li>
-          {% endfor %}
-        {% endfor %}
-      </ul>
-    </div>
-  {% endif %}
-
-  <div class="row">
-    <div class="col-lg-7">
-      <div class="card card-primary card-outline shadow-sm">
-        <div class="card-header">
-          <h3 class="card-title">
-            <i class="fas fa-user-check mr-2"></i>Membership Summary
-          </h3>
-        </div>
-        <div class="card-body">
-          <dl class="row mb-0">
-            <dt class="col-5 col-md-4">Player</dt>
-            <dd class="col-7 col-md-8">
-              <span class="badge badge-light border">
-                {{ player.first_name }} {{ player.last_name }}
-              </span>
-            </dd>
-
-            <dt class="col-5 col-md-4">Product</dt>
-            <dd class="col-7 col-md-8">
-              <span class="badge badge-info">{{ product.name }}</span>
-              {% if product.pay_per_match %}
-                <span class="ml-1 badge badge-secondary">Pay-per-match</span>
-              {% endif %}
-            </dd>
-
-            <dt class="col-5 col-md-4">Season</dt>
-            <dd class="col-7 col-md-8">{{ product.season.name }}</dd>
-
-            <dt class="col-5 col-md-4">Payment</dt>
-            <dd class="col-7 col-md-8">
-              {% if plan %}
-                <div class="mb-1">
-                  <strong>{{ plan.label }}</strong>
-                  — £{{ plan.instalment_amount_gbp|floatformat:2 }} × {{ plan.instalment_count }} ({{ plan.get_frequency_display }})
-                  {% if plan.includes_match_fees %}
-                    <span class="badge badge-success ml-1">Includes match fees</span>
-                  {% endif %}
+    <div class="content-header pb-0">
+        <div class="container-fluid">
+            <div class="row mb-2 align-items-center">
+                <div class="col-sm-7 d-flex align-items-center">
+                    <i class="fas fa-id-card-alt fa-lg text-primary mr-2"></i>
+                    <h1 class="m-0 h4">Confirm Membership</h1>
                 </div>
-                <div class="text-muted small">
-                  {% if plan.first_payment_due %} • First payment due {{ plan.first_payment_due|date:"j M Y" }}{% endif %}
+                <div class="col-sm-5">
+                    <ol class="breadcrumb float-sm-right">
+                        <li class="breadcrumb-item">
+                            <a href="{% url 'dashboard' %}">Home</a>
+                        </li>
+                        <li class="breadcrumb-item">
+                            <a href="{% url 'memberships:choose' player.id %}">Choose</a>
+                        </li>
+                        <li class="breadcrumb-item active">Confirm</li>
+                    </ol>
                 </div>
-              {% elif product.list_price_gbp and product.list_price_gbp|floatformat != "0" %}
-                <div><strong>Membership fee:</strong> £{{ product.list_price_gbp|floatformat:2 }}</div>
-              {% else %}
-              {% endif %}
-
-              {% if product.pay_per_match %}
-                <div class="mt-2">
-                  <strong>Match fee:</strong>
-                  {% if match_fee %}
-                    £{{ match_fee.amount_gbp|floatformat:2 }} <span class="text-muted">({{ match_fee.name }})</span>
-                  {% else %}
-                    applies per game
-                  {% endif %}
-                </div>
-              {% endif %}
-            </dd>
-
-          <dt class="col-5 col-md-4">Notes</dt>
-            <dd class="col-7 col-md-8">
-              {{ product.notes }}
-
-            </dd>
-          </dl>
-
-          <div class="callout callout-info mt-3 mb-0">
-            <p class="mb-1"><i class="fas fa-info-circle mr-1"></i>
-              Please check all details are correct before confirming your membership.
-            </p>
-            <p class="mb-0 small text-muted">
-              By confirming, you enter into a membership agreement with Redditch Hockey Club for the stated season.
-            </p>
-          </div>
-        </div>
-      </div>
-
-      <div class="card card-outline card-secondary shadow-sm">
-  <div class="card-header">
-    <h3 class="card-title"><i class="fas fa-file-contract mr-2"></i>Membership Terms &amp; Conditions</h3>
-    <div class="card-tools">
-      <button class="btn btn-tool" type="button" data-card-widget="collapse"><i class="fas fa-minus"></i></button>
-    </div>
-  </div>
-  <div class="card-body p-0">
-    <div class="p-3" style="max-height: 260px; overflow:auto;">
-      
-      <h6 class="font-weight-bold">1) Membership & Eligibility</h6>
-      <p>Membership runs for the season <strong>{{ product.season.name }}</strong>. Junior members require parent/guardian consent. All members agree to abide by Club rules, England Hockey policies, and our Code of Conduct. The Club reserves the right to refuse or terminate membership in cases of serious breach.</p>
-
-      <h6 class="font-weight-bold">2) Fees, Payments & Arrears</h6>
-      <p>
-        Membership, training, and match fees must be paid on time as published by the Club. Payment schedules (annual, standing order, instalments) are binding once agreed.
-        Missed or late payments may result in suspension from matches, training, or voting rights until resolved.
-        The Treasurer may agree repayment plans where there is financial difficulty. Members must contact the Club before arrears escalate.
-      </p>
-
-      <h6 class="font-weight-bold">3) Match, Training & Event Fees</h6>
-      <p>
-        Fees apply per fixture/session. Rates are communicated by Captains/Coaches. Concessions, where available, will be published on the website or by communication.
-      </p>
-
-      <h6 class="font-weight-bold">4) Refunds, Pauses & Cancellations</h6>
-      <p>
-        Membership fees are non-refundable once the season starts, except at the Committee’s discretion in exceptional circumstances (e.g., relocation, long-term injury). Requests must be submitted in writing to the Treasurer.
-      </p>
-
-      <h6 class="font-weight-bold">5) Suspension & Termination</h6>
-      <p>
-        Members may be suspended for non-payment, breaches of conduct, or safeguarding concerns. Termination of membership requires Committee approval.
-      </p>
-
-      <h6 class="font-weight-bold">6) Conduct & Safeguarding</h6>
-      <p>
-        All members (and parents/guardians of juniors) must uphold the Club Code of Conduct, Respect guidelines, and England Hockey safeguarding policies. Any breach may lead to suspension or removal from the Club.
-      </p>
-
-      <h6 class="font-weight-bold">7) Health, Safety & Medical</h6>
-      <p>
-        Members confirm they are medically fit to play and will disclose any relevant health conditions to the Club. In emergencies, members consent to first aid and, if necessary, further medical treatment.
-      </p>
-
-      <h6 class="font-weight-bold">8) Insurance & Liability</h6>
-      <p>
-        Participation in hockey carries inherent risks. The Club holds appropriate liability insurance, but members are responsible for their own personal insurance and property. The Club accepts no liability for loss/damage of personal belongings.
-      </p>
-
-      <h6 class="font-weight-bold">9) Media, Photography & Promotion</h6>
-      <p>
-        The Club may take photos/videos during training, matches, and events for promotional purposes. If you (or your child) do not consent, notify the Club in writing and update your profile settings.
-      </p>
-
-      <h6 class="font-weight-bold">10) Data Protection</h6>
-      <p>
-        The Club processes personal and financial data in line with UK GDPR and the Data Protection Act 2018. Access is restricted to authorised committee members. Data is used only for membership, fixtures, finance, and safeguarding.
-      </p>
-
-      <h6 class="font-weight-bold">11) Dispute Resolution</h6>
-      <p>
-        Members may dispute fees, disciplinary action, or other matters by submitting a written statement to the Treasurer within 14 days. The Treasurer and Chairperson will review and reply within 14 days.
-      </p>
-
-      <h6 class="font-weight-bold">12) Changes to Terms</h6>
-      <p>The Club may reasonably update these terms during the season. Members will be notified of any material changes.</p>
-
-    </div>
-    <div class="border-top p-3 bg-light">
-      <button type="button" class="btn btn-outline-secondary btn-sm" data-toggle="modal" data-target="#fullTermsModal">
-        <i class="fas fa-external-link-alt mr-1"></i>Open full terms
-      </button>
-    </div>
-  </div>
-</div>
-
-
-
-    </div>
-
-    {# Right column: confirmation form #}
-    <div class="col-lg-5">
-      <div class="card card-success card-outline shadow-sm">
-        <div class="card-header">
-          <h3 class="card-title"><i class="fas fa-check-circle mr-2"></i>Confirm & Submit</h3>
-        </div>
-        <div class="card-body">
-          <form method="post" novalidate>
-            {% csrf_token %}
-
-              {# Required T&Cs agreement checkbox (server validates too) #}
-              <div class="form-group mb-3">
-                <div class="form-check">
-                  {{ form.accept_terms }}
-                  <label class="form-check-label" for="{{ form.accept_terms.id_for_label }}">
-                    I agree to the club’s <a href="#" data-toggle="modal" data-target="#fullTermsModal">Membership Terms &amp; Conditions</a>
-                  </label>
-                </div>
-                {% if form.accept_terms.errors %}
-                  <div class="invalid-feedback d-block">
-                    {{ form.accept_terms.errors.0 }}
-                  </div>
-                {% endif %}
-              </div>
-
-
-            <div class="d-flex justify-content-between align-items-center">
-              <a href="{% url 'memberships:choose' player.id %}" class="btn btn-default">
-                <i class="fas fa-arrow-left mr-1"></i>Back
-              </a>
-              <button type="submit" class="btn btn-success">
-                <i class="fas fa-check mr-1"></i>Confirm Subscription
-              </button>
             </div>
-          </form>
         </div>
-        <div class="card-footer bg-white">
-          <div class="text-muted small">
-            Need help? Contact your team captain or the Membership Secretary.
-          </div>
-        </div>
-      </div>
     </div>
-  </div>
-</div>
-
-{# Modal with scrollable, print-friendly full terms #}
-<div class="modal fade" id="fullTermsModal" tabindex="-1" aria-labelledby="fullTermsLabel" aria-hidden="true">
-  <div class="modal-dialog modal-lg modal-dialog-scrollable">
-    <div class="modal-content">
-      <div class="modal-header bg-primary">
-        <h5 class="modal-title text-white" id="fullTermsLabel"><i class="fas fa-file-contract mr-2"></i>Full Membership Terms &amp; Fee Collection Policy</h5>
-        <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
-          <span aria-hidden="true">×</span>
-        </button>
-      </div>
-      <div class="modal-body">
-
-        <p class="text-muted small">Effective season: <strong>{{ product.season.name }}</strong></p>
-
-        <h6 class="font-weight-bold">Membership Eligibility</h6>
-        <p>Open to players, social members, and volunteers in line with Club and England Hockey regulations. Juniors require parent/guardian consent.</p>
-
-        <h6 class="font-weight-bold">Fees, Payments & Arrears</h6>
-        <p>All fees (membership, training, match, events) must be paid on or before the due dates. Standing orders or staged instalments must be honoured in full.</p>
-        
-        <div class="table-responsive mb-3">
-          <table class="table table-sm table-bordered">
-            <thead class="thead-light"><tr><th>Fee Type</th><th>Payment Date</th><th>Arrears Date</th></tr></thead>
-            <tbody>
-              <tr><td>Membership Fee (one-off)</td><td>1st October</td><td>31st October</td></tr>
-              <tr><td>Membership Fee (Standing Order)</td><td>1st of each month</td><td>Last day of month</td></tr>
-              <tr><td>Training Fee</td><td>On training date</td><td>7 days later</td></tr>
-              <tr><td>Match Fee</td><td>On match date</td><td>7 days later</td></tr>
-              <tr><td>Other Event Fee</td><td>Set by organiser</td><td>14 days later*</td></tr>
-            </tbody>
-          </table>
+    <div class="container-fluid">
+        {# Surface any form errors nicely #}
+        {% if form.errors or form.non_field_errors %}
+            <div class="alert alert-danger">
+                <h6 class="mb-2">
+                    <i class="icon fas fa-exclamation-triangle"></i> Please fix the issues below
+                </h6>
+                {{ form.non_field_errors }}
+                <ul class="mb-0">
+                    {% for field in form %}
+                        {% for error in field.errors %}
+                            <li>
+                                <strong>{{ field.label }}:</strong> {{ error }}
+                            </li>
+                        {% endfor %}
+                    {% endfor %}
+                </ul>
+            </div>
+        {% endif %}
+        <div class="row">
+            <div class="col-lg-7">
+                <div class="card card-primary card-outline shadow-sm">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="fas fa-user-check mr-2"></i>Membership Summary
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <dl class="row mb-0">
+                            <dt class="col-5 col-md-4">Player</dt>
+                            <dd class="col-7 col-md-8">
+                                <span class="badge badge-light border">{{ player.first_name }} {{ player.last_name }}</span>
+                            </dd>
+                            <dt class="col-5 col-md-4">Product</dt>
+                            <dd class="col-7 col-md-8">
+                                <span class="badge badge-info">{{ product.name }}</span>
+                                {% if product.pay_per_match %}<span class="ml-1 badge badge-secondary">Pay-per-match</span>{% endif %}
+                            </dd>
+                            <dt class="col-5 col-md-4">Season</dt>
+                            <dd class="col-7 col-md-8">
+                                {{ product.season.name }}
+                            </dd>
+                            <dt class="col-5 col-md-4">Payment</dt>
+                            <dd class="col-7 col-md-8">
+                                {% if plan %}
+                                    <div class="mb-1">
+                                        <strong>{{ plan.label }}</strong>
+                                        — £{{ plan.instalment_amount_gbp|floatformat:2 }} × {{ plan.instalment_count }} ({{ plan.get_frequency_display }})
+                                        {% if plan.includes_match_fees %}<span class="badge badge-success ml-1">Includes match fees</span>{% endif %}
+                                    </div>
+                                    <div class="text-muted small">
+                                        {% if plan.first_payment_due %}• First payment due {{ plan.first_payment_due|date:"j M Y" }}{% endif %}
+                                    </div>
+                                {% elif product.list_price_gbp and product.list_price_gbp|floatformat != "0" %}
+                                    <div>
+                                        <strong>Membership fee:</strong> £{{ product.list_price_gbp|floatformat:2 }}
+                                    </div>
+                                {% else %}
+                                {% endif %}
+                                {% if product.pay_per_match %}
+                                    <div class="mt-2">
+                                        <strong>Match fee:</strong>
+                                        {% if match_fee %}
+                                            £{{ match_fee.amount_gbp|floatformat:2 }} <span class="text-muted">({{ match_fee.name }})</span>
+                                        {% else %}
+                                            applies per game
+                                        {% endif %}
+                                    </div>
+                                {% endif %}
+                            </dd>
+                            <dt class="col-5 col-md-4">Notes</dt>
+                            <dd class="col-7 col-md-8">
+                                {{ product.notes }}
+                            </dd>
+                        </dl>
+                        <div class="callout callout-info mt-3 mb-0">
+                            <p class="mb-1">
+                                <i class="fas fa-info-circle mr-1"></i>
+                                Please check all details are correct before confirming your membership.
+                            </p>
+                            <p class="mb-0 small text-muted">
+                                By confirming, you enter into a membership agreement with Redditch Hockey Club for the stated season.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="card card-outline card-secondary shadow-sm">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="fas fa-file-contract mr-2"></i>Membership Terms &amp; Conditions
+                        </h3>
+                        <div class="card-tools">
+                            <button class="btn btn-tool" type="button" data-card-widget="collapse">
+                                <i class="fas fa-minus"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="p-3" style="max-height: 260px; overflow:auto;">
+                            <h6 class="font-weight-bold">1) Membership & Eligibility</h6>
+                            <p>
+                                Membership runs for the season <strong>{{ product.season.name }}</strong>. Junior members require parent/guardian consent. All members agree to abide by Club rules, England Hockey policies, and our Code of Conduct. The Club reserves the right to refuse or terminate membership in cases of serious breach.
+                            </p>
+                            <h6 class="font-weight-bold">2) Fees, Payments & Arrears</h6>
+                            <p>
+                                Membership, training, and match fees must be paid on time as published by the Club. Payment schedules (annual, standing order, instalments) are binding once agreed.
+                                Missed or late payments may result in suspension from matches, training, or voting rights until resolved.
+                                The Treasurer may agree repayment plans where there is financial difficulty. Members must contact the Club before arrears escalate.
+                            </p>
+                            <h6 class="font-weight-bold">3) Match, Training & Event Fees</h6>
+                            <p>
+                                Fees apply per fixture/session. Rates are communicated by Captains/Coaches. Concessions, where available, will be published on the website or by communication.
+                            </p>
+                            <h6 class="font-weight-bold">4) Refunds, Pauses & Cancellations</h6>
+                            <p>
+                                Membership fees are non-refundable once the season starts, except at the Committee’s discretion in exceptional circumstances (e.g., relocation, long-term injury). Requests must be submitted in writing to the Treasurer.
+                            </p>
+                            <h6 class="font-weight-bold">5) Suspension & Termination</h6>
+                            <p>
+                                Members may be suspended for non-payment, breaches of conduct, or safeguarding concerns. Termination of membership requires Committee approval.
+                            </p>
+                            <h6 class="font-weight-bold">6) Conduct & Safeguarding</h6>
+                            <p>
+                                All members (and parents/guardians of juniors) must uphold the Club Code of Conduct, Respect guidelines, and England Hockey safeguarding policies. Any breach may lead to suspension or removal from the Club.
+                            </p>
+                            <h6 class="font-weight-bold">7) Health, Safety & Medical</h6>
+                            <p>
+                                Members confirm they are medically fit to play and will disclose any relevant health conditions to the Club. In emergencies, members consent to first aid and, if necessary, further medical treatment.
+                            </p>
+                            <h6 class="font-weight-bold">8) Insurance & Liability</h6>
+                            <p>
+                                Participation in hockey carries inherent risks. The Club holds appropriate liability insurance, but members are responsible for their own personal insurance and property. The Club accepts no liability for loss/damage of personal belongings.
+                            </p>
+                            <h6 class="font-weight-bold">9) Media, Photography & Promotion</h6>
+                            <p>
+                                The Club may take photos/videos during training, matches, and events for promotional purposes. If you (or your child) do not consent, notify the Club in writing and update your profile settings.
+                            </p>
+                            <h6 class="font-weight-bold">10) Data Protection</h6>
+                            <p>
+                                The Club processes personal and financial data in line with UK GDPR and the Data Protection Act 2018. Access is restricted to authorised committee members. Data is used only for membership, fixtures, finance, and safeguarding.
+                            </p>
+                            <h6 class="font-weight-bold">11) Dispute Resolution</h6>
+                            <p>
+                                Members may dispute fees, disciplinary action, or other matters by submitting a written statement to the Treasurer within 14 days. The Treasurer and Chairperson will review and reply within 14 days.
+                            </p>
+                            <h6 class="font-weight-bold">12) Changes to Terms</h6>
+                            <p>The Club may reasonably update these terms during the season. Members will be notified of any material changes.</p>
+                        </div>
+                        <div class="border-top p-3 bg-light">
+                            <button type="button"
+                                    class="btn btn-outline-secondary btn-sm"
+                                    data-toggle="modal"
+                                    data-target="#fullTermsModal">
+                                <i class="fas fa-external-link-alt mr-1"></i>Open full terms
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {# Right column: confirmation form #}
+            <div class="col-lg-5">
+                <div class="card card-success card-outline shadow-sm">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="fas fa-check-circle mr-2"></i>Confirm & Submit
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <form method="post" novalidate>
+                            {% csrf_token %}
+                            {# Required T&Cs agreement checkbox (server validates too) #}
+                            <div class="form-group mb-3">
+                                <div class="form-check">
+                                    {{ form.accept_terms }}
+                                    <label class="form-check-label" for="{{ form.accept_terms.id_for_label }}">
+                                        I agree to the club’s <a href="#" data-toggle="modal" data-target="#fullTermsModal">Membership Terms &amp; Conditions</a>
+                                    </label>
+                                </div>
+                                {% if form.accept_terms.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.accept_terms.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <a href="{% url 'memberships:choose' player.id %}"
+                                   class="btn btn-default">
+                                    <i class="fas fa-arrow-left mr-1"></i>Back
+                                </a>
+                                <button type="submit" class="btn btn-success">
+                                    <i class="fas fa-check mr-1"></i>Confirm Subscription
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="card-footer bg-white">
+                        <div class="text-muted small">Need help? Contact your team captain or the Membership Secretary.</div>
+                    </div>
+                </div>
+            </div>
         </div>
-        <p class="small text-muted">*Default 14 days unless otherwise notified.</p>
-
-        <h6 class="font-weight-bold">Repayment Plans</h6>
-        <p>Members facing financial difficulty may request a repayment plan. Captains may agree simple extensions; complex plans require Treasurer approval. All plans are logged. Missed instalments reset the arrears clock.</p>
-
-        <h6 class="font-weight-bold">Escalation Process (Summary)</h6>
-        <ul>
-          <li><strong>Arrears date:</strong> Friendly reminder (Captain/Organiser)</li>
-          <li><strong>+1 month:</strong> Second reminder (Captain/Organiser)</li>
-          <li><strong>+3 months:</strong> Formal reminder from Treasurer (risk of suspension)</li>
-          <li><strong>+6 months:</strong> Letter co-signed by Chair (suspension enforced)</li>
-          <li><strong>+11 months:</strong> Final letter, case referred to Committee</li>
-        </ul>
-        <p>All communications are respectful and logged. Non-payment may lead to suspension of playing/voting rights.</p>
-
-        <h6 class="font-weight-bold">Refunds & Cancellations</h6>
-        <p>Non-refundable once season begins, except at Committee discretion (injury, relocation, hardship).</p>
-
-        <h6 class="font-weight-bold">Conduct, Safeguarding & Health</h6>
-        <p>All members agree to follow the Club’s Code of Conduct, safeguarding rules, and respect policies. Members must confirm fitness to play and disclose health concerns.</p>
-
-        <h6 class="font-weight-bold">Liability & Insurance</h6>
-        <p>Hockey carries inherent risks. The Club holds liability insurance but is not responsible for personal property or injury beyond statutory obligations.</p>
-
-        <h6 class="font-weight-bold">Data Protection</h6>
-        <p>All membership and financial data is handled under UK GDPR and Data Protection Act 2018, accessible only to authorised officers. Data is retained only as required for Club records.</p>
-
-        <h6 class="font-weight-bold">Disputes</h6>
-        <p>Written disputes must be submitted within 14 days of notice. The Treasurer and Chairperson will review and respond within 14 days.</p>
-
-        <h6 class="font-weight-bold">Changes</h6>
-        <p>Terms may be updated to reflect Club or regulatory changes. Members will be notified of material amendments.</p>
-
-        <hr>
-        <p class="small text-muted mb-0">Questions? Contact the Treasurer or Membership Secretary.</p>
-
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-        <button type="button" class="btn btn-primary" data-dismiss="modal">I Understand</button>
-      </div>
     </div>
-  </div>
-</div>
-
-
+    {# Modal with scrollable, print-friendly full terms #}
+    <div class="modal fade"
+         id="fullTermsModal"
+         tabindex="-1"
+         aria-labelledby="fullTermsLabel"
+         aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header bg-primary">
+                    <h5 class="modal-title text-white" id="fullTermsLabel">
+                        <i class="fas fa-file-contract mr-2"></i>Full Membership Terms &amp; Fee Collection Policy
+                    </h5>
+                    <button type="button"
+                            class="close text-white"
+                            data-dismiss="modal"
+                            aria-label="Close">
+                        <span aria-hidden="true">×</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <p class="text-muted small">
+                        Effective season: <strong>{{ product.season.name }}</strong>
+                    </p>
+                    <h6 class="font-weight-bold">Membership Eligibility</h6>
+                    <p>
+                        Open to players, social members, and volunteers in line with Club and England Hockey regulations. Juniors require parent/guardian consent.
+                    </p>
+                    <h6 class="font-weight-bold">Fees, Payments & Arrears</h6>
+                    <p>
+                        All fees (membership, training, match, events) must be paid on or before the due dates. Standing orders or staged instalments must be honoured in full.
+                    </p>
+                    <div class="table-responsive mb-3">
+                        <table class="table table-sm table-bordered">
+                            <thead class="thead-light">
+                                <tr>
+                                    <th>Fee Type</th>
+                                    <th>Payment Date</th>
+                                    <th>Arrears Date</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Membership Fee (one-off)</td>
+                                    <td>1st October</td>
+                                    <td>31st October</td>
+                                </tr>
+                                <tr>
+                                    <td>Membership Fee (Standing Order)</td>
+                                    <td>1st of each month</td>
+                                    <td>Last day of month</td>
+                                </tr>
+                                <tr>
+                                    <td>Training Fee</td>
+                                    <td>On training date</td>
+                                    <td>7 days later</td>
+                                </tr>
+                                <tr>
+                                    <td>Match Fee</td>
+                                    <td>On match date</td>
+                                    <td>7 days later</td>
+                                </tr>
+                                <tr>
+                                    <td>Other Event Fee</td>
+                                    <td>Set by organiser</td>
+                                    <td>14 days later*</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <p class="small text-muted">*Default 14 days unless otherwise notified.</p>
+                    <h6 class="font-weight-bold">Repayment Plans</h6>
+                    <p>
+                        Members facing financial difficulty may request a repayment plan. Captains may agree simple extensions; complex plans require Treasurer approval. All plans are logged. Missed instalments reset the arrears clock.
+                    </p>
+                    <h6 class="font-weight-bold">Escalation Process (Summary)</h6>
+                    <ul>
+                        <li>
+                            <strong>Arrears date:</strong> Friendly reminder (Captain/Organiser)
+                        </li>
+                        <li>
+                            <strong>+1 month:</strong> Second reminder (Captain/Organiser)
+                        </li>
+                        <li>
+                            <strong>+3 months:</strong> Formal reminder from Treasurer (risk of suspension)
+                        </li>
+                        <li>
+                            <strong>+6 months:</strong> Letter co-signed by Chair (suspension enforced)
+                        </li>
+                        <li>
+                            <strong>+11 months:</strong> Final letter, case referred to Committee
+                        </li>
+                    </ul>
+                    <p>All communications are respectful and logged. Non-payment may lead to suspension of playing/voting rights.</p>
+                    <h6 class="font-weight-bold">Refunds & Cancellations</h6>
+                    <p>Non-refundable once season begins, except at Committee discretion (injury, relocation, hardship).</p>
+                    <h6 class="font-weight-bold">Conduct, Safeguarding & Health</h6>
+                    <p>
+                        All members agree to follow the Club’s Code of Conduct, safeguarding rules, and respect policies. Members must confirm fitness to play and disclose health concerns.
+                    </p>
+                    <h6 class="font-weight-bold">Liability & Insurance</h6>
+                    <p>
+                        Hockey carries inherent risks. The Club holds liability insurance but is not responsible for personal property or injury beyond statutory obligations.
+                    </p>
+                    <h6 class="font-weight-bold">Data Protection</h6>
+                    <p>
+                        All membership and financial data is handled under UK GDPR and Data Protection Act 2018, accessible only to authorised officers. Data is retained only as required for Club records.
+                    </p>
+                    <h6 class="font-weight-bold">Disputes</h6>
+                    <p>
+                        Written disputes must be submitted within 14 days of notice. The Treasurer and Chairperson will review and respond within 14 days.
+                    </p>
+                    <h6 class="font-weight-bold">Changes</h6>
+                    <p>Terms may be updated to reflect Club or regulatory changes. Members will be notified of material amendments.</p>
+                    <hr>
+                    <p class="small text-muted mb-0">Questions? Contact the Treasurer or Membership Secretary.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" data-dismiss="modal">I Understand</button>
+                </div>
+            </div>
+        </div>
+    </div>
 {% endblock %}

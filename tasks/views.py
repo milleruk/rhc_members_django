@@ -19,10 +19,10 @@ from django.views.generic import CreateView, FormView, ListView
 from .forms import TaskBulkGenerateForm, TaskCreateForm
 from .models import Task, TaskStatus
 
-
 # ---------------------------
 # Shared filtering for lists
 # ---------------------------
+
 
 class TaskListFilterMixin:
     """
@@ -80,6 +80,7 @@ class TaskListFilterMixin:
 # My tasks
 # ---------------------------
 
+
 class MyTaskListView(LoginRequiredMixin, TaskListFilterMixin, ListView):
     model = Task
     template_name = "tasks/my_list.html"
@@ -87,9 +88,8 @@ class MyTaskListView(LoginRequiredMixin, TaskListFilterMixin, ListView):
     paginate_by = 18
 
     def get_queryset(self) -> QuerySet[Task]:
-        qs = (
-            Task.objects.filter(assigned_to=self.request.user)
-            .select_related("assigned_to", "created_by")
+        qs = Task.objects.filter(assigned_to=self.request.user).select_related(
+            "assigned_to", "created_by"
         )
         qs = self._apply_common_filters(qs)
 
@@ -112,6 +112,7 @@ class MyTaskListView(LoginRequiredMixin, TaskListFilterMixin, ListView):
 # ---------------------------
 # All tasks (admin/staff)
 # ---------------------------
+
 
 class AllTaskListView(LoginRequiredMixin, PermissionRequiredMixin, TaskListFilterMixin, ListView):
     permission_required = "tasks.view_all_tasks"
@@ -137,6 +138,7 @@ class AllTaskListView(LoginRequiredMixin, PermissionRequiredMixin, TaskListFilte
 # ---------------------------
 # State changes
 # ---------------------------
+
 
 @login_required
 @require_POST
@@ -180,6 +182,7 @@ def dismiss_task(request, pk):
 # Create / Bulk-generate
 # ---------------------------
 
+
 class TaskCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateView):
     permission_required = "tasks.add_task"
     model = Task
@@ -201,6 +204,7 @@ class TaskBulkGenerateView(LoginRequiredMixin, PermissionRequiredMixin, FormView
     Bulk-create tasks targeting players by Player Types / Teams / Products (season),
     and auto-assign each task to the player's creator (with optional fallback).
     """
+
     permission_required = "tasks.add_task"
     template_name = "tasks/bulk_generate.html"
     form_class = TaskBulkGenerateForm
@@ -235,7 +239,9 @@ class TaskBulkGenerateView(LoginRequiredMixin, PermissionRequiredMixin, FormView
             player_ids.update(ids)
 
         if teams and teams.exists():
-            tm_qs = TeamMembership.objects.filter(team__in=teams).values_list("player_id", flat=True)
+            tm_qs = TeamMembership.objects.filter(team__in=teams).values_list(
+                "player_id", flat=True
+            )
             player_ids.update(tm_qs)
 
         # Products alone do not resolve players *unless* used with "season + only_without_subscription"
@@ -254,7 +260,7 @@ class TaskBulkGenerateView(LoginRequiredMixin, PermissionRequiredMixin, FormView
                 if not player_ids:
                     messages.warning(
                         self.request,
-                        "No player types/teams selected; products alone do not select players."
+                        "No player types/teams selected; products alone do not select players.",
                     )
                     return super().form_invalid(form)
 
@@ -281,17 +287,19 @@ class TaskBulkGenerateView(LoginRequiredMixin, PermissionRequiredMixin, FormView
             else:
                 assignee = fallback_assignee  # may still be None
 
-            to_create.append(Task(
-                title=title,
-                description=description,
-                created_by=self.request.user,
-                assigned_to=assignee,
-                status=TaskStatus.OPEN,
-                due_at=due_at,
-                subject=p,                      # GenericForeignKey: attach to Player
-                complete_on=complete_on,
-                allow_manual_complete=allow_manual_complete,
-            ))
+            to_create.append(
+                Task(
+                    title=title,
+                    description=description,
+                    created_by=self.request.user,
+                    assigned_to=assignee,
+                    status=TaskStatus.OPEN,
+                    due_at=due_at,
+                    subject=p,  # GenericForeignKey: attach to Player
+                    complete_on=complete_on,
+                    allow_manual_complete=allow_manual_complete,
+                )
+            )
 
         with transaction.atomic():
             Task.objects.bulk_create(to_create, batch_size=500)

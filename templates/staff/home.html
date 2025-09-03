@@ -1,159 +1,155 @@
 {% extends "base.html" %}
 {% block title %}Staff Dashboard{% endblock %}
-
 {% block content %}
-<div class="content-header py-2">
-  <div class="container-fluid d-flex justify-content-between align-items-center">
-    <div>
-      <h1 class="m-0 h4">Staff Dashboard</h1>
-      <p class="text-muted small mb-0">Quick overview & shortcuts.</p>
-    </div>
-    <div>
-      <a class="btn btn-primary btn-sm" href="{% url 'staff:player_list' %}">
-        Manage Players
-      </a>
-    </div>
-  </div>
-</div>
-
-<section class="content">
-  <div class="container-fluid">
-
-    <!-- KPI cards -->
-    <div class="row">
-      <div class="col-md-3 col-sm-6 mb-3">
-        <div class="card card-outline card-primary h-100">
-          <div class="card-body">
-            <div class="d-flex justify-content-between">
-              <div>
-                <div class="text-muted small">Total Players</div>
-                <div class="h4 mb-0">{{ total_players }}</div>
-              </div>
-              <i class="fas fa-users fa-2x text-primary"></i>
+    <div class="content-header py-2">
+        <div class="container-fluid d-flex justify-content-between align-items-center">
+            <div>
+                <h1 class="m-0 h4">Staff Dashboard</h1>
+                <p class="text-muted small mb-0">Quick overview & shortcuts.</p>
             </div>
-          </div>
-        </div>
-      </div>
-      <div class="col-md-3 col-sm-6 mb-3">
-        <div class="card card-outline card-success h-100">
-          <div class="card-body">
-            <div class="text-muted small">Questionnaire Completion</div>
-            <div class="h4 mb-0">{{ questionnaire_completion }}%</div>
-          </div>
-        </div>
-      </div>
-      <div class="col-md-3 col-sm-6 mb-3">
-        <div class="card card-outline card-info h-100">
-          <div class="card-body">
-            <div class="text-muted small">Active Subscriptions</div>
-            <div class="h4 mb-0">{{ active_subs }}</div>
-            <div class="small text-muted">Pending: {{ pending_subs }}</div>
-          </div>
-        </div>
-      </div>
-      <div class="col-md-3 col-sm-6 mb-3">
-        <div class="card card-outline card-warning h-100">
-          <div class="card-body">
-            <div class="text-muted small">Accesses Today</div>
-            <div class="h4 mb-0">{{ today_access_logs }}</div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Two columns -->
-    <div class="row">
-      <div class="col-lg-7 mb-3">
-        <div class="card">
-          <div class="card-header">
-            <h3 class="card-title h6 mb-0">Teams (player counts)</h3>
-          </div>
-          <div class="card-body p-0">
-            <table class="table table-sm mb-0">
-              <thead>
-                <tr>
-                  <th>Team</th>
-                  <th class="text-right">Players</th>
-                </tr>
-              </thead>
-              <tbody>
-              {% for row in teams_with_counts %}
-                <tr>
-                  <td>{{ row.team_memberships__team__name }}</td>
-                  <td class="text-right">{{ row.total }}</td>
-                </tr>
-              {% empty %}
-                <tr><td colspan="2" class="text-muted p-3">No teams in scope.</td></tr>
-              {% endfor %}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <div class="card mt-3">
-          <div class="card-header">
-            <h3 class="card-title h6 mb-0">Players by Type</h3>
-          </div>
-          <div class="card-body">
-            <ul class="list-unstyled mb-0">
-              {% for k, v in player_types.items %}
-                <li class="d-flex justify-content-between border-bottom py-1">
-                  <span>{{ k }}</span>
-                  <span class="font-weight-bold">{{ v }}</span>
-                </li>
-              {% empty %}
-                <li class="text-muted">No data.</li>
-              {% endfor %}
-            </ul>
-          </div>
-        </div>
-      </div>
-
-      <div class="col-lg-5 mb-3">
-        <div class="card">
-          <div class="card-header">
-            <h3 class="card-title h6 mb-0">Upcoming Birthdays (next 30 days)</h3>
-          </div>
-          <div class="card-body">
-            <ul class="list-unstyled mb-0">
-              {% for p, date in upcoming_birthdays %}
-                <li class="d-flex justify-content-between border-bottom py-1">
-                  <span>{{ p.first_name }} {{ p.last_name }}</span>
-                  <span class="text-muted">{{ date|date:"M d" }}</span>
-                </li>
-              {% empty %}
-                <li class="text-muted">None in the next 30 days.</li>
-              {% endfor %}
-            </ul>
-          </div>
-        </div>
-
-          <div class="card mt-3">
-            <div class="card-header">
-              <h3 class="card-title h6 mb-0">Shortcuts</h3>
+            <div>
+                <a class="btn btn-primary btn-sm" href="{% url 'staff:player_list' %}">Manage Players</a>
             </div>
-            <div class="card-body">
-              <a class="btn btn-outline-primary btn-sm mr-2 mb-2" href="{% url 'staff:player_list' %}">
-                <i class="fas fa-users mr-1"></i> Players
-              </a>
-              <a class="btn btn-outline-success btn-sm mr-2 mb-2" href="{% url 'staff:player_list' %}">
-                <i class="fas fa-id-card-alt mr-1"></i> Memberships
-              </a>
-              <a class="btn btn-outline-info btn-sm mr-2 mb-2" href="{% url 'staff:memberships_list' %}">
-                <i class="fas fa-receipt mr-1"></i> Subscriptions
-              </a>
-              <a class="btn btn-outline-warning btn-sm mr-2 mb-2" href="{% url 'tasks:bulk_generate' %}">
-                <i class="fas fa-tasks mr-1"></i> Create Bulk Task
-              </a>
-              <a class="btn btn-outline-danger btn-sm mr-2 mb-2" href="{% url 'tasks:create' %}">
-                <i class="fas fa-plus-circle mr-1"></i> Create Task
-              </a>
-            </div>
-          </div>
-
-      </div>
+        </div>
     </div>
-
-  </div>
-</section>
+    <section class="content">
+        <div class="container-fluid">
+            <!-- KPI cards -->
+            <div class="row">
+                <div class="col-md-3 col-sm-6 mb-3">
+                    <div class="card card-outline card-primary h-100">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <div class="text-muted small">Total Players</div>
+                                    <div class="h4 mb-0">{{ total_players }}</div>
+                                </div>
+                                <i class="fas fa-users fa-2x text-primary"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 col-sm-6 mb-3">
+                    <div class="card card-outline card-success h-100">
+                        <div class="card-body">
+                            <div class="text-muted small">Questionnaire Completion</div>
+                            <div class="h4 mb-0">{{ questionnaire_completion }}%</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 col-sm-6 mb-3">
+                    <div class="card card-outline card-info h-100">
+                        <div class="card-body">
+                            <div class="text-muted small">Active Subscriptions</div>
+                            <div class="h4 mb-0">{{ active_subs }}</div>
+                            <div class="small text-muted">Pending: {{ pending_subs }}</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 col-sm-6 mb-3">
+                    <div class="card card-outline card-warning h-100">
+                        <div class="card-body">
+                            <div class="text-muted small">Accesses Today</div>
+                            <div class="h4 mb-0">{{ today_access_logs }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Two columns -->
+            <div class="row">
+                <div class="col-lg-7 mb-3">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title h6 mb-0">Teams (player counts)</h3>
+                        </div>
+                        <div class="card-body p-0">
+                            <table class="table table-sm mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Team</th>
+                                        <th class="text-right">Players</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for row in teams_with_counts %}
+                                        <tr>
+                                            <td>{{ row.team_memberships__team__name }}</td>
+                                            <td class="text-right">{{ row.total }}</td>
+                                        </tr>
+                                    {% empty %}
+                                        <tr>
+                                            <td colspan="2" class="text-muted p-3">No teams in scope.</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="card mt-3">
+                        <div class="card-header">
+                            <h3 class="card-title h6 mb-0">Players by Type</h3>
+                        </div>
+                        <div class="card-body">
+                            <ul class="list-unstyled mb-0">
+                                {% for k, v in player_types.items %}
+                                    <li class="d-flex justify-content-between border-bottom py-1">
+                                        <span>{{ k }}</span>
+                                        <span class="font-weight-bold">{{ v }}</span>
+                                    </li>
+                                {% empty %}
+                                    <li class="text-muted">No data.</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-5 mb-3">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title h6 mb-0">Upcoming Birthdays (next 30 days)</h3>
+                        </div>
+                        <div class="card-body">
+                            <ul class="list-unstyled mb-0">
+                                {% for p, date in upcoming_birthdays %}
+                                    <li class="d-flex justify-content-between border-bottom py-1">
+                                        <span>{{ p.first_name }} {{ p.last_name }}</span>
+                                        <span class="text-muted">{{ date|date:"M d" }}</span>
+                                    </li>
+                                {% empty %}
+                                    <li class="text-muted">None in the next 30 days.</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="card mt-3">
+                        <div class="card-header">
+                            <h3 class="card-title h6 mb-0">Shortcuts</h3>
+                        </div>
+                        <div class="card-body">
+                            <a class="btn btn-outline-primary btn-sm mr-2 mb-2"
+                               href="{% url 'staff:player_list' %}">
+                                <i class="fas fa-users mr-1"></i> Players
+                            </a>
+                            <a class="btn btn-outline-success btn-sm mr-2 mb-2"
+                               href="{% url 'staff:player_list' %}">
+                                <i class="fas fa-id-card-alt mr-1"></i> Memberships
+                            </a>
+                            <a class="btn btn-outline-info btn-sm mr-2 mb-2"
+                               href="{% url 'staff:memberships_list' %}">
+                                <i class="fas fa-receipt mr-1"></i> Subscriptions
+                            </a>
+                            <a class="btn btn-outline-warning btn-sm mr-2 mb-2"
+                               href="{% url 'tasks:bulk_generate' %}">
+                                <i class="fas fa-tasks mr-1"></i> Create Bulk Task
+                            </a>
+                            <a class="btn btn-outline-danger btn-sm mr-2 mb-2"
+                               href="{% url 'tasks:create' %}">
+                                <i class="fas fa-plus-circle mr-1"></i> Create Task
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
 {% endblock %}

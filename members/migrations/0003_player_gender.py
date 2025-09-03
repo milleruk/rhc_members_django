@@ -6,13 +6,21 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('members', '0002_position_team_teammembership'),
+        ("members", "0002_position_team_teammembership"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='player',
-            name='gender',
-            field=models.CharField(choices=[('male', 'Male'), ('female', 'Female'), ('other', 'Other / Prefer not to say')], default='other', max_length=20),
+            model_name="player",
+            name="gender",
+            field=models.CharField(
+                choices=[
+                    ("male", "Male"),
+                    ("female", "Female"),
+                    ("other", "Other / Prefer not to say"),
+                ],
+                default="other",
+                max_length=20,
+            ),
         ),
     ]

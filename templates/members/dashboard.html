@@ -1,280 +1,250 @@
 {% extends "base.html" %}
 {% block title %}Player Dashboard{% endblock %}
-
 {% block content %}
-<div class="content">
-  <div class="container-fluid">
-
-    <!-- HERO / ACTIONS -->
-    <div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
-      <div>
-        <h2 class="h4 mb-1"><i class="fas fa-tachometer-alt mr-2"></i>Player Dashboard</h2>
-        <p class="text-muted mb-0 small">Manage your players, memberships and tasks at a glance.</p>
-      </div>
-      <div class="d-flex flex-wrap">
-        <a href="{% url 'player_add' %}" class="btn btn-primary mr-2 mb-2">
-          <i class="fas fa-user-plus mr-1"></i> Add Player
-        </a>
-        <a href="{% url 'memberships:mine' %}" class="btn btn-outline-secondary mb-2">
-          <i class="fas fa-id-card-alt mr-1"></i> My Memberships
-        </a>
-      </div>
-    </div>
-
-    <!-- KPI WIDGETS -->
-    <div class="row">
-      <div class="col-6 col-md-3">
-        <div class="small-box bg-primary">
-          <div class="inner">
-            <h3 class="mb-1">{{ players|length }}</h3>
-            <p class="mb-0">Total Players</p>
-          </div>
-          <div class="icon"><i class="fas fa-users"></i></div>
-        </div>
-      </div>
-
-      <div class="col-6 col-md-3">
-        <div class="small-box bg-info">
-          <div class="inner">
-            <h3 class="mb-1">{{ pending_tasks|length|default:0 }}</h3>
-            <p class="mb-0">Open Tasks</p>
-          </div>
-          <div class="icon"><i class="fas fa-bell"></i></div>
-          <a href="{% url 'tasks:my_list' %}" class="small-box-footer">
-            View tasks <i class="fas fa-arrow-circle-right ml-1"></i>
-          </a>
-        </div>
-      </div>
-    </div>
-
-    <!-- MEMBERSHIP CARDS HEADER -->
-    <div class="card card-info mb-3">
-      <div class="card-header d-flex align-items-center justify-content-between">
-        <h3 class="card-title mb-0">
-          <i class="fas fa-id-card-alt mr-1"></i> Membership Cards
-        </h3>
-        <span class="badge badge-light text-muted">
-          {{ players|length }} player{{ players|length|pluralize }}
-        </span>
-      </div>
-      <div class="card-body py-2">
-        <p class="text-muted mb-0">
-          View membership details and actions for each player. (Wallet passes coming soon.)
-        </p>
-      </div>
-    </div>
-    <!-- /MEMBERSHIP CARDS HEADER -->
-
-    <div class="row">
-      <!-- LEFT: PLAYER CARDS -->
-      <div class="col-12 col-lg-8">
-        {% if players %}
-          <div class="row">
-            {% for p in players %}
-            <div class="col-12 col-md-6 mb-3">
-              <div id="card-{{ p.public_id }}"
-                   class="membership-card shadow-sm"
-                   tabindex="0"
-                   aria-label="Membership card for {{ p.full_name|default:p }}"
-                   data-name="{{ p.full_name|default:p }}"
-                   data-number="RHC{{ p.membership_number }}"
-                   data-player-type="{{ p.player_type|default:'' }}"
-                   data-public-id="{{ p.public_id }}"
-                   data-email="{{ p.email|default:'' }}">
-                <div class="mc-inner">
-
-                  <!-- FRONT -->
-                  <div class="mc-face mc-front">
-                    <div class="mc-top d-flex justify-content-between align-items-start">
-                      <div class="d-flex align-items-center">
-                        <div class="mc-avatar mr-2">
-                          <span class="mc-initials">
-                            {{ p.first_name|default:"?"|slice:":1" }}{{ p.last_name|default:""|slice:":1" }}
-                          </span>
-                        </div>
-                        <div>
-                          <div class="mc-name">{{ p.full_name|default:p }}</div>
-                          {% if p.player_type %}
-                            <div class="mc-sub text-muted small">{{ p.player_type }}</div>
-                          {% endif %}
-                          {% if p.email %}
-                            <div class="text-muted small"><i class="far fa-envelope mr-1"></i>{{ p.email }}</div>
-                          {% endif %}
-                        </div>
-                      </div>
-                      <div class="mc-chip" title="Club chip"></div>
-                    </div>
-
-                    <div class="mc-number mt-2" title="Membership number">
-                      <i class="fas fa-id-card-alt mr-2"></i>RHC{{ p.membership_number }}
-                    </div>
-
-                    <div class="mc-badges mt-2">
-                      {% if p.get_relation_display %}
-                        <span class="badge badge-light border mr-1">{{ p.get_relation_display }}</span>
-                      {% endif %}
-                      {% if p.membership_status %}
-                        <span class="badge
-                          {% if p.membership_status|lower == 'active' %}badge-success
-                          {% elif p.membership_status|lower == 'pending' %}badge-info
-                          {% else %}badge-dark{% endif %} mr-1">
-                          {{ p.membership_status }}
-                        </span>
-                      {% endif %}
-                      {% if p.membership_plan_label %}
-                        <span class="badge badge-secondary">{{ p.membership_plan_label }}</span>
-                      {% endif %}
-                    </div>
-
-                    {% with teams=p.team_memberships.all %}
-                      {% if teams %}
-                        <div class="mt-2 small text-muted">
-                          <i class="fas fa-users mr-1"></i>
-                          {% for m in teams|slice:":3" %}
-                            <span class="badge badge-light border mr-1">{{ m.team.name }}</span>
-                          {% endfor %}
-                          {% if teams|length > 3 %}
-                            <span class="badge badge-light border">+{{ teams|length|add:"-3" }}</span>
-                          {% endif %}
-                        </div>
-                      {% endif %}
-                    {% endwith %}
-
-                    {% if p.answers_pct is not None %}
-                      <div class="mt-3">
-                        <div class="d-flex justify-content-between small mb-1">
-                          <span class="text-muted">Profile completeness</span>
-                          <span class="text-muted">{{ p.answers_pct }}%</span>
-                        </div>
-                        <div class="progress mc-progress">
-                          <div class="progress-bar
-                                      {% if p.answers_pct >= 80 %}bg-success
-                                      {% elif p.answers_pct >= 40 %}bg-warning
-                                      {% else %}bg-danger{% endif %}"
-                               role="progressbar"
-                               style="width: {{ p.answers_pct }}%;"
-                               aria-valuenow="{{ p.answers_pct }}" aria-valuemin="0" aria-valuemax="100"></div>
-                        </div>
-                      </div>
-                    {% endif %}
-
-                    <div class="d-flex justify-content-between align-items-center mt-3">
-                      <a href="{% url 'answer' p.public_id %}" class="btn btn-sm btn-primary">
-                        <i class="fas fa-edit mr-1"></i> Update Profile
-                      </a>
-                      <a href="{% url 'player_edit' public_id=p.public_id %}" class="btn btn-sm btn-primary">
-                        <i class="fas fa-user-cog mr-1"></i> Edit Details
-                      </a>
-                      <button class="btn btn-sm btn-outline-secondary mc-flip-btn" type="button">
-                        <i class="fas fa-ellipsis-h"></i>
-                      </button>
-                    </div>
-                  </div>
-
-                  <!-- BACK -->
-                  <div class="mc-face mc-back">
-                    <div class="small text-muted mb-2">Actions</div>
-
-                    <!-- Desktop / Tablet -->
-                    <div class="btn-group btn-group-sm d-none d-sm-flex flex-wrap">
-
-                      <!-- Apple Wallet placeholder -->
-                      <a class="btn btn-dark mb-2 mr-2"
-                         href="{% url 'wallet:wallet_apple' p.public_id %}"
-                         title="Download test Apple Wallet pass">
-                        <i class="fab fa-apple mr-1"></i> Apple Wallet (test)
-                      </a>
-
-                      <button type="button" class="btn btn-outline-danger mb-2"
-                              onclick="return confirmDelete('{{ p.public_id }}', '{{ p.full_name|default:p|escapejs }}')">
-                        <i class="fas fa-trash mr-1"></i> Remove
-                      </button>
-                    </div>
-
-                    <!-- Mobile: Dropdown -->
-                    <div class="d-flex d-sm-none">
-                      <div class="dropdown w-100">
-                        <button class="btn btn-outline-secondary btn-sm dropdown-toggle w-100"
-                                type="button" id="actionsMenu{{ forloop.counter }}"
-                                data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                          Actions
-                        </button>
-                        <div class="dropdown-menu dropdown-menu-right w-100" aria-labelledby="actionsMenu{{ forloop.counter }}">
-                          <a class="dropdown-item" href="{% url 'answer' p.public_id %}">
-                            <i class="fas fa-edit mr-2"></i> Update Profile
-                          </a>
-                          <a class="dropdown-item" href="{% url 'player_edit' public_id=p.public_id %}">
-                            <i class="fas fa-user-cog mr-2"></i> Edit Details
-                          </a>
-
-                          <!-- Apple Wallet placeholder -->
-                          <a class="dropdown-item"
-                             href="{% url 'wallet:wallet_apple' p.public_id %}">
-                            <i class="fab fa-apple mr-2"></i> Apple Wallet (test)
-                          </a>
-
-                          <div class="dropdown-divider"></div>
-                          <button class="dropdown-item text-danger" type="button"
-                                  onclick="return confirmDelete('{{ p.public_id }}', '{{ p.full_name|default:p|escapejs }}')">
-                            <i class="fas fa-trash mr-2"></i> Remove
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-
-                    <!-- Club strip -->
-                    <div class="mc-strip mt-3">
-                      <div class="mc-note small">
-                        Club use only • Player ID: {{ p.public_id }}
-                      </div>
-                    </div>
-
-                    <!-- Print/PDF -->
-                    <button class="btn btn-sm btn-outline-secondary mt-3" type="button"
-                            onclick="printMembershipCard('{{ p.public_id }}')">
-                      <i class="fas fa-print mr-1"></i> Print / PDF
-                    </button>
-
-                    <button class="btn btn-sm btn-light mt-3 mc-flip-btn" type="button">
-                      <i class="fas fa-undo"></i> Back
-                    </button>
-                  </div>
-
+    <div class="content">
+        <div class="container-fluid">
+            <!-- HERO / ACTIONS -->
+            <div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
+                <div>
+                    <h2 class="h4 mb-1">
+                        <i class="fas fa-tachometer-alt mr-2"></i>Player Dashboard
+                    </h2>
+                    <p class="text-muted mb-0 small">Manage your players, memberships and tasks at a glance.</p>
                 </div>
-              </div>
-
-              <!-- HIDDEN DELETE FORM (per player) -->
-              <form id="delete-form-{{ p.public_id }}"
-                    action="{% url 'player_delete' p.public_id %}"
-                    method="post" style="display:none;">
-                {% csrf_token %}
-              </form>
+                <div class="d-flex flex-wrap">
+                    <a href="{% url 'player_add' %}" class="btn btn-primary mr-2 mb-2">
+                        <i class="fas fa-user-plus mr-1"></i> Add Player
+                    </a>
+                    <a href="{% url 'memberships:mine' %}"
+                       class="btn btn-outline-secondary mb-2">
+                        <i class="fas fa-id-card-alt mr-1"></i> My Memberships
+                    </a>
+                </div>
             </div>
-            {% endfor %}
-          </div>
-        {% else %}
-          <div class="card card-outline card-info">
-            <div class="card-body">
-              <p class="mb-3"><i class="far fa-smile-wink mr-1"></i>No players yet. Add your first player to get started.</p>
-              <a href="{% url 'player_add' %}" class="btn btn-primary">
-                <i class="fas fa-user-plus mr-1"></i> Add Player
-              </a>
+            <!-- KPI WIDGETS -->
+            <div class="row">
+                <div class="col-6 col-md-3">
+                    <div class="small-box bg-primary">
+                        <div class="inner">
+                            <h3 class="mb-1">{{ players|length }}</h3>
+                            <p class="mb-0">Total Players</p>
+                        </div>
+                        <div class="icon">
+                            <i class="fas fa-users"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="small-box bg-info">
+                        <div class="inner">
+                            <h3 class="mb-1">{{ pending_tasks|length|default:0 }}</h3>
+                            <p class="mb-0">Open Tasks</p>
+                        </div>
+                        <div class="icon">
+                            <i class="fas fa-bell"></i>
+                        </div>
+                        <a href="{% url 'tasks:my_list' %}" class="small-box-footer">
+                            View tasks <i class="fas fa-arrow-circle-right ml-1"></i>
+                        </a>
+                    </div>
+                </div>
             </div>
-          </div>
-        {% endif %}
-      </div>
-
-      <!-- RIGHT: TASKS + CLUB NOTICES + QUICK LINKS -->
-      <div class="col-12 col-lg-4">
-        {# keep your existing tasks, notices, quick links here unchanged #}
-      </div>
+            <!-- MEMBERSHIP CARDS HEADER -->
+            <div class="card card-info mb-3">
+                <div class="card-header d-flex align-items-center justify-content-between">
+                    <h3 class="card-title mb-0">
+                        <i class="fas fa-id-card-alt mr-1"></i> Membership Cards
+                    </h3>
+                    <span class="badge badge-light text-muted">{{ players|length }} player{{ players|length|pluralize }}</span>
+                </div>
+                <div class="card-body py-2">
+                    <p class="text-muted mb-0">View membership details and actions for each player. (Wallet passes coming soon.)</p>
+                </div>
+            </div>
+            <!-- /MEMBERSHIP CARDS HEADER -->
+            <div class="row">
+                <!-- LEFT: PLAYER CARDS -->
+                <div class="col-12 col-lg-8">
+                    {% if players %}
+                        <div class="row">
+                            {% for p in players %}
+                                <div class="col-12 col-md-6 mb-3">
+                                    <div id="card-{{ p.public_id }}"
+                                         class="membership-card shadow-sm"
+                                         tabindex="0"
+                                         aria-label="Membership card for {{ p.full_name|default:p }}"
+                                         data-name="{{ p.full_name|default:p }}"
+                                         data-number="RHC{{ p.membership_number }}"
+                                         data-player-type="{{ p.player_type|default:'' }}"
+                                         data-public-id="{{ p.public_id }}"
+                                         data-email="{{ p.email|default:'' }}">
+                                        <div class="mc-inner">
+                                            <!-- FRONT -->
+                                            <div class="mc-face mc-front">
+                                                <div class="mc-top d-flex justify-content-between align-items-start">
+                                                    <div class="d-flex align-items-center">
+                                                        <div class="mc-avatar mr-2">
+                                                            <span class="mc-initials">{{ p.first_name|default:"?"|slice:":1" }}{{ p.last_name|default:""|slice:":1" }}</span>
+                                                        </div>
+                                                        <div>
+                                                            <div class="mc-name">{{ p.full_name|default:p }}</div>
+                                                            {% if p.player_type %}<div class="mc-sub text-muted small">{{ p.player_type }}</div>{% endif %}
+                                                            {% if p.email %}
+                                                                <div class="text-muted small">
+                                                                    <i class="far fa-envelope mr-1"></i>{{ p.email }}
+                                                                </div>
+                                                            {% endif %}
+                                                        </div>
+                                                    </div>
+                                                    <div class="mc-chip" title="Club chip"></div>
+                                                </div>
+                                                <div class="mc-number mt-2" title="Membership number">
+                                                    <i class="fas fa-id-card-alt mr-2"></i>RHC{{ p.membership_number }}
+                                                </div>
+                                                <div class="mc-badges mt-2">
+                                                    {% if p.get_relation_display %}
+                                                        <span class="badge badge-light border mr-1">{{ p.get_relation_display }}</span>
+                                                    {% endif %}
+                                                    {% if p.membership_status %}
+                                                        <span class="badge {% if p.membership_status|lower == 'active' %}badge-success {% elif p.membership_status|lower == 'pending' %}badge-info {% else %}badge-dark{% endif %} mr-1">
+                                                            {{ p.membership_status }}
+                                                        </span>
+                                                    {% endif %}
+                                                    {% if p.membership_plan_label %}<span class="badge badge-secondary">{{ p.membership_plan_label }}</span>{% endif %}
+                                                </div>
+                                                {% with teams=p.team_memberships.all %}
+                                                    {% if teams %}
+                                                        <div class="mt-2 small text-muted">
+                                                            <i class="fas fa-users mr-1"></i>
+                                                            {% for m in teams|slice:":3" %}<span class="badge badge-light border mr-1">{{ m.team.name }}</span>{% endfor %}
+                                                            {% if teams|length > 3 %}<span class="badge badge-light border">+{{ teams|length|add:"-3" }}</span>{% endif %}
+                                                        </div>
+                                                    {% endif %}
+                                                {% endwith %}
+                                                {% if p.answers_pct is not None %}
+                                                    <div class="mt-3">
+                                                        <div class="d-flex justify-content-between small mb-1">
+                                                            <span class="text-muted">Profile completeness</span>
+                                                            <span class="text-muted">{{ p.answers_pct }}%</span>
+                                                        </div>
+                                                        <div class="progress mc-progress">
+                                                            <div class="progress-bar {% if p.answers_pct >= 80 %}bg-success {% elif p.answers_pct >= 40 %}bg-warning {% else %}bg-danger{% endif %}"
+                                                                 role="progressbar"
+                                                                 style="width: {{ p.answers_pct }}%"
+                                                                 aria-valuenow="{{ p.answers_pct }}"
+                                                                 aria-valuemin="0"
+                                                                 aria-valuemax="100"></div>
+                                                        </div>
+                                                    </div>
+                                                {% endif %}
+                                                <div class="d-flex justify-content-between align-items-center mt-3">
+                                                    <a href="{% url 'answer' p.public_id %}" class="btn btn-sm btn-primary">
+                                                        <i class="fas fa-edit mr-1"></i> Update Profile
+                                                    </a>
+                                                    <a href="{% url 'player_edit' public_id=p.public_id %}"
+                                                       class="btn btn-sm btn-primary">
+                                                        <i class="fas fa-user-cog mr-1"></i> Edit Details
+                                                    </a>
+                                                    <button class="btn btn-sm btn-outline-secondary mc-flip-btn" type="button">
+                                                        <i class="fas fa-ellipsis-h"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            <!-- BACK -->
+                                            <div class="mc-face mc-back">
+                                                <div class="small text-muted mb-2">Actions</div>
+                                                <!-- Desktop / Tablet -->
+                                                <div class="btn-group btn-group-sm d-none d-sm-flex flex-wrap">
+                                                    <!-- Apple Wallet placeholder -->
+                                                    <a class="btn btn-dark mb-2 mr-2"
+                                                       href="{% url 'wallet:wallet_apple' p.public_id %}"
+                                                       title="Download test Apple Wallet pass">
+                                                        <i class="fab fa-apple mr-1"></i> Apple Wallet (test)
+                                                    </a>
+                                                    <button type="button"
+                                                            class="btn btn-outline-danger mb-2"
+                                                            onclick="return confirmDelete('{{ p.public_id }}', '{{ p.full_name|default:p|escapejs }}')">
+                                                        <i class="fas fa-trash mr-1"></i> Remove
+                                                    </button>
+                                                </div>
+                                                <!-- Mobile: Dropdown -->
+                                                <div class="d-flex d-sm-none">
+                                                    <div class="dropdown w-100">
+                                                        <button class="btn btn-outline-secondary btn-sm dropdown-toggle w-100"
+                                                                type="button"
+                                                                id="actionsMenu{{ forloop.counter }}"
+                                                                data-toggle="dropdown"
+                                                                aria-haspopup="true"
+                                                                aria-expanded="false">Actions</button>
+                                                        <div class="dropdown-menu dropdown-menu-right w-100"
+                                                             aria-labelledby="actionsMenu{{ forloop.counter }}">
+                                                            <a class="dropdown-item" href="{% url 'answer' p.public_id %}">
+                                                                <i class="fas fa-edit mr-2"></i> Update Profile
+                                                            </a>
+                                                            <a class="dropdown-item"
+                                                               href="{% url 'player_edit' public_id=p.public_id %}">
+                                                                <i class="fas fa-user-cog mr-2"></i> Edit Details
+                                                            </a>
+                                                            <!-- Apple Wallet placeholder -->
+                                                            <a class="dropdown-item"
+                                                               href="{% url 'wallet:wallet_apple' p.public_id %}">
+                                                                <i class="fab fa-apple mr-2"></i> Apple Wallet (test)
+                                                            </a>
+                                                            <div class="dropdown-divider"></div>
+                                                            <button class="dropdown-item text-danger"
+                                                                    type="button"
+                                                                    onclick="return confirmDelete('{{ p.public_id }}', '{{ p.full_name|default:p|escapejs }}')">
+                                                                <i class="fas fa-trash mr-2"></i> Remove
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <!-- Club strip -->
+                                                <div class="mc-strip mt-3">
+                                                    <div class="mc-note small">Club use only • Player ID: {{ p.public_id }}</div>
+                                                </div>
+                                                <!-- Print/PDF -->
+                                                <button class="btn btn-sm btn-outline-secondary mt-3"
+                                                        type="button"
+                                                        onclick="printMembershipCard('{{ p.public_id }}')">
+                                                    <i class="fas fa-print mr-1"></i> Print / PDF
+                                                </button>
+                                                <button class="btn btn-sm btn-light mt-3 mc-flip-btn" type="button">
+                                                    <i class="fas fa-undo"></i> Back
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <!-- HIDDEN DELETE FORM (per player) -->
+                                    <form id="delete-form-{{ p.public_id }}"
+                                          action="{% url 'player_delete' p.public_id %}"
+                                          method="post"
+                                          style="display:none">
+                                        {% csrf_token %}
+                                    </form>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="card card-outline card-info">
+                            <div class="card-body">
+                                <p class="mb-3">
+                                    <i class="far fa-smile-wink mr-1"></i>No players yet. Add your first player to get started.
+                                </p>
+                                <a href="{% url 'player_add' %}" class="btn btn-primary">
+                                    <i class="fas fa-user-plus mr-1"></i> Add Player
+                                </a>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+                <!-- RIGHT: TASKS + CLUB NOTICES + QUICK LINKS -->
+                <div class="col-12 col-lg-4">{# keep your existing tasks, notices, quick links here unchanged #}</div>
+            </div>
+        </div>
     </div>
-
-  </div>
-</div>
-
-<!-- JS: confirm delete -->
-<script>
+    <!-- JS: confirm delete -->
+    <script>
 function confirmDelete(publicId, name) {
   if (confirm('Remove ' + name + '? This cannot be undone.')) {
     var f = document.getElementById('delete-form-' + publicId);
@@ -282,10 +252,9 @@ function confirmDelete(publicId, name) {
   }
   return false; // prevent default navigation on links/buttons
 }
-</script>
-
-<!-- JS: flip interactions -->
-<script>
+    </script>
+    <!-- JS: flip interactions -->
+    <script>
   document.addEventListener('click', function(e) {
     const btn = e.target.closest('.mc-flip-btn');
     if (!btn) return;
@@ -301,10 +270,9 @@ function confirmDelete(publicId, name) {
       active.classList.toggle('is-flipped');
     }
   });
-</script>
-
-<!-- JS: TRUE CR80 print (front/back; no actions) -->
-<script>
+    </script>
+    <!-- JS: TRUE CR80 print (front/back; no actions) -->
+    <script>
 function printMembershipCard(publicId) {
   const el = document.getElementById('card-' + publicId);
   if (!el) return;
@@ -318,7 +286,7 @@ function printMembershipCard(publicId) {
   };
 
   const w = window.open('', '', 'width=1000,height=800');
-  w.document.write(`<!doctype html>
+  w.document.write(`<!DOCTYPE html>
 <html>
 <head>
 <meta charset="utf-8">
@@ -381,10 +349,9 @@ function printMembershipCard(publicId) {
   w.document.close();
   w.focus();
 }
-</script>
-
-<!-- STYLES: flip engine + responsive -->
-<style>
+    </script>
+    <!-- STYLES: flip engine + responsive -->
+    <style>
 /* Flip card engine */
 .membership-card{ position:relative; perspective:1000px; border-radius:14px; }
 .membership-card:focus{ outline:2px dashed rgba(0,0,0,.2); outline-offset:2px; }
@@ -436,8 +403,8 @@ function printMembershipCard(publicId) {
 @media (prefers-reduced-motion: reduce){
   .mc-inner{ transition:none; }
 }
-</style>
-<style>
+    </style>
+    <style>
 /* --- Flip fix: ensure true 3D + hide mirrored faces --- */
 .membership-card{ perspective: 1000px; -webkit-perspective: 1000px; }
 .mc-inner{ transform-style: preserve-3d; -webkit-transform-style: preserve-3d; transition: transform .6s cubic-bezier(.22,.61,.36,1); }
@@ -445,6 +412,5 @@ function printMembershipCard(publicId) {
 .mc-front{ transform: rotateY(0deg); z-index:2; }
 .mc-back{  transform: rotateY(180deg) !important; z-index:1; }
 .mc-front, .mc-back { transform: translateZ(0) rotateY(var(--ry,0)); }
-</style>
-
+    </style>
 {% endblock %}

@@ -1,10 +1,9 @@
 from django.conf import settings
-from django.db import models
 from django.core.exceptions import ValidationError
-from django.utils.translation import gettext_lazy as _
-from django.utils.timezone import localdate
+from django.db import models
 from django.db.models import QuerySet
-
+from django.utils.timezone import localdate
+from django.utils.translation import gettext_lazy as _
 
 
 class SeasonQuerySet(QuerySet):
@@ -20,6 +19,7 @@ class SeasonQuerySet(QuerySet):
         if current:
             return current
         return self.upcoming_after(d).first()
+
 
 class Season(models.Model):
     name = models.CharField(max_length=32, unique=True)  # "2025/26"
@@ -47,10 +47,11 @@ class Season(models.Model):
 
     def __str__(self):
         return self.name
-    
+
 
 class MembershipCategory(models.Model):
     """High-level buckets like U12, Teen, Senior, Guest."""
+
     code = models.SlugField(max_length=50, unique=True)
     label = models.CharField(max_length=100)
     description = models.TextField(blank=True)
@@ -63,7 +64,9 @@ class MembershipCategory(models.Model):
 
 class MembershipProduct(models.Model):
     season = models.ForeignKey(Season, on_delete=models.PROTECT, related_name="products")
-    category = models.ForeignKey(MembershipCategory, on_delete=models.PROTECT, related_name="products")
+    category = models.ForeignKey(
+        MembershipCategory, on_delete=models.PROTECT, related_name="products"
+    )
     name = models.CharField(max_length=150)
     sku = models.SlugField(max_length=80)  # unique within a season
     list_price_gbp = models.DecimalField(max_digits=8, decimal_places=2, default=0)
@@ -72,12 +75,11 @@ class MembershipProduct(models.Model):
 
     # Behaviour flags
     requires_plan = models.BooleanField(
-        default=True,
-        help_text="If false, plan is optional (e.g., £0 guest memberships)."
+        default=True, help_text="If false, plan is optional (e.g., £0 guest memberships)."
     )
     pay_per_match = models.BooleanField(
         default=False,
-        help_text="If true, a per-match fee also applies in addition to any membership payment."
+        help_text="If true, a per-match fee also applies in addition to any membership payment.",
     )
 
     class Meta:
@@ -130,14 +132,23 @@ class MatchFeeTariff(models.Model):
     """
     Per-match fee, can be scoped to product or category.
     """
+
     season = models.ForeignKey(Season, on_delete=models.PROTECT, related_name="match_fees")
     name = models.CharField(max_length=80, default="League Match")
     amount_gbp = models.DecimalField(max_digits=6, decimal_places=2)
     category = models.ForeignKey(
-        MembershipCategory, null=True, blank=True, on_delete=models.PROTECT, related_name="match_fees"
+        MembershipCategory,
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="match_fees",
     )
     product = models.ForeignKey(
-        MembershipProduct, null=True, blank=True, on_delete=models.PROTECT, related_name="match_fees"
+        MembershipProduct,
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="match_fees",
     )
     is_default = models.BooleanField(default=False)
     active = models.BooleanField(default=True)
@@ -146,8 +157,7 @@ class MatchFeeTariff(models.Model):
         ordering = ["-product__id", "-category__id", "name"]
         constraints = [
             models.UniqueConstraint(
-                fields=["season", "name", "category", "product"],
-                name="uniq_match_fee_scope"
+                fields=["season", "name", "category", "product"], name="uniq_match_fee_scope"
             )
         ]
 
@@ -164,13 +174,14 @@ class Subscription(models.Model):
         ("cancelled", "Cancelled"),
     )
 
-    player = models.ForeignKey("members.Player", on_delete=models.CASCADE, related_name="subscriptions")
-    product = models.ForeignKey("MembershipProduct", on_delete=models.PROTECT, related_name="subscriptions")
+    player = models.ForeignKey(
+        "members.Player", on_delete=models.CASCADE, related_name="subscriptions"
+    )
+    product = models.ForeignKey(
+        "MembershipProduct", on_delete=models.PROTECT, related_name="subscriptions"
+    )
     plan = models.ForeignKey(
-        "PaymentPlan",
-        on_delete=models.PROTECT,
-        related_name="subscriptions",
-        null=True, blank=True
+        "PaymentPlan", on_delete=models.PROTECT, related_name="subscriptions", null=True, blank=True
     )
 
     # Denormalised season for constraints/queries
@@ -179,23 +190,24 @@ class Subscription(models.Model):
         on_delete=models.PROTECT,
         related_name="subscriptions",
         editable=False,
-        null=False, blank=False,
+        null=False,
+        blank=False,
     )
 
     started_at = models.DateField(auto_now_add=True)
     status = models.CharField(max_length=20, choices=STATUS, default="pending")
     external_ref = models.CharField(max_length=120, blank=True)
-    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL
+    )
 
     class Meta:
+        ordering = ["-started_at"]
         permissions = [
             ("activate_subscription", "Can activate a pending subscription"),
             ("set_pending_subscription", "Can set a subscription back to pending"),
             ("cancel_subscription", "Can cancel a subscription"),
         ]
-
-    class Meta:
-        ordering = ["-started_at"]
         constraints = [
             # Exactly one pending/active sub per player per season
             models.UniqueConstraint(
@@ -210,6 +222,7 @@ class Subscription(models.Model):
 
     def clean(self):
         from django.core.exceptions import ValidationError
+
         # Enforce plan requirement if applicable
         if self.product.requires_plan and self.plan is None:
             raise ValidationError("This product requires a payment plan.")

@@ -1,30 +1,41 @@
 {% extends "base.html" %}
 {% block title %}Policies{% endblock %}
 {% block content %}
-<div class="card">
-  <div class="card-header"><h3 class="card-title">Policies</h3></div>
-  <div class="card-body p-0">
-    <table class="table table-striped mb-0">
-      <thead>
-        <tr><th>Title</th><th>Category</th><th>Published</th><th>File</th></tr>
-      </thead>
-      <tbody>
-        {% for p in policies %}
-          <tr>
-            <td>{{ p.title }}</td>
-            <td>{{ p.category|default:"—" }}</td>
-            <td>{{ p.published_at|date:"Y-m-d" }}</td>
-            <td>
-              {% if p.file %}
-                <a href="{{ p.file.url }}" target="_blank" rel="noopener">Download</a>
-              {% else %}—{% endif %}
-            </td>
-          </tr>
-        {% empty %}
-          <tr><td colspan="4" class="text-muted p-3">No policies yet.</td></tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
-</div>
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Policies</h3>
+        </div>
+        <div class="card-body p-0">
+            <table class="table table-striped mb-0">
+                <thead>
+                    <tr>
+                        <th>Title</th>
+                        <th>Category</th>
+                        <th>Published</th>
+                        <th>File</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for p in policies %}
+                        <tr>
+                            <td>{{ p.title }}</td>
+                            <td>{{ p.category|default:"—" }}</td>
+                            <td>{{ p.published_at|date:"Y-m-d" }}</td>
+                            <td>
+                                {% if p.file %}
+                                    <a href="{{ p.file.url }}" target="_blank" rel="noopener">Download</a>
+                                {% else %}
+                                    —
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="4" class="text-muted p-3">No policies yet.</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
 {% endblock %}

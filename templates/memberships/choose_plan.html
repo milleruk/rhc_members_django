@@ -1,30 +1,29 @@
 {% extends "base.html" %}
 {% block title %}Choose Plan{% endblock %}
 {% block content %}
-<div class="container py-3">
-  <a href="{% url 'memberships:choose' player.id %}" class="btn btn-link p-0 mb-2">← Back</a>
-
-  <div class="card">
-    <div class="card-body">
-      <h4 class="mb-1">{{ product.name }}</h4>
-      <p class="text-muted">Season: {{ product.season.name }} | Category: {{ product.category.label }}</p>
-
-      <div class="list-group">
-        {% for plan in plans %}
-          <a class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
-             href="{% url 'memberships:confirm' player.id plan.id %}">
-            <div>
-              <div class="fw-bold">{{ plan.label }}</div>
-              <div class="small text-muted">
-                £{{ plan.instalment_amount_gbp }} × {{ plan.instalment_count }} ({{ plan.get_frequency_display }})
-                {% if plan.includes_match_fees %} • includes match fees{% endif %}
-              </div>
+    <div class="container py-3">
+        <a href="{% url 'memberships:choose' player.id %}"
+           class="btn btn-link p-0 mb-2">← Back</a>
+        <div class="card">
+            <div class="card-body">
+                <h4 class="mb-1">{{ product.name }}</h4>
+                <p class="text-muted">Season: {{ product.season.name }} | Category: {{ product.category.label }}</p>
+                <div class="list-group">
+                    {% for plan in plans %}
+                        <a class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
+                           href="{% url 'memberships:confirm' player.id plan.id %}">
+                            <div>
+                                <div class="fw-bold">{{ plan.label }}</div>
+                                <div class="small text-muted">
+                                    £{{ plan.instalment_amount_gbp }} × {{ plan.instalment_count }} ({{ plan.get_frequency_display }})
+                                    {% if plan.includes_match_fees %}• includes match fees{% endif %}
+                                </div>
+                            </div>
+                            <span class="btn btn-outline-primary btn-sm">Choose</span>
+                        </a>
+                    {% endfor %}
+                </div>
             </div>
-            <span class="btn btn-outline-primary btn-sm">Choose</span>
-          </a>
-        {% endfor %}
-      </div>
+        </div>
     </div>
-  </div>
-</div>
 {% endblock %}

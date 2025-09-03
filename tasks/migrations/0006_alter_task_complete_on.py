@@ -6,13 +6,18 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('tasks', '0005_task_allow_manual_complete'),
+        ("tasks", "0005_task_allow_manual_complete"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='task',
-            name='complete_on',
-            field=models.CharField(blank=True, help_text='When an event with this name is emitted for the same subject, mark this task DONE.', max_length=100, null=True),
+            model_name="task",
+            name="complete_on",
+            field=models.CharField(
+                blank=True,
+                help_text="When an event with this name is emitted for the same subject, mark this task DONE.",
+                max_length=100,
+                null=True,
+            ),
         ),
     ]

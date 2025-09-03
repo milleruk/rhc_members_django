@@ -1,32 +1,42 @@
-<!doctype html>
+<!DOCTYPE html>
 <html>
-  <body style="font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; color:#222;">
-    <h2 style="margin:0 0 12px;">You have {{ tasks|length }} open task{{ tasks|length|pluralize }}</h2>
-    <p style="margin:0 0 16px;">Hi {{ user.get_full_name|default:user.get_username }}, here’s your task summary.</p>
-
-    <table width="100%" cellpadding="8" cellspacing="0" style="border-collapse:collapse;">
-      <tbody>
-      {% for t in tasks %}
-        <tr style="border-bottom:1px solid #eee;">
-          <td style="width:28px; text-align:center;">
-            {% if t.due_at and t.is_overdue %}⏰{% elif t.due_at %}📅{% else %}📝{% endif %}
-          </td>
-          <td>
-            <div style="font-weight:600;">{{ t.title }}</div>
-            {% if t.subject %}<div style="color:#666; font-size:13px;">About: {{ t.subject }}</div>{% endif %}
-            {% if t.due_at %}<div style="color:#666; font-size:13px;">Due {{ t.due_at|date:"D, j M Y H:i" }}</div>{% endif %}
-          </td>
-        </tr>
-      {% endfor %}
-      </tbody>
-    </table>
-
-    <p style="margin-top:16px;">
-      <a href="{{ base_list_url }}" style="background:#1f6feb; color:#fff; text-decoration:none; padding:10px 14px; border-radius:6px;">
-        View my tasks
-      </a>
-    </p>
-
-    <p style="color:#888; font-size:12px; margin-top:24px;">— {{ site_name }}</p>
-  </body>
+    <body style="font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+                 color:#222">
+        <h2 style="margin:0 0 12px;">You have {{ tasks|length }} open task{{ tasks|length|pluralize }}</h2>
+        <p style="margin:0 0 16px;">Hi {{ user.get_full_name|default:user.get_username }}, here’s your task summary.</p>
+        <table width="100%"
+               cellpadding="8"
+               cellspacing="0"
+               style="border-collapse:collapse">
+            <tbody>
+                {% for t in tasks %}
+                    <tr style="border-bottom:1px solid #eee;">
+                        <td style="width:28px; text-align:center;">
+                            {% if t.due_at and t.is_overdue %}
+                                ⏰
+                            {% elif t.due_at %}
+                                📅
+                            {% else %}
+                                📝
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div style="font-weight:600;">{{ t.title }}</div>
+                            {% if t.subject %}<div style="color:#666; font-size:13px;">About: {{ t.subject }}</div>{% endif %}
+                            {% if t.due_at %}<div style="color:#666; font-size:13px;">Due {{ t.due_at|date:"D, j M Y H:i" }}</div>{% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <p style="margin-top:16px;">
+            <a href="{{ base_list_url }}"
+               style="background:#1f6feb;
+                      color:#fff;
+                      text-decoration:none;
+                      padding:10px 14px;
+                      border-radius:6px">View my tasks</a>
+        </p>
+        <p style="color:#888; font-size:12px; margin-top:24px;">— {{ site_name }}</p>
+    </body>
 </html>

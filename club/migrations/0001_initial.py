@@ -7,39 +7,67 @@ class Migration(migrations.Migration):
 
     initial = True
 
-    dependencies = [
-    ]
+    dependencies = []
 
     operations = [
         migrations.CreateModel(
-            name='ClubNotice',
+            name="ClubNotice",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('title', models.CharField(max_length=200)),
-                ('text', models.TextField()),
-                ('level', models.CharField(choices=[('info', 'Info'), ('success', 'Success'), ('warning', 'Warning'), ('danger', 'Danger')], default='info', max_length=10)),
-                ('url', models.URLField(blank=True, null=True)),
-                ('active', models.BooleanField(default=True)),
-                ('valid_from', models.DateField(blank=True, null=True)),
-                ('valid_to', models.DateField(blank=True, null=True)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                    ),
+                ),
+                ("title", models.CharField(max_length=200)),
+                ("text", models.TextField()),
+                (
+                    "level",
+                    models.CharField(
+                        choices=[
+                            ("info", "Info"),
+                            ("success", "Success"),
+                            ("warning", "Warning"),
+                            ("danger", "Danger"),
+                        ],
+                        default="info",
+                        max_length=10,
+                    ),
+                ),
+                ("url", models.URLField(blank=True, null=True)),
+                ("active", models.BooleanField(default=True)),
+                ("valid_from", models.DateField(blank=True, null=True)),
+                ("valid_to", models.DateField(blank=True, null=True)),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
             ],
             options={
-                'ordering': ['-created_at'],
+                "ordering": ["-created_at"],
             },
         ),
         migrations.CreateModel(
-            name='QuickLink',
+            name="QuickLink",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('label', models.CharField(max_length=100)),
-                ('url', models.URLField()),
-                ('icon', models.CharField(blank=True, help_text="Optional FontAwesome icon class (e.g. 'fas fa-id-card-alt')", max_length=50)),
-                ('sort_order', models.PositiveIntegerField(default=0)),
-                ('active', models.BooleanField(default=True)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                    ),
+                ),
+                ("label", models.CharField(max_length=100)),
+                ("url", models.URLField()),
+                (
+                    "icon",
+                    models.CharField(
+                        blank=True,
+                        help_text="Optional FontAwesome icon class (e.g. 'fas fa-id-card-alt')",
+                        max_length=50,
+                    ),
+                ),
+                ("sort_order", models.PositiveIntegerField(default=0)),
+                ("active", models.BooleanField(default=True)),
             ],
             options={
-                'ordering': ['sort_order', 'label'],
+                "ordering": ["sort_order", "label"],
             },
         ),
     ]

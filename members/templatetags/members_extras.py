@@ -3,6 +3,7 @@ from django import template
 
 register = template.Library()
 
+
 @register.filter
 def get_item(qs_or_dict, key):
     """Return object/value by id or key from a queryset, list, or dict."""
@@ -31,6 +32,7 @@ def get_item(qs_or_dict, key):
     except Exception:
         pass
     return ""
+
 
 @register.filter
 def attr(obj, name):

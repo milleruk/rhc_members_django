@@ -7,45 +7,90 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('memberships', '0001_initial'),
+        ("memberships", "0001_initial"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='membershipproduct',
-            name='pay_per_match',
-            field=models.BooleanField(default=False, help_text='If true, no membership payments; player pays per match.'),
+            model_name="membershipproduct",
+            name="pay_per_match",
+            field=models.BooleanField(
+                default=False, help_text="If true, no membership payments; player pays per match."
+            ),
         ),
         migrations.AddField(
-            model_name='membershipproduct',
-            name='requires_plan',
-            field=models.BooleanField(default=True, help_text='If false, plan is optional (e.g., £0 guest memberships).'),
+            model_name="membershipproduct",
+            name="requires_plan",
+            field=models.BooleanField(
+                default=True, help_text="If false, plan is optional (e.g., £0 guest memberships)."
+            ),
         ),
         migrations.AlterField(
-            model_name='membershipproduct',
-            name='list_price_gbp',
+            model_name="membershipproduct",
+            name="list_price_gbp",
             field=models.DecimalField(decimal_places=2, default=0, max_digits=8),
         ),
         migrations.AlterField(
-            model_name='subscription',
-            name='plan',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.PROTECT, related_name='subscriptions', to='memberships.paymentplan'),
+            model_name="subscription",
+            name="plan",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.PROTECT,
+                related_name="subscriptions",
+                to="memberships.paymentplan",
+            ),
         ),
         migrations.CreateModel(
-            name='MatchFeeTariff',
+            name="MatchFeeTariff",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('name', models.CharField(default='League Match', max_length=80)),
-                ('amount_gbp', models.DecimalField(decimal_places=2, max_digits=6)),
-                ('is_default', models.BooleanField(default=False)),
-                ('active', models.BooleanField(default=True)),
-                ('category', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.PROTECT, related_name='match_fees', to='memberships.membershipcategory')),
-                ('product', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.PROTECT, related_name='match_fees', to='memberships.membershipproduct')),
-                ('season', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='match_fees', to='memberships.season')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                    ),
+                ),
+                ("name", models.CharField(default="League Match", max_length=80)),
+                ("amount_gbp", models.DecimalField(decimal_places=2, max_digits=6)),
+                ("is_default", models.BooleanField(default=False)),
+                ("active", models.BooleanField(default=True)),
+                (
+                    "category",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.PROTECT,
+                        related_name="match_fees",
+                        to="memberships.membershipcategory",
+                    ),
+                ),
+                (
+                    "product",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.PROTECT,
+                        related_name="match_fees",
+                        to="memberships.membershipproduct",
+                    ),
+                ),
+                (
+                    "season",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.PROTECT,
+                        related_name="match_fees",
+                        to="memberships.season",
+                    ),
+                ),
             ],
             options={
-                'ordering': ['-product__id', '-category__id', 'name'],
-                'constraints': [models.UniqueConstraint(fields=('season', 'name', 'category', 'product'), name='uniq_match_fee_scope')],
+                "ordering": ["-product__id", "-category__id", "name"],
+                "constraints": [
+                    models.UniqueConstraint(
+                        fields=("season", "name", "category", "product"),
+                        name="uniq_match_fee_scope",
+                    )
+                ],
             },
         ),
     ]

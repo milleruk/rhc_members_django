@@ -11,45 +11,82 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
-        ('members', '0009_player_public_id'),
+        ("members", "0009_player_public_id"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='SpondAccessAnchor',
+            name="SpondAccessAnchor",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                    ),
+                ),
             ],
             options={
-                'permissions': (('access_spond_app', 'Has Access to Spond App'),),
-                'managed': False,
-                'default_permissions': (),
+                "permissions": (("access_spond_app", "Has Access to Spond App"),),
+                "managed": False,
+                "default_permissions": (),
             },
         ),
         migrations.CreateModel(
-            name='SpondMember',
+            name="SpondMember",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('spond_member_id', models.CharField(max_length=64, unique=True)),
-                ('full_name', models.CharField(max_length=255)),
-                ('email', models.EmailField(blank=True, max_length=254)),
-                ('data', models.JSONField(blank=True, default=dict)),
-                ('last_synced_at', models.DateTimeField(blank=True, null=True)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                    ),
+                ),
+                ("spond_member_id", models.CharField(max_length=64, unique=True)),
+                ("full_name", models.CharField(max_length=255)),
+                ("email", models.EmailField(blank=True, max_length=254)),
+                ("data", models.JSONField(blank=True, default=dict)),
+                ("last_synced_at", models.DateTimeField(blank=True, null=True)),
             ],
         ),
         migrations.CreateModel(
-            name='PlayerSpondLink',
+            name="PlayerSpondLink",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('linked_at', models.DateTimeField(default=django.utils.timezone.now)),
-                ('active', models.BooleanField(default=True)),
-                ('linked_by', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to=settings.AUTH_USER_MODEL)),
-                ('player', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='spond_links', to='members.player')),
-                ('spond_member', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='player_links', to='spond_integration.spondmember')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                    ),
+                ),
+                ("linked_at", models.DateTimeField(default=django.utils.timezone.now)),
+                ("active", models.BooleanField(default=True)),
+                (
+                    "linked_by",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+                (
+                    "player",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="spond_links",
+                        to="members.player",
+                    ),
+                ),
+                (
+                    "spond_member",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="player_links",
+                        to="spond_integration.spondmember",
+                    ),
+                ),
             ],
             options={
-                'unique_together': {('player', 'spond_member')},
+                "unique_together": {("player", "spond_member")},
             },
         ),
     ]

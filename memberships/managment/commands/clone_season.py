@@ -1,13 +1,19 @@
 from django.core.management.base import BaseCommand, CommandError
-from memberships.models import Season, MembershipCategory, MembershipProduct, PaymentPlan, AddOnFee
 from django.db import transaction
+
+from memberships.models import AddOnFee, MembershipProduct, PaymentPlan, Season
+
 
 class Command(BaseCommand):
     help = "Clone products/plans/addons from one season to a new season."
 
     def add_arguments(self, parser):
-        parser.add_argument("--from", dest="from_name", required=True, help="Source season name (e.g. 2024/25)")
-        parser.add_argument("--to", dest="to_name", required=True, help="Target season name (must exist)")
+        parser.add_argument(
+            "--from", dest="from_name", required=True, help="Source season name (e.g. 2024/25)"
+        )
+        parser.add_argument(
+            "--to", dest="to_name", required=True, help="Target season name (must exist)"
+        )
 
     @transaction.atomic
     def handle(self, *args, **opts):
@@ -53,10 +59,13 @@ class Command(BaseCommand):
 
         for addon in AddOnFee.objects.filter(season=src):
             AddOnFee.objects.get_or_create(
-                season=dst, name=addon.name,
-                defaults=dict(amount_gbp=addon.amount_gbp, active=addon.active)
+                season=dst,
+                name=addon.name,
+                defaults=dict(amount_gbp=addon.amount_gbp, active=addon.active),
             )
 
-        self.stdout.write(self.style.SUCCESS(
-            f"Done. New products: {count_products}, plans cloned: {count_plans}."
-        ))
+        self.stdout.write(
+            self.style.SUCCESS(
+                f"Done. New products: {count_products}, plans cloned: {count_plans}."
+            )
+        )

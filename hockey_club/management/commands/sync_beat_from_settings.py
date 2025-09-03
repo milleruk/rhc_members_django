@@ -1,23 +1,29 @@
 from __future__ import annotations
+
 import json
 from datetime import timedelta
 from typing import Any, Dict
 
+from celery.schedules import crontab as celery_crontab
 from django.conf import settings
 from django.core.management.base import BaseCommand
 from django_celery_beat.models import (
-    PeriodicTask, CrontabSchedule, IntervalSchedule, SolarSchedule, ClockedSchedule
+    ClockedSchedule,
+    CrontabSchedule,
+    IntervalSchedule,
+    PeriodicTask,
+    SolarSchedule,
 )
-from celery.schedules import crontab as celery_crontab
 
 PREFIX = getattr(settings, "HOCKEYCLUB_BEAT_PREFIX", "settings:")
 
 PERIOD_MAP = {
     "seconds": IntervalSchedule.SECONDS,
     "minutes": IntervalSchedule.MINUTES,
-    "hours":   IntervalSchedule.HOURS,
-    "days":    IntervalSchedule.DAYS,
+    "hours": IntervalSchedule.HOURS,
+    "days": IntervalSchedule.DAYS,
 }
+
 
 def _json(val, default):
     try:
@@ -25,6 +31,7 @@ def _json(val, default):
     except TypeError:
         # Fallback: stringify anything not JSONable
         return json.dumps(default)
+
 
 class Command(BaseCommand):
     help = "Sync CELERY_BEAT_SCHEDULE / BEAT_FROM_SETTINGS into django-celery-beat (create/update/delete)."
@@ -58,13 +65,25 @@ class Command(BaseCommand):
                         updated = True
                 # ensure only one schedule FK is set
                 if want.get("interval_id") and (pt.crontab_id or pt.solar_id or pt.clocked_id):
-                    pt.crontab_id = None; pt.solar_id = None; pt.clocked_id = None; updated = True
+                    pt.crontab_id = None
+                    pt.solar_id = None
+                    pt.clocked_id = None
+                    updated = True
                 if want.get("crontab_id") and (pt.interval_id or pt.solar_id or pt.clocked_id):
-                    pt.interval_id = None; pt.solar_id = None; pt.clocked_id = None; updated = True
+                    pt.interval_id = None
+                    pt.solar_id = None
+                    pt.clocked_id = None
+                    updated = True
                 if want.get("solar_id") and (pt.interval_id or pt.crontab_id or pt.clocked_id):
-                    pt.interval_id = None; pt.crontab_id = None; pt.clocked_id = None; updated = True
+                    pt.interval_id = None
+                    pt.crontab_id = None
+                    pt.clocked_id = None
+                    updated = True
                 if want.get("clocked_id") and (pt.interval_id or pt.crontab_id or pt.solar_id):
-                    pt.interval_id = None; pt.crontab_id = None; pt.solar_id = None; updated = True
+                    pt.interval_id = None
+                    pt.crontab_id = None
+                    pt.solar_id = None
+                    updated = True
 
                 if updated:
                     pt.save()
@@ -189,4 +208,6 @@ class Command(BaseCommand):
             return base
 
         # Unknown or not supported
-        raise ValueError(f"Unsupported schedule type in CELERY_BEAT_SCHEDULE for task={task!r}: {type(schedule).__name__}")
+        raise ValueError(
+            f"Unsupported schedule type in CELERY_BEAT_SCHEDULE for task={task!r}: {type(schedule).__name__}"
+        )

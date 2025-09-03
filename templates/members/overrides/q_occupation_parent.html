@@ -1,50 +1,36 @@
 {% load widget_tweaks %}
-
 {# templates/members/overrides/q_occupation_parent.html #}
 {# Expects: field (BoundField), item (with desc_html/label) #}
-
 <div class="card border mb-3 shadow-sm" id="group-{{ field.name }}">
-  <div class="card-header bg-light d-flex align-items-center py-2">
-    <i class="fas fa-briefcase mr-2"></i>
-    <strong>{{ item.label }}</strong>
-  </div>
-
-  <div class="card-body">
-    {# Optional: any long description you’ve put in the question’s Description (Markdown) #}
-    {% if item.desc_html %}
-      <div class="prose text-muted small mb-3">
-        {{ item.desc_html|safe }}
-      </div>
-    {% endif %}
-
-    {# Input itself (respect errors + classes) #}
-    <div class="form-group mb-2">
-      {% if field.errors %}
-        {{ field|add_class:"form-control is-invalid" }}
-      {% else %}
-        {{ field|add_class:"form-control" }}
-      {% endif %}
-      {% if field.errors %}
-        <div class="invalid-feedback d-block">
-          {{ field.errors|striptags }}
+    <div class="card-header bg-light d-flex align-items-center py-2">
+        <i class="fas fa-briefcase mr-2"></i>
+        <strong>{{ item.label }}</strong>
+    </div>
+    <div class="card-body">
+        {# Optional: any long description you’ve put in the question’s Description (Markdown) #}
+        {% if item.desc_html %}<div class="prose text-muted small mb-3">{{ item.desc_html|safe }}</div>{% endif %}
+        {# Input itself (respect errors + classes) #}
+        <div class="form-group mb-2">
+            {% if field.errors %}
+                {{ field|add_class:"form-control is-invalid" }}
+            {% else %}
+                {{ field|add_class:"form-control" }}
+            {% endif %}
+            {% if field.errors %}<div class="invalid-feedback d-block">{{ field.errors|striptags }}</div>{% endif %}
         </div>
-      {% endif %}
+        {# Rationale: why we ask — lightweight, friendly, and optional #}
+        <div class="small text-muted">
+            <i class="far fa-question-circle mr-1"></i>
+            <span>
+                We ask this to understand the skills and experience within our community.
+                From time to time, opportunities arise where specialist knowledge, professional
+                experience or volunteering support can benefit the club (e.g. first aid,
+                safeguarding, coaching, fundraising, media, sponsorship, trades).
+                <strong>Sharing is optional—your info won’t be published.</strong>
+            </span>
+        </div>
     </div>
-
-    {# Rationale: why we ask — lightweight, friendly, and optional #}
-    <div class="small text-muted">
-      <i class="far fa-question-circle mr-1"></i>
-      <span>
-        We ask this to understand the skills and experience within our community.
-        From time to time, opportunities arise where specialist knowledge, professional
-        experience or volunteering support can benefit the club (e.g. first aid,
-        safeguarding, coaching, fundraising, media, sponsorship, trades).
-        <strong>Sharing is optional—your info won’t be published.</strong>
-      </span>
-    </div>
-  </div>
 </div>
-
 <style>
 .prose ul { margin-left: 1.25rem; }
 .prose h4, .prose h5 { margin:.25rem 0 .5rem; }

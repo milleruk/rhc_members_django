@@ -8,21 +8,38 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('members', '0003_player_gender'),
+        ("members", "0003_player_gender"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='PlayerAccessLog',
+            name="PlayerAccessLog",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('accessed_at', models.DateTimeField(auto_now_add=True)),
-                ('accessed_by', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL)),
-                ('player', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='access_logs', to='members.player')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                    ),
+                ),
+                ("accessed_at", models.DateTimeField(auto_now_add=True)),
+                (
+                    "accessed_by",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL
+                    ),
+                ),
+                (
+                    "player",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="access_logs",
+                        to="members.player",
+                    ),
+                ),
             ],
             options={
-                'ordering': ['-accessed_at'],
+                "ordering": ["-accessed_at"],
             },
         ),
     ]

@@ -4,4 +4,3 @@ Please confirm your email for Redditch Hockey Club:
 {{ activation_url }}
 
 If you didn’t create this account, ignore this email.
-

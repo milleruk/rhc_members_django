@@ -1,12 +1,13 @@
+import uuid
+
 from django.conf import settings
 from django.contrib.auth.models import Group
-from django.db import models
-from django.utils import timezone
-from django.core.exceptions import ValidationError
 from django.contrib.contenttypes.fields import GenericRelation
+from django.core.exceptions import ValidationError
+from django.db import models
 from django.urls import reverse
+from django.utils import timezone
 
-import uuid
 
 class PlayerType(models.Model):
     name = models.CharField(max_length=20, unique=True)  # "Senior" / "Junior"
@@ -40,17 +41,16 @@ class Player(models.Model):
     last_name = models.CharField(max_length=100)
     date_of_birth = models.DateField()
     gender = models.CharField(max_length=20, choices=GENDER_CHOICES, default="other")
-    relation = models.CharField(
-        max_length=20, choices=RELATION_CHOICES, default="self"
-    )
+    relation = models.CharField(max_length=20, choices=RELATION_CHOICES, default="self")
     player_type = models.ForeignKey("PlayerType", on_delete=models.PROTECT)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     updated_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
-        null=True, blank=True,
+        null=True,
+        blank=True,
         on_delete=models.SET_NULL,
-        related_name="player_updates"
+        related_name="player_updates",
     )
 
     tasks = GenericRelation(
@@ -59,15 +59,14 @@ class Player(models.Model):
         object_id_field="subject_id",
         related_query_name="player_subject",
     )
-    
+
     membership_number = models.CharField(
         max_length=10,
         unique=True,
         blank=False,
         null=False,
-        help_text="Automatically generated sequential membership number"
+        help_text="Automatically generated sequential membership number",
     )
-
 
     class Meta:
         permissions = (
@@ -79,7 +78,7 @@ class Player(models.Model):
 
     def __str__(self) -> str:
         return f"{self.first_name} {self.last_name} ({self.player_type})"
-    
+
     # Optional centralised permission helper:
     def can_edit(self, user):
         if not getattr(user, "is_authenticated", False):
@@ -100,15 +99,16 @@ class Player(models.Model):
     @property
     def age(self) -> int:
         today = timezone.localdate()
-        return today.year - self.date_of_birth.year - (
-            (today.month, today.day)
-            < (self.date_of_birth.month, self.date_of_birth.day)
+        return (
+            today.year
+            - self.date_of_birth.year
+            - ((today.month, today.day) < (self.date_of_birth.month, self.date_of_birth.day))
         )
-    
+
     @property
     def has_active_spond_link(self):
         return self.spond_links.filter(active=True).exists()
-    
+
     # 🚨 Add validation so DOB must be strictly before today
 
     def get_absolute_url(self):
@@ -121,21 +121,20 @@ class Player(models.Model):
             return
 
         if dob >= timezone.localdate():
-            raise ValidationError({
-                "date_of_birth": "Date of birth cannot be today or in the future."
-            })
-        
+            raise ValidationError(
+                {"date_of_birth": "Date of birth cannot be today or in the future."}
+            )
+
     @property
     def active_subscription(self):
         # Adjust related name & fields to your models
         return (
-            self.subscriptions  # e.g. related_name='subscriptions'
-            .filter(status='active')
-            .select_related('product', 'season', 'plan')
-            .order_by('-started_at')
+            self.subscriptions.filter(status="active")  # e.g. related_name='subscriptions'
+            .select_related("product", "season", "plan")
+            .order_by("-started_at")
             .first()
         )
-        
+
     def save(self, *args, **kwargs):
         creating = self._state.adding and not self.pk
         super().save(*args, **kwargs)  # save first so we have a pk/id
@@ -157,8 +156,7 @@ class QuestionCategory(models.Model):
     name = models.CharField(max_length=100, unique=True)
     display_order = models.PositiveIntegerField(default=0)
     description = models.TextField(
-        blank=True,
-        help_text="Optional detailed description or instructions (Markdown supported)."
+        blank=True, help_text="Optional detailed description or instructions (Markdown supported)."
     )
 
     class Meta:
@@ -177,12 +175,9 @@ class DynamicQuestion(models.Model):
     label = models.CharField(max_length=255)
     help_text = models.CharField(max_length=255, blank=True)
     description = models.TextField(
-        blank=True,
-        help_text="Optional detailed description or instructions (Markdown supported)."
+        blank=True, help_text="Optional detailed description or instructions (Markdown supported)."
     )
-    question_type = models.CharField(
-        max_length=10, choices=QUESTION_TYPE_CHOICES, default="text"
-    )
+    question_type = models.CharField(max_length=10, choices=QUESTION_TYPE_CHOICES, default="text")
     required = models.BooleanField(default=False)
     requires_detail_if_yes = models.BooleanField(
         default=False, help_text="If checkbox is ticked, require additional detail"
@@ -195,9 +190,7 @@ class DynamicQuestion(models.Model):
         related_name="questions",
     )
     applies_to = models.ManyToManyField("PlayerType", related_name="questions")
-    visible_to_groups = models.ManyToManyField(
-        Group, related_name="viewable_questions", blank=True
-    )
+    visible_to_groups = models.ManyToManyField(Group, related_name="viewable_questions", blank=True)
     display_order = models.PositiveIntegerField(default=0)
     active = models.BooleanField(default=True)
 
@@ -209,16 +202,25 @@ class DynamicQuestion(models.Model):
 
     # For numerical questions
     number_min = models.DecimalField(
-        max_digits=12, decimal_places=2, null=True, blank=True,
-        help_text="Minimum allowed value (optional, numeric questions only)."
+        max_digits=12,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        help_text="Minimum allowed value (optional, numeric questions only).",
     )
     number_max = models.DecimalField(
-        max_digits=12, decimal_places=2, null=True, blank=True,
-        help_text="Maximum allowed value (optional, numeric questions only)."
+        max_digits=12,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        help_text="Maximum allowed value (optional, numeric questions only).",
     )
     number_step = models.DecimalField(
-        max_digits=12, decimal_places=2, null=True, blank=True,
-        help_text="UI step for HTML number input (optional)."
+        max_digits=12,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        help_text="UI step for HTML number input (optional).",
     )
 
     class Meta:
@@ -235,9 +237,7 @@ class DynamicQuestion(models.Model):
 
 
 class PlayerAnswer(models.Model):
-    player = models.ForeignKey(
-        "Player", on_delete=models.CASCADE, related_name="answers"
-    )
+    player = models.ForeignKey("Player", on_delete=models.CASCADE, related_name="answers")
     question = models.ForeignKey(
         "DynamicQuestion", on_delete=models.CASCADE, related_name="answers"
     )
@@ -245,8 +245,10 @@ class PlayerAnswer(models.Model):
     boolean_answer = models.BooleanField(null=True, blank=True)
     detail_text = models.TextField(blank=True)
     numeric_answer = models.CharField(
-        max_length=32, blank=True, null=True,
-        help_text="For numeric-style answers (mobile, ID, etc.), stored as string to preserve leading zeros."
+        max_length=32,
+        blank=True,
+        null=True,
+        help_text="For numeric-style answers (mobile, ID, etc.), stored as string to preserve leading zeros.",
     )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -286,9 +288,7 @@ class Position(models.Model):
 
 class TeamMembership(models.Model):
     team = models.ForeignKey("Team", on_delete=models.CASCADE, related_name="memberships")
-    player = models.ForeignKey(
-        "Player", on_delete=models.CASCADE, related_name="team_memberships"
-    )
+    player = models.ForeignKey("Player", on_delete=models.CASCADE, related_name="team_memberships")
     positions = models.ManyToManyField("Position", blank=True)
     assigned_by = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True
@@ -310,9 +310,7 @@ class TeamMembership(models.Model):
 
 
 class PlayerAccessLog(models.Model):
-    player = models.ForeignKey(
-        "Player", on_delete=models.CASCADE, related_name="access_logs"
-    )
+    player = models.ForeignKey("Player", on_delete=models.CASCADE, related_name="access_logs")
     accessed_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     accessed_at = models.DateTimeField(auto_now_add=True)
 
@@ -322,13 +320,14 @@ class PlayerAccessLog(models.Model):
     def __str__(self):
         return f"{self.accessed_by} viewed {self.player} at {self.accessed_at:%Y-%m-%d %H:%M}"
 
+
 class Notice(models.Model):
     title = models.CharField(max_length=200)
     body = models.TextField(blank=True)
     audience = models.CharField(
         max_length=50,
-        choices=[("all","All"), ("senior","Senior"), ("junior","Junior")],
-        default="all"
+        choices=[("all", "All"), ("senior", "Senior"), ("junior", "Junior")],
+        default="all",
     )
     active = models.BooleanField(default=True)
     start_at = models.DateTimeField(null=True, blank=True)
@@ -338,6 +337,7 @@ class Notice(models.Model):
 
     class Meta:
         ordering = ["-pinned", "-created_at"]
+
 
 class DirectMessage(models.Model):
     to_user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)

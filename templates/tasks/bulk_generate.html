@@ -1,122 +1,130 @@
 {% extends "base.html" %}
 {% load widget_tweaks %}
 {% block title %}Generate Tasks{% endblock %}
-
 {% block content %}
-<div class="content-header pb-0">
-  <div class="container-fluid">
-    <div class="row mb-2">
-      <div class="col-sm-6"><h1 class="m-0">Generate Tasks</h1></div>
-      <div class="col-sm-6">
-        <ol class="breadcrumb float-sm-right">
-          <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Home</a></li>
-          <li class="breadcrumb-item"><a href="{% url 'tasks:my_list' %}">Tasks</a></li>
-          <li class="breadcrumb-item active">Generate</li>
-        </ol>
-      </div>
+    <div class="content-header pb-0">
+        <div class="container-fluid">
+            <div class="row mb-2">
+                <div class="col-sm-6">
+                    <h1 class="m-0">Generate Tasks</h1>
+                </div>
+                <div class="col-sm-6">
+                    <ol class="breadcrumb float-sm-right">
+                        <li class="breadcrumb-item">
+                            <a href="{% url 'dashboard' %}">Home</a>
+                        </li>
+                        <li class="breadcrumb-item">
+                            <a href="{% url 'tasks:my_list' %}">Tasks</a>
+                        </li>
+                        <li class="breadcrumb-item active">Generate</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
     </div>
-  </div>
-</div>
-
-<section class="content">
-  <div class="container-fluid">
-
-    <form method="post">
-      {% csrf_token %}
-
-      <div class="row">
-        <div class="col-lg-8">
-
-          <div class="card card-primary card-outline">
-            <div class="card-header d-flex align-items-center">
-              <h3 class="card-title"><i class="fas fa-bolt mr-2"></i>Task details</h3>
-            </div>
-            <div class="card-body">
-              {% include "partials/_field.html" with field=form.title %}
-              {% include "partials/_field.html" with field=form.description %}
-            </div>
-          </div>
-
-          <div class="card card-light">
-            <div class="card-header">
-              <h3 class="card-title"><i class="fas fa-users mr-2"></i>Who to target</h3>
-              <div class="card-tools">
-                <button type="button" class="btn btn-tool" data-card-widget="collapse"><i class="fas fa-minus"></i></button>
-              </div>
-            </div>
-            <div class="card-body">
-              <div class="form-row">
-                <div class="col-md-6">{% include "partials/_field.html" with field=form.player_types %}</div>
-                <div class="col-md-6">{% include "partials/_field.html" with field=form.teams %}</div>
-              </div>
-
-              <div class="form-row">
-                <div class="col-md-6">
-                  {% include "partials/_field.html" with field=form.season %}
-                  <small class="text-muted">Selecting a season will refresh products below.</small>
+    <section class="content">
+        <div class="container-fluid">
+            <form method="post">
+                {% csrf_token %}
+                <div class="row">
+                    <div class="col-lg-8">
+                        <div class="card card-primary card-outline">
+                            <div class="card-header d-flex align-items-center">
+                                <h3 class="card-title">
+                                    <i class="fas fa-bolt mr-2"></i>Task details
+                                </h3>
+                            </div>
+                            <div class="card-body">
+                                {% include "partials/_field.html" with field=form.title %}
+                                {% include "partials/_field.html" with field=form.description %}
+                            </div>
+                        </div>
+                        <div class="card card-light">
+                            <div class="card-header">
+                                <h3 class="card-title">
+                                    <i class="fas fa-users mr-2"></i>Who to target
+                                </h3>
+                                <div class="card-tools">
+                                    <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                                        <i class="fas fa-minus"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div class="form-row">
+                                    <div class="col-md-6">{% include "partials/_field.html" with field=form.player_types %}</div>
+                                    <div class="col-md-6">{% include "partials/_field.html" with field=form.teams %}</div>
+                                </div>
+                                <div class="form-row">
+                                    <div class="col-md-6">
+                                        {% include "partials/_field.html" with field=form.season %}
+                                        <small class="text-muted">Selecting a season will refresh products below.</small>
+                                    </div>
+                                    <div class="col-md-6">{% include "partials/_field.html" with field=form.products %}</div>
+                                </div>
+                                <div class="form-row">
+                                    <div class="col-md-6">
+                                        <div class="custom-control custom-checkbox mt-2">
+                                            {% render_field form.only_without_subscription class+="custom-control-input" id="id_only_without_subscription" %}
+                                            <label class="custom-control-label" for="id_only_without_subscription">
+                                                Exclude players already subscribed this season
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- /.col-lg-8 -->
+                    <div class="col-lg-4">
+                        <div class="card card-light mb-3">
+                            <div class="card-header">
+                                <h3 class="card-title">
+                                    <i class="far fa-user mr-2"></i>Assignment
+                                </h3>
+                            </div>
+                            <div class="card-body">
+                                <div class="custom-control custom-checkbox mb-2">
+                                    {% render_field form.assign_to_creator class+="custom-control-input" id="id_assign_to_creator" %}
+                                    <label class="custom-control-label" for="id_assign_to_creator">Assign to each player’s creator</label>
+                                </div>
+                                {% include "partials/_field.html" with field=form.fallback_assignee %}
+                                {% include "partials/_field.html" with field=form.due_at %}
+                            </div>
+                        </div>
+                        <div class="card card-light">
+                            <div class="card-header">
+                                <h3 class="card-title">
+                                    <i class="fas a-robot mr-2"></i>Automation
+                                </h3>
+                            </div>
+                            <div class="card-body">
+                                {% include "partials/_field.html" with field=form.complete_on %}
+                                <div class="custom-control custom-checkbox">
+                                    {% render_field form.allow_manual_complete class+="custom-control-input" id="id_allow_manual_complete" %}
+                                    <label class="custom-control-label" for="id_allow_manual_complete">Allow manual complete</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mt-3 d-flex">
+                            <button class="btn btn-primary flex-fill">
+                                <i class="fas fa-bolt mr-1"></i> Generate
+                            </button>
+                            <a href="{% url 'tasks:my_list' %}"
+                               class="btn btn-outline-secondary ml-2">Cancel</a>
+                        </div>
+                    </div>
+                    <!-- /.col-lg-4 -->
                 </div>
-                <div class="col-md-6">{% include "partials/_field.html" with field=form.products %}</div>
-              </div>
-
-              <div class="form-row">
-                <div class="col-md-6">
-                  <div class="custom-control custom-checkbox mt-2">
-                    {% render_field form.only_without_subscription class+="custom-control-input" id="id_only_without_subscription" %}
-                    <label class="custom-control-label" for="id_only_without_subscription">
-                      Exclude players already subscribed this season
-                    </label>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-        </div><!-- /.col-lg-8 -->
-
-        <div class="col-lg-4">
-
-          <div class="card card-light mb-3">
-            <div class="card-header"><h3 class="card-title"><i class="far fa-user mr-2"></i>Assignment</h3></div>
-            <div class="card-body">
-                <div class="custom-control custom-checkbox mb-2">
-                    {% render_field form.assign_to_creator class+="custom-control-input" id="id_assign_to_creator" %}
-                    <label class="custom-control-label" for="id_assign_to_creator">
-                    Assign to each player’s creator
-                    </label>
-                </div>
-                {% include "partials/_field.html" with field=form.fallback_assignee %}
-                {% include "partials/_field.html" with field=form.due_at %}
-                </div>
-          </div>
-
-          <div class="card card-light">
-            <div class="card-header"><h3 class="card-title"><i class="fas a-robot mr-2"></i>Automation</h3></div>
-            <div class="card-body">
-              {% include "partials/_field.html" with field=form.complete_on %}
-              <div class="custom-control custom-checkbox">
-                {% render_field form.allow_manual_complete class+="custom-control-input" id="id_allow_manual_complete" %}
-                <label class="custom-control-label" for="id_allow_manual_complete">Allow manual complete</label>
-              </div>
-            </div>
-          </div>
-
-          <div class="mt-3 d-flex">
-            <button class="btn btn-primary flex-fill"><i class="fas fa-bolt mr-1"></i> Generate</button>
-            <a href="{% url 'tasks:my_list' %}" class="btn btn-outline-secondary ml-2">Cancel</a>
-          </div>
-
-        </div><!-- /.col-lg-4 -->
-      </div><!-- /.row -->
-    </form>
-
-  </div>
-</section>
-
-<script>
+                <!-- /.row -->
+            </form>
+        </div>
+    </section>
+    <script>
   // Auto-submit to reload Product choices when Season changes
   (function(){
     const season = document.getElementById("id_season");
     if (season) season.addEventListener("change", function(){ this.form.submit(); });
   })();
-</script>
+    </script>
 {% endblock %}

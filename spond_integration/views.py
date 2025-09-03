@@ -1,25 +1,26 @@
 # spond/views.py
-from django.contrib.auth.decorators import permission_required
-from django.db.models import Count, Q, Prefetch
-from django.http import JsonResponse, HttpResponseBadRequest, HttpResponse
-from django.views.decorators.http import require_GET, require_POST
-from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
-from django.utils.timezone import now
-from django.views.generic import TemplateView
-from django.utils.decorators import method_decorator
-from django.core.paginator import Paginator
-from django.conf import settings
-
-from .models import SpondMember, PlayerSpondLink, SpondGroup, SpondEvent
-from members.models import Player
-
-
 import json
 from datetime import datetime, timedelta
-from .services import SpondClient, run_async, fetch_events_between
+
+from django.conf import settings
+from django.contrib.auth.decorators import permission_required
+from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
+from django.core.paginator import Paginator
+from django.db.models import Count, Prefetch, Q
+from django.http import HttpResponse, HttpResponseBadRequest, JsonResponse
+from django.utils.decorators import method_decorator
+from django.utils.timezone import now
+from django.views.decorators.http import require_GET, require_POST
+from django.views.generic import TemplateView
+
+from members.models import Player
+
+from .models import PlayerSpondLink, SpondEvent, SpondGroup, SpondMember
+from .services import SpondClient, fetch_events_between, run_async
 
 try:
     from .models import SpondAttendance  # event, member, status
+
     HAS_ATTENDANCE = True
 except Exception:
     SpondAttendance = None
@@ -34,15 +35,16 @@ ATTENDED_STATUSES = getattr(
 
 PERM = "spond_integration.access_spond_app"
 
+
 def _bool(request, name):
     v = (request.GET.get(name) or "").strip().lower()
     return v in {"1", "true", "yes", "y", "on"}
 
 
-
 @require_GET
 def can_access(request):
     return JsonResponse({"has_access": request.user.has_perm(PERM)})
+
 
 @require_GET
 @permission_required(PERM, raise_exception=True)
@@ -62,6 +64,7 @@ def search_members(request):
     ]
     return JsonResponse({"results": results})
 
+
 @require_POST
 @permission_required(PERM, raise_exception=True)
 def link_player(request, player_id: int):
@@ -80,6 +83,7 @@ def link_player(request, player_id: int):
         player=player, spond_member=sm, defaults={"linked_by": request.user, "active": True}
     )
     return JsonResponse({"ok": True, "link_id": link.id})
+
 
 @require_POST
 @permission_required(PERM, raise_exception=True)
@@ -114,7 +118,7 @@ class SpondDashboardView(LoginRequiredMixin, PermissionRequiredMixin, TemplateVi
         # Member filter
         member_filter = Q()
         if q:
-            member_filter &= (Q(full_name__icontains=q) | Q(email__icontains=q))
+            member_filter &= Q(full_name__icontains=q) | Q(email__icontains=q)
         if group_id:
             member_filter &= Q(groups__id=group_id)
 
@@ -133,7 +137,10 @@ class SpondDashboardView(LoginRequiredMixin, PermissionRequiredMixin, TemplateVi
         has_events = False
         events_qs = []
         try:
-            from .models import SpondEvent  # has fields: start_at, end_at, meetup_at; relations: group (FK), subgroups (M2M)
+            from .models import (  # has fields: start_at, end_at, meetup_at; relations: group (FK), subgroups (M2M)
+                SpondEvent,
+            )
+
             events_qs = (
                 SpondEvent.objects.all()
                 .select_related("group")
@@ -179,13 +186,14 @@ class SpondDashboardView(LoginRequiredMixin, PermissionRequiredMixin, TemplateVi
             }
         )
         return ctx
-    
+
 
 @method_decorator(require_GET, name="dispatch")
 class SpondEventsDashboardView(LoginRequiredMixin, PermissionRequiredMixin, TemplateView):
     """
     AdminLTE dashboard listing Spond events with filters & KPIs (using start_at/end_at).
     """
+
     template_name = "spond_integration/events_dashboard.html"
     permission_required = "spond_integration.access_spond_app"
     raise_exception = True
@@ -237,19 +245,18 @@ class SpondEventsDashboardView(LoginRequiredMixin, PermissionRequiredMixin, Temp
             attendance_prefetch = Prefetch(
                 "attendances",
                 queryset=(
-                    SpondAttendance.objects
-                    .select_related("member")
-                    .filter(
-                        Q(checked_in_at__isnull=False) | Q(status__in=ATTENDED_STATUSES)
-                    )
+                    SpondAttendance.objects.select_related("member")
+                    .filter(Q(checked_in_at__isnull=False) | Q(status__in=ATTENDED_STATUSES))
                     .prefetch_related(
                         Prefetch(
                             "member__player_links",
-                            queryset=PlayerSpondLink.objects.select_related("player", "spond_member"),
+                            queryset=PlayerSpondLink.objects.select_related(
+                                "player", "spond_member"
+                            ),
                         )
                     )
                 ),
-                to_attr="attended_list",   # only *attended* rows
+                to_attr="attended_list",  # only *attended* rows
             )
             events = events.prefetch_related(attendance_prefetch)
 
@@ -263,7 +270,8 @@ class SpondEventsDashboardView(LoginRequiredMixin, PermissionRequiredMixin, Temp
             total_attendances = (
                 SpondEvent.objects.annotate(att_count=Count("attendances"))
                 .aggregate(c=Count("attendances"))
-                .get("c") or 0
+                .get("c")
+                or 0
             )
 
         # Pagination
@@ -276,7 +284,9 @@ class SpondEventsDashboardView(LoginRequiredMixin, PermissionRequiredMixin, Temp
                 "when": when,
                 "selected_group": int(group_id) if group_id and group_id.isdigit() else None,
                 "selected_kind": kind if kind in {"MATCH", "EVENT"} else "",
-                "groups": SpondGroup.objects.all().annotate(member_count=Count("members")).order_by("name"),
+                "groups": SpondGroup.objects.all()
+                .annotate(member_count=Count("members"))
+                .order_by("name"),
                 "events_page": page_obj,
                 "HAS_ATTENDANCE": HAS_ATTENDANCE,
                 "kpi": {
@@ -289,7 +299,8 @@ class SpondEventsDashboardView(LoginRequiredMixin, PermissionRequiredMixin, Temp
             }
         )
         return ctx
-    
+
+
 @require_GET
 @permission_required(PERM, raise_exception=True)
 def debug_spond_events_json(request):
@@ -304,7 +315,7 @@ def debug_spond_events_json(request):
       - keys_only (bool: '1'/'true' → just return union of top-level keys)
     """
     user = getattr(settings, "SPOND_USERNAME", "")
-    pwd  = getattr(settings, "SPOND_PASSWORD", "")
+    pwd = getattr(settings, "SPOND_PASSWORD", "")
     if not user or not pwd:
         return JsonResponse({"error": "SPOND creds missing"}, status=400)
 
@@ -314,7 +325,7 @@ def debug_spond_events_json(request):
 
     try:
         days_back = int(request.GET.get("days_back", 14))
-        days_fwd  = int(request.GET.get("days_forward", 60))
+        days_fwd = int(request.GET.get("days_forward", 60))
     except ValueError:
         return JsonResponse({"error": "Invalid days_back/days_forward"}, status=400)
 
@@ -324,11 +335,11 @@ def debug_spond_events_json(request):
         limit = 100
 
     only_matches = _bool("only_matches")
-    pretty       = _bool("pretty")
-    keys_only    = _bool("keys_only")
+    pretty = _bool("pretty")
+    keys_only = _bool("keys_only")
 
     start = datetime.now() - timedelta(days=days_back)
-    end   = datetime.now() + timedelta(days=days_fwd)
+    end = datetime.now() + timedelta(days=days_fwd)
 
     async def _fetch():
         async with SpondClient(user, pwd) as session:
@@ -344,7 +355,7 @@ def debug_spond_events_json(request):
         events = [ev for ev in events if ev.get("matchEvent") or ev.get("matchInfo")]
 
     # Limit results
-    events = events[:max(1, limit)]
+    events = events[: max(1, limit)]
 
     # keys_only mode: show union of top-level keys + a quick count
     if keys_only:
@@ -376,12 +387,13 @@ def debug_spond_events_json(request):
         )
     return JsonResponse(payload, safe=False)
 
+
 def debug_spond_methods(request):
     """
     Introspect the underlying Spond client: list public callables and probe a few.
     """
     user = getattr(settings, "SPOND_USERNAME", "")
-    pwd  = getattr(settings, "SPOND_PASSWORD", "")
+    pwd = getattr(settings, "SPOND_PASSWORD", "")
     if not user or not pwd:
         return JsonResponse({"error": "SPOND creds missing"}, status=400)
 
@@ -401,14 +413,25 @@ def debug_spond_methods(request):
             # Try a few likely event/match methods without arguments
             tried = {}
             for cand in (
-                "get_events", "list_events", "fetch_events", "get_calendar",
-                "get_matches", "list_matches", "fetch_matches", "fixtures", "get_fixtures",
+                "get_events",
+                "list_events",
+                "fetch_events",
+                "get_calendar",
+                "get_matches",
+                "list_matches",
+                "fetch_matches",
+                "fixtures",
+                "get_fixtures",
             ):
                 fn = getattr(raw, cand, None)
                 if callable(fn):
                     try:
                         res = await fn()
-                        count = len(res) if isinstance(res, (list, tuple)) else (len(res or {}) if isinstance(res, dict) else 1)
+                        count = (
+                            len(res)
+                            if isinstance(res, (list, tuple))
+                            else (len(res or {}) if isinstance(res, dict) else 1)
+                        )
                         tried[cand] = {"ok": True, "count": count, "type": type(res).__name__}
                     except TypeError as e:
                         tried[cand] = {"ok": False, "error": f"TypeError: {e}"}
@@ -420,7 +443,10 @@ def debug_spond_methods(request):
     out = run_async(_probe())
     pretty = _bool(request, "pretty")
     if pretty:
-        return HttpResponse(json.dumps(out, indent=2, ensure_ascii=False), content_type="application/json; charset=utf-8")
+        return HttpResponse(
+            json.dumps(out, indent=2, ensure_ascii=False),
+            content_type="application/json; charset=utf-8",
+        )
     return JsonResponse(out)
 
 
@@ -435,7 +461,7 @@ def debug_spond_call(request):
     All query params except 'path' and 'pretty' are forwarded as ?params.
     """
     user = getattr(settings, "SPOND_USERNAME", "")
-    pwd  = getattr(settings, "SPOND_PASSWORD", "")
+    pwd = getattr(settings, "SPOND_PASSWORD", "")
     if not user or not pwd:
         return JsonResponse({"error": "SPOND creds missing"}, status=400)
 
@@ -454,9 +480,14 @@ def debug_spond_call(request):
     try:
         data = run_async(_fetch())
     except Exception as e:
-        return JsonResponse({"error": f"fetch failed: {e!r}", "path": path, "params": forward}, status=500)
+        return JsonResponse(
+            {"error": f"fetch failed: {e!r}", "path": path, "params": forward}, status=500
+        )
 
     payload = {"path": path, "params": forward, "type": type(data).__name__, "data": data}
     if pretty:
-        return HttpResponse(json.dumps(payload, indent=2, ensure_ascii=False), content_type="application/json; charset=utf-8")
+        return HttpResponse(
+            json.dumps(payload, indent=2, ensure_ascii=False),
+            content_type="application/json; charset=utf-8",
+        )
     return JsonResponse(payload, safe=False)

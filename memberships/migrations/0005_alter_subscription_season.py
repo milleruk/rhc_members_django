@@ -7,13 +7,18 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('memberships', '0004_backfill_subscription_season'),
+        ("memberships", "0004_backfill_subscription_season"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='subscription',
-            name='season',
-            field=models.ForeignKey(editable=False, on_delete=django.db.models.deletion.PROTECT, related_name='subscriptions', to='memberships.season'),
+            model_name="subscription",
+            name="season",
+            field=models.ForeignKey(
+                editable=False,
+                on_delete=django.db.models.deletion.PROTECT,
+                related_name="subscriptions",
+                to="memberships.season",
+            ),
         ),
     ]

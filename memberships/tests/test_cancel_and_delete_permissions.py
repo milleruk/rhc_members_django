@@ -1,5 +1,4 @@
 import pytest
-from datetime import date
 from django.urls import reverse
 
 from memberships.models import Subscription
