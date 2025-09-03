@@ -41,10 +41,16 @@
           </div>
 
           <div class="form-group mx-sm-2 mb-2 mb-sm-0">
-            <select name="status" class="form-control form-control-sm">
+            <select name="status" class="form-control form-control-sm" onchange="this.form.submit()">
               <option value="">Status: Any</option>
               {% for code, label in status_choices %}
-                <option value="{{ code }}" {% if request.GET.status == code %}selected{% endif %}>
+                <option value="{{ code }}"
+                  {% if request.GET.status %}
+                    {% if request.GET.status == code %}selected{% endif %}
+                  {% else %}
+                    {% if code == 'open' %}selected{% endif %}
+                  {% endif %}
+                >
                   {{ label }}
                 </option>
               {% endfor %}
@@ -105,35 +111,12 @@
                 {% endif %}
                 <!-- Subject row -->
                 <div class="mb-3 small">
+                  {% if t.subject_link %}
                   <i class="fas fa-link mr-1 text-muted"></i>
-
-                  {% if t.subject %}
-                          {% with admin_url=t.subject_admin_url %}
-                              • {{ t.subject }}
-                          {% endwith %}
-                        {% else %}
-                          <span class="text-muted">No subject</span>
-                        {% endif %}
-
+                    • {{ t.subject_link|safe }}
+                  {% endif %}
                 </div>
 
-                <!-- Progress (fake: just reflects status visually like AdminLTE projects) -->
-                <div class="clearfix mb-2">
-                  <span class="float-left text-muted small">Progress</span>
-                  <span class="float-right text-muted small">
-                    {% if t.status == 'done' %}100%{% elif t.status == 'dismissed' %}—{% else %}0%{% endif %}
-                  </span>
-                </div>
-                <div class="progress" style="height:6px;">
-                  <div class="progress-bar
-                    {% if t.status == 'done' %}bg-success
-                    {% elif t.status == 'dismissed' %}bg-secondary
-                    {% elif t.is_overdue %}bg-danger
-                    {% else %}bg-warning{% endif %}"
-                    role="progressbar"
-                    style="width:{% if t.status == 'done' %}100{% elif t.status == 'dismissed' %}0{% else %}0{% endif %}%">
-                  </div>
-                </div>
               </div>
 
               <div class="card-footer bg-white">
@@ -157,14 +140,21 @@
                             <i class="fas fa-robot mr-1"></i> Auto
                           </span>
                         {% elif t.can_complete %}
-                          <a class="btn btn-sm btn-success"
-                            href="{% url 'tasks:complete' t.pk %}?next={{ request.get_full_path|urlencode }}">
-                            <i class="fas fa-check mr-1"></i> Complete
-                          </a>
-                          <a class="btn btn-sm btn-outline-secondary"
-                            href="{% url 'tasks:dismiss' t.pk %}?next={{ request.get_full_path|urlencode }}">
-                            <i class="fas fa-eye-slash mr-1"></i> Dismiss
-                          </a>
+                          <form action="{% url 'tasks:complete' t.pk %}" method="post" class="d-inline">
+                            {% csrf_token %}
+                            <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                            <button type="submit" class="btn btn-sm btn-success">
+                              <i class="fas fa-check mr-1"></i> Complete
+                            </button>
+                          </form>
+
+                          <form action="{% url 'tasks:dismiss' t.pk %}" method="post" class="d-inline">
+                            {% csrf_token %}
+                            <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                            <button type="submit" class="btn btn-sm btn-outline-secondary">
+                              <i class="fas fa-eye-slash mr-1"></i> Dismiss
+                            </button>
+                          </form>
                         {% else %}
                           <span class="btn btn-sm btn-outline-light text-muted" title="Assigned to another user">
                             <i class="far fa-hourglass mr-1"></i> Waiting

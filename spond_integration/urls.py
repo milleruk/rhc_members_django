@@ -1,4 +1,4 @@
-from django.urls import path, re_path
+from django.urls import path, re_path, reverse_lazy
 from django.shortcuts import redirect
 from . import views
 from .views import (

@@ -15,6 +15,8 @@ from django.utils.timezone import now
 from django.views.decorators.http import require_POST
 from django.views.generic import DetailView, ListView, TemplateView
 
+from accounts.mixins import RequireMFAMixin
+
 # import from other apps (no circulars)
 from members.forms import TeamAssignmentForm
 from members.models import (
@@ -282,6 +284,13 @@ class PlayerListView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
 # Admin/Staff: Player detail
 # ──────────────────────────────────────────────────────────────────────────────
 
+#class PlayerDetailView(RequireMFAMixin, LoginRequiredMixin, PermissionRequiredMixin, DetailView):
+#
+#    def dispatch(self, request, *args, **kwargs):
+#        # Debug: see what MFA check returns for this user
+#        print("MFA CHECK:", self.user_has_mfa(request.user))
+#        return super().dispatch(request, *args, **kwargs)
+#    
 class PlayerDetailView(LoginRequiredMixin, PermissionRequiredMixin, DetailView):
     model = Player
     pk_url_kwarg = "player_id"

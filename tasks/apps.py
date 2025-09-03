@@ -9,3 +9,4 @@ class TasksConfig(AppConfig):
     def ready(self):
         # Import signals only after the app registry is ready
         from . import signals  # noqa: F401
+        import tasks.tasks

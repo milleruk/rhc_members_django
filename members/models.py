@@ -4,6 +4,7 @@ from django.db import models
 from django.utils import timezone
 from django.core.exceptions import ValidationError
 from django.contrib.contenttypes.fields import GenericRelation
+from django.urls import reverse
 
 import uuid
 
@@ -109,6 +110,9 @@ class Player(models.Model):
         return self.spond_links.filter(active=True).exists()
     
     # 🚨 Add validation so DOB must be strictly before today
+
+    def get_absolute_url(self):
+        return reverse("members:dashboard", args=[self.pk])
 
     def clean(self):
         super().clean()

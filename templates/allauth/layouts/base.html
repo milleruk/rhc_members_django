@@ -1,0 +1,14 @@
+{# templates/allauth/layouts/base.html #}
+{% extends "base.html" %}
+{% load i18n %}
+
+{# Map Allauth's head_title -> your <title> block #}
+{% block title %}{% block head_title %}{% endblock %}{% endblock %}
+
+{# Allow Allauth to inject <head> bits if needed #}
+{% block extra_head %}{% block extrahead %}{% endblock %}{% endblock %}
+
+{# Allauth child layouts render into 'body' #}
+{% block content %}
+  {% block body %}{% endblock %}
+{% endblock %}

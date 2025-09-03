@@ -1,0 +1,45 @@
+{# templates/allauth/layouts/entrance.html #}
+{% extends "allauth/layouts/base.html" %}
+{% load i18n %}
+
+{% block body %}
+<div class="content">
+  <div class="container-fluid">
+
+    <div class="row mb-3">
+      <div class="col-12 d-flex align-items-center justify-content-between">
+        <h1 class="h4 mb-0">
+          <i class="fas fa-user-lock mr-2"></i>
+          {% block page_heading %}{% block head_title %}{% endblock %}{% endblock %}
+        </h1>
+        <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary btn-sm">
+          <i class="fas fa-arrow-left mr-1"></i> {% trans "Back to Dashboard" %}
+        </a>
+      </div>
+    </div>
+
+    {% if messages %}
+      <div class="row">
+        <div class="col-12">
+          {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} mb-3">{{ message }}</div>
+          {% endfor %}
+        </div>
+      </div>
+    {% endif %}
+
+    <div class="row justify-content-center">
+      <div class="col-md-8 col-lg-6">
+        <div class="card card-outline card-primary">
+          {# Optional header could go here if you want a fixed title row #}
+          <div class="card-body">
+            {# Allauth view content inserts here #}
+            {% block content %}{% endblock %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

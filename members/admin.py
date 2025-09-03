@@ -1,5 +1,15 @@
 from django.contrib import admin
-from .models import Player, PlayerType, DynamicQuestion, PlayerAnswer, Team, Position, TeamMembership, PlayerAccessLog, QuestionCategory
+from .models import (
+    Player,
+    PlayerType,
+    DynamicQuestion,
+    PlayerAnswer,
+    Team,
+    Position,
+    TeamMembership,
+    PlayerAccessLog,
+    QuestionCategory,
+)
 
 @admin.register(PlayerType)
 class PlayerTypeAdmin(admin.ModelAdmin):
@@ -46,7 +56,7 @@ class PlayerAnswerAdmin(admin.ModelAdmin):
 class TeamAdmin(admin.ModelAdmin):
     list_display = ("name", "active")
     list_filter = ("active",)
-    filter_horizontal = ("staff",)  # nice dual-list selector
+    filter_horizontal = ("staff",)
     search_fields = ("name",)
 
 @admin.register(Position)
@@ -66,3 +76,26 @@ class PlayerAccessLogAdmin(admin.ModelAdmin):
     list_display = ("player", "accessed_by", "accessed_at")
     list_filter = ("accessed_at", "accessed_by")
     search_fields = ("player__first_name", "player__last_name", "accessed_by__username")
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Integrate django-hijack with the Django User admin
+# (Fixes: "User is not registered in the default admin..." warning)
+# ──────────────────────────────────────────────────────────────────────────────
+from django.contrib.auth import get_user_model
+from django.contrib.auth.admin import UserAdmin
+from hijack.contrib.admin import HijackUserAdminMixin
+
+User = get_user_model()
+
+# Unregister the default User admin (registered by django.contrib.auth)
+try:
+    admin.site.unregister(User)
+except admin.sites.NotRegistered:
+    pass
+
+# Re-register with Hijack integration
+@admin.register(User)
+class CustomUserAdmin(HijackUserAdminMixin, UserAdmin):
+    """User admin with django-hijack integration."""
+    pass

@@ -91,7 +91,13 @@ class MyTaskListView(LoginRequiredMixin, TaskListFilterMixin, ListView):
             Task.objects.filter(assigned_to=self.request.user)
             .select_related("assigned_to", "created_by")
         )
-        return self._apply_common_filters(qs)
+        qs = self._apply_common_filters(qs)
+
+        # 👇 Add this to default to open tasks
+        if "status" not in self.request.GET:
+            qs = qs.filter(status=TaskStatus.OPEN)
+
+        return qs
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)

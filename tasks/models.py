@@ -4,6 +4,8 @@ from django.conf import settings
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.urls import reverse, NoReverseMatch
+from django.utils.html import format_html
+from .utils import reverse_first
 
 class TaskStatus(models.TextChoices):
     OPEN = "open", "Open"
@@ -66,6 +68,51 @@ class Task(models.Model):
     def is_overdue(self):
         from django.utils import timezone
         return self.status == TaskStatus.OPEN and self.due_at and self.due_at < timezone.now()
+    
+    @property
+    def subject_frontend_url(self):
+        """
+        Best-effort URL to the user-facing page for this task's subject.
+        Uses real member-facing routes (UUID public_id for Player).
+        """
+        obj = getattr(self, "subject", None)
+        if not obj:
+            return None
+
+        app = obj._meta.app_label
+        model = obj._meta.model_name
+
+        # ---- members.Player -> use player_edit (UUID) ----
+        if app == "members" and model == "player":
+            public_id = getattr(obj, "public_id", None)
+            if public_id:
+                # You could also add other candidates here if you later add them
+                return reverse_first("answer", kwargs={"public_id": public_id})
+
+        # Add more subject types here as your frontend routes exist
+        # e.g. memberships.Subscription, etc.
+
+        return None
+
+    @property
+    def subject_link(self):
+        """
+        Render an <a> tag to the frontend subject page if available.
+        Fallback: admin link or plain text.
+        """
+        obj = getattr(self, "subject", None)
+        if not obj:
+            return None
+
+        url = self.subject_frontend_url
+        if url:
+            return format_html('<a href="{}">{}</a>', url, str(obj))
+
+        admin_url = getattr(self, "subject_admin_url", None)
+        if admin_url:
+            return format_html('<a href="{}">{}</a>', admin_url, str(obj))
+
+        return str(obj)
 
     def subject_admin_url(self):
         """Return admin change URL for the subject if that admin exists, else None."""

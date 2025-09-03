@@ -339,7 +339,7 @@ def sync_spond_members():
             for g in groups or []:
                 add_group_like(g, parent_id=None)
 
-            # 2) Flatten members
+            # 2) Flatten m   embers
             members = []
             for g in groups or []:
                 for m in (g.get("members") or []):
