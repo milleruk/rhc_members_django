@@ -1,87 +1,103 @@
 # accounts/views.py
 from __future__ import annotations
 
-from typing import Optional
-
-from django.conf import settings
 from django.contrib import messages
-from django.contrib.auth.models import User
-from django.contrib.auth.views import LoginView
-from django.db import transaction
-from django.shortcuts import resolve_url
+from django.contrib.auth import get_user_model
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.db import IntegrityError, transaction
 from django.urls import reverse_lazy
-from django.utils.http import url_has_allowed_host_and_scheme
+from django.views.generic import FormView
+from allauth.account.views import LoginView as AllauthLoginView
+from django import forms
 
-from .forms import EmailOnlyAuthenticationForm, EmailOnlySignupForm
+from .forms import AllauthLoginForm, AllauthSignupForm, ProfileForm
 from hockey_club.emails import send_activation_email
 
-
-REMEMBER_ME_AGE_SECONDS = 60 * 60 * 24 * 14  # 14 days
-
-
-def _safe_redirect_url(request, fallback: str) -> str:
-    """
-    Return a safe post-auth redirect URL. Prefers ?next= when present and safe.
-    """
-    next_url: Optional[str] = request.POST.get("next") or request.GET.get("next")
-    if next_url and url_has_allowed_host_and_scheme(
-        url=next_url,
-        allowed_hosts={request.get_host()},
-        require_https=request.is_secure(),
-    ):
-        return next_url
-    return resolve_url(fallback)
+User = get_user_model()
 
 
-class EmailLoginView(LoginView):
-    """
-    Email-based login view with optional 'remember me' session persistence.
-    """
+class EmailLoginView(AllauthLoginView):
+    """Email-only login via Allauth (uses AllauthLoginForm)."""
     template_name = "registration/login.html"
-    authentication_form = EmailOnlyAuthenticationForm
-    redirect_authenticated_user = True  # already-logged-in users skip to redirect URL
-
-    def form_valid(self, form):
-        # Delegate to Django to authenticate + log in (rotates session key).
-        response = super().form_valid(form)
-
-        # Session lifetime: browser session if not 'remember me'
-        remember = form.cleaned_data.get("remember_me")
-        if not remember:
-            self.request.session.set_expiry(0)  # expire on browser close
-        else:
-            self.request.session.set_expiry(REMEMBER_ME_AGE_SECONDS)
-
-        return response
-
-    def get_success_url(self) -> str:
-        # Respect ?next= when safe; otherwise LOGIN_REDIRECT_URL
-        return _safe_redirect_url(self.request, getattr(settings, "LOGIN_REDIRECT_URL", "/"))
+    form_class = AllauthLoginForm
 
 
-class SignupView(CreateView):
-    """
-    Email-first signup: user is created inactive and must verify via email.
-    """
+class SignupView(FormView):
+    """Signup using Allauth form (not a ModelForm)."""
     template_name = "registration/signup.html"
-    form_class = EmailOnlySignupForm
-    success_url = reverse_lazy("login")
+    form_class = AllauthSignupForm
+    success_url = reverse_lazy("account_login")
 
     def form_valid(self, form):
-        # All-or-nothing DB write; send mail only after commit.
-        with transaction.atomic():
-            user: User = form.save(commit=False)
-            # Ensure email is set on the user model from the form
-            user.email = form.cleaned_data["email"]
-            # Keep new accounts inactive until confirmed
-            user.is_active = False
-            user.save()
+        email = (form.cleaned_data.get("email") or "").strip().lower()
+        if User.objects.filter(email__iexact=email).exists():
+            form.add_error("email", "An account with this email already exists. Try logging in or resetting your password.")
+            return self.form_invalid(form)
 
-            # Defer email until the DB commit has succeeded
+        try:
+            user = form.save(self.request)  # Allauth creates the user
+        except IntegrityError:
+            form.add_error("email", "An account with this email already exists. Try logging in or resetting your password.")
+            return self.form_invalid(form)
+
+        # Require email confirmation before login
+        user.is_active = False
+        user.save(update_fields=["is_active"])
+
+        transaction.on_commit(lambda: send_activation_email(self.request, user))
+        messages.success(self.request, "Account created. Please check your email to confirm before logging in.")
+        return super().form_valid(form)
+
+
+class UserSettingsView(LoginRequiredMixin, FormView):
+    """Simple settings hub for profile (first/last/email)."""
+    template_name = "account/settings.html"
+    form_class = ProfileForm
+    success_url = reverse_lazy("accounts:settings")
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["instance"] = self.request.user
+        return kwargs
+
+    def form_valid(self, form):
+        form.save()
+        messages.success(self.request, "Profile updated.")
+        return super().form_valid(form)
+
+
+class ResendActivationForm(forms.Form):
+    email = forms.EmailField(widget=forms.EmailInput(attrs={
+        "class": "form-control", "placeholder": "name@example.com", "autocomplete": "email",
+    }))
+
+class ResendConfirmationView(FormView):
+    template_name = "account/resend_confirmation.html"
+    form_class = ResendActivationForm
+    success_url = reverse_lazy("account_login")
+
+    def form_valid(self, form):
+        email = (form.cleaned_data["email"] or "").strip().lower()
+        try:
+            user = User.objects.get(email__iexact=email)
+        except User.DoesNotExist:
+            messages.info(self.request, "If that address exists, a verification email has been sent.")
+            return super().form_valid(form)
+
+        # Only resend if not verified
+        from allauth.account.models import EmailAddress
+        try:
+            addr = EmailAddress.objects.get(user=user, email__iexact=email)
+        except EmailAddress.DoesNotExist:
+            # Create and send one
             transaction.on_commit(lambda: send_activation_email(self.request, user))
+            messages.success(self.request, "Verification email sent.")
+            return super().form_valid(form)
 
-        messages.success(
-            self.request,
-            "Account created. Please check your email to confirm your address before logging in.",
-        )
+        if addr.verified:
+            messages.info(self.request, "This email is already verified. You can log in.")
+            return super().form_valid(form)
+
+        transaction.on_commit(lambda: send_activation_email(self.request, user))
+        messages.success(self.request, "Verification email sent.")
         return super().form_valid(form)

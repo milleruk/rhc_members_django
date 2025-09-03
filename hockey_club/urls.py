@@ -4,13 +4,26 @@ from django.urls import path, include
 from django.views.generic import RedirectView
 from django.conf.urls import handler403, handler404
 from members.views import TermsView, PrivacyView
+from accounts.views import EmailLoginView, SignupView, ResendConfirmationView
 from . import views
+
 
 urlpatterns = [
     # ---- Admin & auth ----
     path("admin/", admin.site.urls),
     path("hijack/", include("hijack.urls")),
+
+    # Your overrides first
+    path("accounts/login/",  EmailLoginView.as_view(), name="account_login"),
+    path("accounts/signup/", SignupView.as_view(),   name="account_signup"),
+    path("accounts/resend-confirmation/", ResendConfirmationView.as_view(), name="account_resend_confirmation"),
+
     path("accounts/", include("allauth.urls")),
+
+    path("accounts/mfa/", include("allauth.mfa.urls")),
+    
+    # Settings hub
+    path("settings/", include(("accounts.urls", "accounts"), namespace="accounts")),
 
     # ---- Core pages ----
     # If your dashboard is a function view: views.dashboard

@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% block title %}Account Settings{% endblock %}
+
+{% block content %}
+<div class="content">
+  <div class="container-fluid">
+
+    <div class="row mb-3">
+      <div class="col-12 d-flex align-items-center justify-content-between">
+        <h1 class="h4 mb-0"><i class="fas fa-user-cog mr-2"></i> Account Settings</h1>
+        <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary btn-sm">
+          <i class="fas fa-arrow-left mr-1"></i> Back to Dashboard
+        </a>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-md-3 mb-3">
+        <div class="list-group">
+          <a class="list-group-item list-group-item-action active" data-toggle="tab" href="#profile">
+            <i class="fas fa-id-badge mr-2"></i> Profile
+          </a>
+          <a class="list-group-item list-group-item-action" data-toggle="tab" href="#email">
+            <i class="fas fa-envelope mr-2"></i> Email Addresses
+          </a>
+          <a class="list-group-item list-group-item-action" data-toggle="tab" href="#password">
+            <i class="fas fa-key mr-2"></i> Password
+          </a>
+          <a class="list-group-item list-group-item-action" data-toggle="tab" href="#mfa">
+            <i class="fas fa-shield-alt mr-2"></i> Two‑Factor Auth (MFA)
+          </a>
+          <a class="list-group-item list-group-item-action" data-toggle="tab" href="#social">
+            <i class="fas fa-link mr-2"></i> Connected Accounts
+          </a>
+        </div>
+      </div>
+
+      <div class="col-md-9">
+        <div class="tab-content">
+
+          <!-- PROFILE TAB -->
+          <div class="tab-pane fade show active" id="profile">
+            <div class="card card-outline card-primary">
+              <div class="card-header"><h3 class="card-title h6 mb-0">Profile</h3></div>
+              <div class="card-body">
+                <form method="post" novalidate>
+                  {% csrf_token %}
+                  <div class="form-row">
+                    <div class="form-group col-md-6">{{ form.first_name.label_tag }} {{ form.first_name }}</div>
+                    <div class="form-group col-md-6">{{ form.last_name.label_tag }} {{ form.last_name }}</div>
+                  </div>
+                  <div class="form-group">{{ form.email.label_tag }} {{ form.email }}
+                    <small class="form-text text-muted">Changing this here updates your login email on file. Verification & primary selection is managed under <strong>Email Addresses</strong> below.</small>
+                  </div>
+                  <button type="submit" class="btn btn-primary"><i class="fas fa-save mr-1"></i> Save changes</button>
+                </form>
+              </div>
+            </div>
+          </div>
+
+          <!-- EMAIL TAB -->
+          <div class="tab-pane fade" id="email">
+            <div class="card card-outline card-primary">
+              <div class="card-header d-flex justify-content-between align-items-center">
+                <h3 class="card-title h6 mb-0">Email Addresses</h3>
+                <a class="btn btn-outline-primary btn-sm" href="{% url 'account_email' %}">
+                  <i class="fas fa-external-link-alt mr-1"></i> Manage via Allauth
+                </a>
+              </div>
+              <div class="card-body">
+                <p class="text-muted mb-2">Add/remove addresses, set your primary, and (re)send verification emails.</p>
+                {% if request.user.emailaddress_set.all %}
+                  <ul class="list-group">
+                    {% for e in request.user.emailaddress_set.all %}
+                      <li class="list-group-item d-flex align-items-center justify-content-between">
+                        <div>
+                          <strong>{{ e.email }}</strong>
+                          {% if e.primary %}<span class="badge badge-primary ml-2">Primary</span>{% endif %}
+                          {% if e.verified %}<span class="badge badge-success ml-2">Verified</span>{% else %}<span class="badge badge-warning ml-2">Unverified</span>{% endif %}
+                        </div>
+                        <a class="btn btn-sm btn-outline-secondary" href="{% url 'account_email' %}">Edit</a>
+                      </li>
+                    {% endfor %}
+                  </ul>
+                {% else %}
+                  <p class="mb-0">No email addresses on your account yet. Use the button above to add one.</p>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+
+          <!-- PASSWORD TAB -->
+          <div class="tab-pane fade" id="password">
+            <div class="card card-outline card-primary">
+              <div class="card-header d-flex justify-content-between align-items-center">
+                <h3 class="card-title h6 mb-0">Change Password</h3>
+                <a class="btn btn-outline-primary btn-sm" href="{% url 'account_change_password' %}">
+                  <i class="fas fa-external-link-alt mr-1"></i> Change via Allauth
+                </a>
+              </div>
+              <div class="card-body">
+                <p class="mb-0 text-muted">Use Allauth's password change flow (current + new password, with validation and session updates).</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- MFA TAB -->
+          <div class="tab-pane fade" id="mfa">
+            <div class="card card-outline card-primary">
+              <div class="card-header d-flex justify-content-between align-items-center">
+                <h3 class="card-title h6 mb-0">Two‑Factor Authentication</h3>
+                <a class="btn btn-outline-primary btn-sm" href="/accounts/mfa/">
+                  <i class="fas fa-external-link-alt mr-1"></i> Manage MFA
+                </a>
+              </div>
+              <div class="card-body">
+                <p class="text-muted">Enable an authenticator app (TOTP), view recovery codes, and manage devices. You can require MFA for certain areas; if you hit a restricted page without MFA configured, we'll prompt you to set it up.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- SOCIAL TAB -->
+          <div class="tab-pane fade" id="social">
+            <div class="card card-outline card-primary">
+              <div class="card-header d-flex justify-content-between align-items-center">
+                <h3 class="card-title h6 mb-0">Connected Accounts</h3>
+                <a class="btn btn-outline-primary btn-sm" href="{% url 'socialaccount_connections' %}">
+                  <i class="fas fa-external-link-alt mr-1"></i> Manage Connections
+                </a>
+              </div>
+              <div class="card-body">
+                <p class="text-muted mb-2">Placeholder for upcoming social logins (Google, GitHub, etc.).</p>
+                <p class="mb-0">Once enabled, you'll be able to connect or disconnect providers here. For now, the button takes you to Allauth's built‑in connections page.</p>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

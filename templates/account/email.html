@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% load i18n %}
+{% load email_extras %} {# accounts/templatetags/email_extras.py -> has_primary filter #}
 
 {% block title %}{% trans "Email Addresses" %}{% endblock %}
 
@@ -16,18 +17,16 @@
 
         <div class="card-body">
           {# Status / guidance #}
-          {% if emailaddresses %}
-            {% if not emailaddresses|length or not emailaddresses.primary %}
-              <div class="alert alert-warning d-flex align-items-center" role="alert">
-                <i class="fas fa-exclamation-circle mr-2"></i>
-                <div>
-                  {% trans "You don’t have a primary email set. Please choose one to receive important notifications." %}
-                </div>
+          {% if emailaddresses and not emailaddresses|has_primary %}
+            <div class="alert alert-warning d-flex align-items-center" role="alert">
+              <i class="fas fa-exclamation-circle mr-2"></i>
+              <div>
+                {% trans "You don’t have a primary email set. Please choose one to receive important notifications." %}
               </div>
-            {% endif %}
+            </div>
           {% endif %}
 
-          {# Existing emails #}
+          {# Existing emails (make primary / resend / remove) #}
           <form method="post" action="{% url 'account_email' %}">
             {% csrf_token %}
 
@@ -62,8 +61,7 @@
                         <button
                           class="btn btn-outline-primary"
                           type="submit"
-                          name="action"
-                          value="primary"
+                          name="action_primary"
                           title="{% trans 'Make primary' %}">
                           <i class="fas fa-star mr-1"></i>{% trans "Make primary" %}
                         </button>
@@ -73,8 +71,7 @@
                         <button
                           class="btn btn-outline-secondary"
                           type="submit"
-                          name="action"
-                          value="send"
+                          name="action_send"
                           title="{% trans 'Resend verification' %}">
                           <i class="fas fa-paper-plane mr-1"></i>{% trans "Resend verification" %}
                         </button>
@@ -83,8 +80,7 @@
                       <button
                         class="btn btn-outline-danger"
                         type="submit"
-                        name="action"
-                        value="remove"
+                        name="action_remove"
                         onclick="return confirm('{% trans 'Remove this email address?' %}')"
                         title="{% trans 'Remove' %}">
                         <i class="fas fa-trash-alt"></i>
@@ -103,31 +99,31 @@
 
           <hr>
 
-            <h5 class="mb-3"><i class="fas fa-plus-circle mr-2"></i>{% trans "Add another email" %}</h5>
-            <form method="post" action="{% url 'account_email' %}" class="form-inline">
-              {% csrf_token %}
-              <div class="form-group mb-2 mr-2 flex-grow-1" style="min-width:260px;">
-                <label for="{{ form.email.id_for_label }}" class="sr-only">{% trans "Email address" %}</label>
-                <input
-                  type="email"
-                  name="{{ form.email.html_name }}"
-                  id="{{ form.email.id_for_label }}"
-                  value="{{ form.email.value|default_if_none:'' }}"
-                  class="form-control w-100"
-                  placeholder="{% trans 'Add new email' %}"
-                  required
-                >
-                {# show field errors inline #}
-                {% if form.email.errors %}
-                  <div class="invalid-feedback d-block">
-                    {{ form.email.errors|striptags }}
-                  </div>
-                {% endif %}
-              </div>
-              <button class="btn btn-primary mb-2" name="action" value="add" type="submit">
-                {% trans "Add" %}
-              </button>
-            </form>
+          {# Add new email #}
+          <h5 class="mb-3"><i class="fas fa-plus-circle mr-2"></i>{% trans "Add another email" %}</h5>
+          <form method="post" action="{% url 'account_email' %}" class="form-inline">
+            {% csrf_token %}
+            <div class="form-group mb-2 mr-2 flex-grow-1" style="min-width:260px;">
+              <label for="{{ form.email.id_for_label }}" class="sr-only">{% trans "Email address" %}</label>
+              <input
+                type="email"
+                name="{{ form.email.html_name }}"
+                id="{{ form.email.id_for_label }}"
+                value="{{ form.email.value|default_if_none:'' }}"
+                class="form-control w-100"
+                placeholder="{% trans 'Add new email' %}"
+                required
+              >
+              {% if form.email.errors %}
+                <div class="invalid-feedback d-block">
+                  {{ form.email.errors|striptags }}
+                </div>
+              {% endif %}
+            </div>
+            <button class="btn btn-primary mb-2" name="action_add" type="submit">
+              {% trans "Add" %}
+            </button>
+          </form>
 
           <p class="text-muted small mt-3 mb-0">
             <i class="fas fa-shield-alt mr-1"></i>

@@ -1,6 +1,12 @@
 from allauth.account.signals import email_changed, email_confirmed
 from django.dispatch import receiver
 
+def _activate_on_email_confirm(request, email_address, **kwargs):
+    user = email_address.user
+    if not user.is_active:
+        user.is_active = True
+        user.save(update_fields=["is_active"])
+
 @receiver(email_confirmed)
 def activate_user_on_confirm(request, email_address, **kwargs):
     user = email_address.user

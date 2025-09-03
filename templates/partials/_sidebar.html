@@ -25,6 +25,12 @@
         <li class="nav-header">GENERAL</li>
 
         <li class="nav-item">
+          <a href="{% url 'accounts:settings' %}" class="nav-link {% if p == '/settings/' %}active{% endif %}">
+            <i class="nav-icon fas fa-gear"></i><p>Settings</p>
+          </a>
+        </li>
+
+        <li class="nav-item">
           <a href="{% url 'dashboard' %}" class="nav-link {% if p == '/players/' %}active{% endif %}">
             <i class="nav-icon fas fa-home"></i><p>Dashboard</p>
           </a>
