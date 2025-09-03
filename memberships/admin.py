@@ -1,8 +1,24 @@
 from django.contrib import admin
 from .models import Season, MembershipCategory, MembershipProduct, PaymentPlan, AddOnFee, Subscription, MatchFeeTariff
+from django import forms
+
+class SeasonForm(forms.ModelForm):
+    class Meta:
+        model = Season
+        fields = "__all__"
+
+    def clean(self):
+        cleaned = super().clean()
+        # Ensure model.clean() runs
+        self.instance.start = cleaned.get("start")
+        self.instance.end = cleaned.get("end")
+        self.instance.name = cleaned.get("name")
+        self.instance.full_clean()  # triggers Season.clean()
+        return cleaned
 
 @admin.register(Season)
 class SeasonAdmin(admin.ModelAdmin):
+    form = SeasonForm    
     list_display = ("name", "start", "end", "is_active")
     list_editable = ("is_active",)
     search_fields = ("name",)

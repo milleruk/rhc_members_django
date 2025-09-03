@@ -1,12 +1,20 @@
+# memberships/forms.py
 from django import forms
 
 class ConfirmSubscriptionForm(forms.Form):
     accept_terms = forms.BooleanField(
+        required=True,
         label="I agree to the club’s Membership Terms & Conditions",
-        required=False
+        error_messages={
+            "required": "You must agree to the club’s Membership Terms & Conditions."
+        },
+        widget=forms.CheckboxInput(attrs={
+            "class": "form-check-input",
+            "required": "required",
+        }),
     )
-    #notes = forms.CharField(
-    #    label="Optional note to membership secretary",
-    #    widget=forms.Textarea(attrs={"rows": 3}),
-    #    required=False,
-    #)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Remove trailing colon in labels for cleaner UI (optional)
+        self.label_suffix = ""

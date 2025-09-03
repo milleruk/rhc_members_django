@@ -3,10 +3,11 @@ from __future__ import annotations
 
 from typing import Optional
 
+from django.utils.timezone import localdate
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db import IntegrityError, transaction
-from django.db.models import Q
+from django.db.models import Q, Exists, OuterRef
 from django.http import Http404, HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -29,11 +30,24 @@ from tasks.events import emit
 # Helpers / guards
 # ---------------------------
 
-def _get_active_season() -> Season:
-    season = Season.objects.filter(is_active=True).order_by("-start").first()
-    if not season:
-        raise Http404("No active season configured.")
-    return season
+def _get_selectable_season(today=None) -> Season:
+    """
+    Return the season that should be selectable:
+      - If today falls within [start, end] for any season, return that one.
+      - Otherwise, return the earliest future season (by start).
+      - If none found, raise 404.
+    """
+    d = today or localdate()
+
+    current = Season.objects.filter(start__lte=d, end__gte=d).order_by("start", "id").first()
+    if current:
+        return current
+
+    upcoming = Season.objects.filter(start__gt=d).order_by("start", "id").first()
+    if upcoming:
+        return upcoming
+
+    raise Http404("No selectable season is available.")
 
 
 def _is_admin(user) -> bool:
@@ -77,7 +91,8 @@ def choose_product(request: HttpRequest, player_id: int) -> HttpResponse:
     if not can_manage_player(request.user, player):
         raise Http404()
 
-    season = _get_active_season()
+    # Use selectable season (current by date, else earliest upcoming)
+    season = _get_selectable_season()
     existing = _existing_membership(player, season)
 
     products_qs = (
@@ -90,7 +105,7 @@ def choose_product(request: HttpRequest, player_id: int) -> HttpResponse:
             | Q(category__applies_to=player.player_type)
         )
         .distinct()
-        .order_by("category__label", "name", "id")  # <-- use label instead of name
+        .order_by("category__label", "name", "id")
     )
 
     products = list(products_qs)
@@ -121,13 +136,16 @@ def choose_plan(request: HttpRequest, player_id: int, product_id: int) -> HttpRe
         pk=product_id,
         active=True,
     )
-    if not product.season.is_active:
-        raise Http404("Product is not in active season.")
+
+    # Only allow plan selection if the product is in the selectable season
+    selectable = _get_selectable_season()
+    if product.season_id != selectable.id:
+        raise Http404("Product is not currently selectable.")
 
     season = product.season
     existing = _existing_membership(player, season)
 
-    # ✅ Use fields that actually exist on PaymentPlan
+    # Use fields that exist on PaymentPlan
     plans = product.plans.filter(active=True).order_by("display_order", "label", "id")
 
     if (not product.requires_plan) and (not plans.exists()):
@@ -179,8 +197,10 @@ def confirm(request: HttpRequest, player_id: int, plan_id: int) -> HttpResponse:
         )
         product = plan.product
 
-    if not product.season.is_active:
-        raise Http404("Not in active season.")
+    # Only allow confirmation if product is in the selectable season
+    selectable = _get_selectable_season()
+    if product.season_id != selectable.id:
+        raise Http404("This product is not in the currently selectable season.")
 
     season = product.season
     existing = _existing_membership(player, season)
@@ -244,19 +264,41 @@ def confirm(request: HttpRequest, player_id: int, plan_id: int) -> HttpResponse:
 def my_memberships(request: HttpRequest) -> HttpResponse:
     """
     List all players managed by the current user and their subscriptions,
-    split into active/pending and historical.
+    split into active/pending and historical. Hide "Choose membership"
+    for players who already have any sub in the current selectable season.
     """
-    players = Player.objects.filter(created_by=request.user).order_by("first_name", "last_name")
+    # Use selectable season
+    try:
+        current_season = _get_selectable_season()
+    except Http404:
+        current_season = None
+
+    players_qs = Player.objects.filter(created_by=request.user).order_by("first_name", "last_name")
+
+    if current_season:
+        players = players_qs.annotate(
+            has_sub_this_season=Exists(
+                Subscription.objects.filter(
+                    player=OuterRef("pk"),
+                    season=current_season,
+                )
+            )
+        )
+    else:
+        players = players_qs.annotate(has_sub_this_season=None)
 
     active_statuses = ["pending", "active"]
 
     active_subs = (
-        Subscription.objects.filter(player__created_by=request.user, status__in=active_statuses)
+        Subscription.objects
+        .filter(player__created_by=request.user, status__in=active_statuses)
         .select_related("player", "product", "product__season", "plan", "season")
         .order_by("player__last_name", "player__first_name", "-started_at")
     )
+
     old_subs = (
-        Subscription.objects.filter(player__created_by=request.user)
+        Subscription.objects
+        .filter(player__created_by=request.user)
         .exclude(status__in=active_statuses)
         .select_related("player", "product", "product__season", "plan", "season")
         .order_by("-started_at")
@@ -265,7 +307,12 @@ def my_memberships(request: HttpRequest) -> HttpResponse:
     return render(
         request,
         "memberships/mine.html",
-        {"players": players, "active_subs": active_subs, "old_subs": old_subs},
+        {
+            "players": players,
+            "active_subs": active_subs,
+            "old_subs": old_subs,
+            "current_season": current_season,
+        },
     )
 
 

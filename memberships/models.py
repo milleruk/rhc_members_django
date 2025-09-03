@@ -1,6 +1,25 @@
 from django.conf import settings
 from django.db import models
+from django.core.exceptions import ValidationError
+from django.utils.translation import gettext_lazy as _
+from django.utils.timezone import localdate
+from django.db.models import QuerySet
 
+
+
+class SeasonQuerySet(QuerySet):
+    def for_date(self, d):
+        return self.filter(start__lte=d, end__gte=d)
+
+    def upcoming_after(self, d):
+        return self.filter(start__gt=d).order_by("start", "id")
+
+    def selectable(self, d=None):
+        d = d or localdate()
+        current = self.for_date(d).order_by("start", "id").first()
+        if current:
+            return current
+        return self.upcoming_after(d).first()
 
 class Season(models.Model):
     name = models.CharField(max_length=32, unique=True)  # "2025/26"
@@ -8,12 +27,27 @@ class Season(models.Model):
     end = models.DateField()
     is_active = models.BooleanField(default=False)
 
+    objects = SeasonQuerySet.as_manager()
+
     class Meta:
         ordering = ["-start"]
 
+    def clean(self):
+        # Basic sanity
+        if self.end < self.start:
+            raise ValidationError(_("Season end date cannot be before start date."))
+
+        # Overlap check (inclusive ranges)
+        qs = Season.objects.exclude(pk=self.pk).filter(
+            start__lte=self.end,
+            end__gte=self.start,
+        )
+        if qs.exists():
+            raise ValidationError(_("Season dates overlap an existing season."))
+
     def __str__(self):
         return self.name
-
+    
 
 class MembershipCategory(models.Model):
     """High-level buckets like U12, Teen, Senior, Guest."""

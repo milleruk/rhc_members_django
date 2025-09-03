@@ -33,9 +33,11 @@
                   {% endif %}
                 </div>
               </div>
-              <a class="btn btn-outline-primary btn-sm" href="{% url 'memberships:choose' p.id %}">
-                <i class="fas fa-plus me-1"></i> Choose membership
-              </a>
+              {% if not p.has_sub_this_season %}
+                <a class="btn btn-outline-primary btn-sm" href="{% url 'memberships:choose' p.id %}">
+                  <i class="fas fa-plus me-1"></i> Choose membership
+                </a>
+              {% endif %}
             </div>
           {% endfor %}
         </div>
