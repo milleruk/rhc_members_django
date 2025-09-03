@@ -1,0 +1,57 @@
+version: "3.9"
+
+services:
+  db:
+    image: mariadb:11
+    container_name: rhc_mariadb_dev
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    ports:
+      - "3307:3306"  # expose if you want local DB access
+    volumes:
+      - dbdata_dev:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.development
+    container_name: rhc_hockey_dev
+    restart: unless-stopped
+    env_file: .env.dev
+    environment:
+      DJANGO_SETTINGS_MODULE: hockey_club.settings
+      # If your Django uses DATABASE_URL, set it here instead:
+      DATABASE_URL: mysql://${MYSQL_USER}:${MYSQL_PASSWORD}@db:3306/${MYSQL_DATABASE}
+      # Or pass individual DB vars your settings.py reads:
+      DB_HOST: db
+      DB_NAME: ${MYSQL_DATABASE}
+      DB_USER: ${MYSQL_USER}
+      DB_PASS: ${MYSQL_PASSWORD}
+      DB_PORT: "3306"
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    command: >
+      sh -c "
+      python manage.py migrate &&
+      python manage.py runserver 0.0.0.0:8000
+      "
+    # Optional debugging:
+    # extra_hosts:
+    #   - "host.docker.internal:host-gateway"
+
+volumes:
+  dbdata_dev:

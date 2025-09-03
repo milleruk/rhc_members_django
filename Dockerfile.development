@@ -1,0 +1,30 @@
+FROM python:3.11-slim
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    DJANGO_SETTINGS_MODULE=hockey_club.settings
+
+# Dev tools you might want available in the container
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    default-libmysqlclient-dev \
+    build-essential gcc \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# If you keep a separate dev requirements file, swap to requirements-dev.txt
+COPY requirements.txt .
+RUN pip install --upgrade pip \
+ && pip install --no-cache-dir -r requirements.txt
+
+# Optional: debugpy for VS Code attach
+# RUN pip install --no-cache-dir debugpy
+
+# Copy app (you can also mount your code at runtime instead)
+COPY . .
+
+EXPOSE 8000
+
+# Dev server (auto-reload; binds to all interfaces)
+# If you use a non-default runserver_plus, swap the command accordingly.
+CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
