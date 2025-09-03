@@ -1,0 +1,10 @@
+[tool.black]
+line-length = 100
+target-version = ["py311"]
+extend-exclude = "/(migrations|venv|.venv)/"
+
+[tool.isort]
+profile = "black"
+line_length = 100
+known_first_party = ["hockey_club","members","memberships","tasks","spond_integration","staff"]
+skip = ["venv",".venv","migrations"]
