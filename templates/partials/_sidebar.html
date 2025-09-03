@@ -143,13 +143,12 @@
 
         <li class="nav-header">CLUB RESOURCES</li>
 
-        {% if perms.resources.view_policy %}
+
           <li class="nav-item">
             <a href="{% url 'resources:policy_list' %}" class="nav-link {% if '/resources/policies' in p %}active{% endif %}">
               <i class="nav-icon fas fa-shield-alt"></i><p>Policies</p>
             </a>
           </li>
-        {% endif %}
 
         
           <li class="nav-item">

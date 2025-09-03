@@ -7,7 +7,7 @@ from django.utils.timezone import localdate
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db import IntegrityError, transaction
-from django.db.models import Q, Exists, OuterRef
+from django.db.models import Q, Exists, OuterRef, Value, BooleanField
 from django.http import Http404, HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -138,6 +138,7 @@ def choose_plan(request: HttpRequest, player_id: int, product_id: int) -> HttpRe
     )
 
     # Only allow plan selection if the product is in the selectable season
+        # Ensure product is in the single selectable season BEFORE any other logic
     selectable = _get_selectable_season()
     if product.season_id != selectable.id:
         raise Http404("Product is not currently selectable.")
@@ -145,7 +146,6 @@ def choose_plan(request: HttpRequest, player_id: int, product_id: int) -> HttpRe
     season = product.season
     existing = _existing_membership(player, season)
 
-    # Use fields that exist on PaymentPlan
     plans = product.plans.filter(active=True).order_by("display_order", "label", "id")
 
     if (not product.requires_plan) and (not plans.exists()):
@@ -285,8 +285,9 @@ def my_memberships(request: HttpRequest) -> HttpResponse:
             )
         )
     else:
-        players = players_qs.annotate(has_sub_this_season=None)
-
+        players = players_qs.annotate(
+            has_sub_this_season=Value(False, output_field=BooleanField())
+        )
     active_statuses = ["pending", "active"]
 
     active_subs = (
