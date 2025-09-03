@@ -176,15 +176,9 @@ Before you submit a pull request, please make sure that:
 - [ ] You have commented on your code, particularly in hard-to-understand areas
 - [ ] You have checked your code and corrected any misspellings
 
-## Translation<a name="translation"></a>
-
-This app is fully translation-ready and translations are handled via [Weblate]. If
-you like to contribute to the app's translation or improve it, feel free to
-register on my [Weblate] instance and start translating.
 
 <!-- Links -->
 
-[aa guide for setting up a dev environment]: https://allianceauth.readthedocs.io/en/latest/development/dev_setup/aa-dev-setup-wsl-vsc-v2.html "AA Guide for Setting up a Dev Environment"
 [black code style]: https://black.readthedocs.io/en/latest/l "Black Code Style"
 [coverage]: https://coverage.readthedocs.io/en/latest/ "coverage"
 [csso]: https://github.com/css/csso "CSSO (CSS Optimizer)"
@@ -194,5 +188,4 @@ register on my [Weblate] instance and start translating.
 [request-mock]: https://requests-mock.readthedocs.io/en/latest/ "request-mock"
 [terser]: https://github.com/terser/terser "Terser"
 [tox]: https://tox.wiki/en/latest/ "tox"
-[weblate]: https://weblate.ppfeufer.de/ "Weblate"
 [webtest]: https://docs.pylonsproject.org/projects/webtest/en/latest/ "Webtest"
