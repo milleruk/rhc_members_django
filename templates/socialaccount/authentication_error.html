@@ -1,0 +1,20 @@
+{% extends "base_auth.html" %}
+{% load i18n %}
+{% block title %}
+    {% trans "Authentication Error" %}
+{% endblock %}
+{% block content %}
+    <div class="login-box">
+        <div class="card card-outline card-danger">
+            <div class="card-header text-center">
+                <span class="h5 mb-0">{% trans "Authentication failed" %}</span>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-danger mb-3">
+                    {% trans "Something went wrong while signing you in with your social account." %}
+                </div>
+                <a class="btn btn-primary btn-block" href="{% url 'account_login' %}">{% trans "Back to Login" %}</a>
+            </div>
+        </div>
+    </div>
+{% endblock %}

@@ -1,0 +1,41 @@
+{% load i18n socialaccount %}
+{% get_providers as socialaccount_providers %}
+{% if socialaccount_providers %}
+    <div class="mb-3">
+        {% for provider in socialaccount_providers %}
+            {% if provider.id == "google" %}
+                <a class="btn btn-danger w-100 mb-2"
+                   href="{% provider_login_url provider.id process=process next=request.GET.next %}">
+                    <i class="fab fa-google me-1"></i> {% trans "Continue with Google" %}
+                </a>
+            {% elif provider.id == "github" %}
+                <a class="btn btn-dark w-100 mb-2"
+                   href="{% provider_login_url provider.id process=process next=request.GET.next %}">
+                    <i class="fab fa-github me-1"></i> {% trans "Continue with GitHub" %}
+                </a>
+            {% elif provider.id == "facebook" %}
+                <button class="btn btn-primary w-100 mb-2"
+                        style="background-color:#1877f2;
+                               border-color:#1877f2"
+                        disabled>
+                    <i class="fab fa-facebook-f me-1"></i> {% trans "Facebook (coming soon)" %}
+                </button>
+            {% elif provider.id == "apple" %}
+                <button class="btn btn-dark w-100 mb-2" disabled>
+                    <i class="fab fa-apple me-1"></i> {% trans "Apple (coming soon)" %}
+                </button>
+            {% elif provider.id == "instagram" %}
+                <a class="btn w-100 mb-2 text-white"
+                   style="background: radial-gradient(circle at 30% 107%, #fdf497 0%, #fdf497 5%, #fd5949 45%, #d6249f 60%, #285AEB 90%)"
+                   href="{% provider_login_url provider.id process=process next=request.GET.next %}">
+                    <i class="fab fa-instagram me-1"></i> {% trans "Continue with Instagram" %}
+                </a>
+            {% else %}
+                <a class="btn btn-outline-secondary w-100 mb-2"
+                   href="{% provider_login_url provider.id process=process next=request.GET.next %}">
+                    {% blocktrans %}Continue with {{ provider.name }}{% endblocktrans %}
+                </a>
+            {% endif %}
+        {% endfor %}
+    </div>
+{% endif %}

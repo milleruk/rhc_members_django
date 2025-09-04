@@ -1,0 +1,18 @@
+{% extends "base_auth.html" %}
+{% load i18n %}
+{% block title %}
+    {% trans "Login Cancelled" %}
+{% endblock %}
+{% block content %}
+    <div class="login-box">
+        <div class="card card-outline card-warning">
+            <div class="card-header text-center">
+                <span class="h5 mb-0">{% trans "Login cancelled" %}</span>
+            </div>
+            <div class="card-body">
+                <p class="text-muted">{% trans "You cancelled the login process." %}</p>
+                <a class="btn btn-primary btn-block" href="{% url 'account_login' %}">{% trans "Try Again" %}</a>
+            </div>
+        </div>
+    </div>
+{% endblock %}

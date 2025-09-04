@@ -22,13 +22,6 @@
                 <ul class="nav nav-pills nav-sidebar flex-column" role="menu">
                     <li class="nav-header">GENERAL</li>
                     <li class="nav-item">
-                        <a href="{% url 'accounts:settings' %}"
-                           class="nav-link {% if p == '/settings/' %}active{% endif %}">
-                            <i class="nav-icon fas fa-gear"></i>
-                            <p>Settings</p>
-                        </a>
-                    </li>
-                    <li class="nav-item">
                         <a href="{% url 'dashboard' %}"
                            class="nav-link {% if p == '/players/' %}active{% endif %}">
                             <i class="nav-icon fas fa-home"></i>
@@ -55,6 +48,13 @@
                             <i class="nav-icon fas fa-check-square"></i>
                             <p>My Tasks</p>
                             {% if open_task_count %}<span class="badge badge-danger navbar-badge">{{ open_task_count }}</span>{% endif %}
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{% url 'accounts:settings' %}"
+                           class="nav-link {% if p == '/settings/' %}active{% endif %}">
+                            <i class="nav-icon fas fa-gear"></i>
+                            <p>Account Settings</p>
                         </a>
                     </li>
                     {% if perms.members.view_staff_area %}

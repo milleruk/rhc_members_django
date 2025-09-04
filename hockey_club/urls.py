@@ -3,7 +3,7 @@ from django.contrib import admin
 from django.urls import include, path
 from django.views.generic import RedirectView
 
-from accounts.views import EmailLoginView, ResendConfirmationView, SignupView
+from accounts.views import ResendConfirmationView
 from members.views import PrivacyView, TermsView
 
 urlpatterns = [
@@ -11,14 +11,15 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("hijack/", include("hijack.urls")),
     # Your overrides first
-    path("accounts/login/", EmailLoginView.as_view(), name="account_login"),
-    path("accounts/signup/", SignupView.as_view(), name="account_signup"),
+    # path("accounts/login/", EmailLoginView.as_view(), name="account_login"),
+    # path("accounts/signup/", SignupView.as_view(), name="account_signup"),
     path(
         "accounts/resend-confirmation/",
         ResendConfirmationView.as_view(),
         name="account_resend_confirmation",
     ),
     path("accounts/", include("allauth.urls")),
+    path("accounts/", include("allauth.socialaccount.urls")),
     path("accounts/mfa/", include("allauth.mfa.urls")),
     # Settings hub
     path("settings/", include(("accounts.urls", "accounts"), namespace="accounts")),

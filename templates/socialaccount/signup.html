@@ -1,0 +1,30 @@
+{% extends "base_auth.html" %}
+{% load i18n account %}
+{% block title %}
+    {% trans "Complete Signup" %}
+{% endblock %}
+{% block content %}
+    <div class="login-box">
+        <div class="card card-outline card-primary">
+            <div class="card-header text-center">
+                <span class="h5 mb-0">{% trans "Complete your signup" %}</span>
+            </div>
+            <div class="card-body">
+                <p class="text-muted small mb-3">{% trans "We need a couple of details to finish creating your account." %}</p>
+                <form method="post" action="{% url 'socialaccount_signup' %}">
+                    {% csrf_token %}
+                    {{ form.non_field_errors }}
+                    {% for field in form %}
+                        <div class="form-group mb-3">
+                            <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                            {{ field }}
+                            {% if field.help_text %}<small class="form-text text-muted">{{ field.help_text }}</small>{% endif %}
+                            {% for err in field.errors %}<div class="text-danger small">{{ err }}</div>{% endfor %}
+                        </div>
+                    {% endfor %}
+                    <button class="btn btn-primary btn-block" type="submit">{% trans "Continue" %}</button>
+                </form>
+            </div>
+        </div>
+    </div>
+{% endblock %}
