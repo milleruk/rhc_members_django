@@ -30,5 +30,3 @@ ENV/
 .vscode/
 .idea/
 *.swp
-
-hockey_club/settings.py

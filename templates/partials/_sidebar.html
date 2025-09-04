@@ -102,6 +102,8 @@
                                     <p>Create Bulk Tasks</p>
                                 </a>
                             </li>
+                        {% endif %}
+                        {% if perms.incidents.access_app %}
                             <li class="nav-item">
                                 <a href="{% url 'incidents:list' %}" class="nav-link">
                                     <i class="nav-icon fas fa-notes-medical"></i>

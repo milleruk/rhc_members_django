@@ -45,7 +45,10 @@ class Incident(models.Model):
     activity_type = models.CharField(
         max_length=16, choices=ActivityType.choices, default=ActivityType.MATCH
     )
-    team = models.ForeignKey(Team, on_delete=models.SET_NULL, null=True, blank=True)
+
+    team = models.ForeignKey(
+        Team, on_delete=models.PROTECT, null=True, blank=True, related_name="incidents"
+    )
 
     primary_player = models.ForeignKey(
         Player,
@@ -75,6 +78,13 @@ class Incident(models.Model):
     # Workflow
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.SUBMITTED)
     status_notes = models.TextField(blank=True)
+
+    reported_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="incidents_reported",
+        db_index=True,
+    )
 
     # Assignment
     assigned_to = models.ForeignKey(

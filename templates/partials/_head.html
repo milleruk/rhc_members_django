@@ -24,4 +24,39 @@
   .project-card .card-title { line-height: 1.2; max-height: 2.4em; overflow: hidden; }
   .project-card .user-block-img { width: 32px; height: 32px; display: inline-flex; align-items:center; justify-content:center; }
   @media (max-width: 575.98px) { .project-card .btn-group .btn { margin-left: .25rem; } }
+
+/* Mobile: footer must NOT be sticky */
+@media (max-width: 767.98px) {
+  .main-footer {
+    position: static !important;
+    bottom: auto !important;
+    width: auto !important;
+  }
+  /* AdminLTE body flag override */
+  body.layout-footer-fixed .main-footer {
+    position: static !important;
+    bottom: auto !important;
+  }
+  /* Remove any extra bottom padding that was added for a fixed footer */
+  .content-wrapper, .content {
+    padding-bottom: 0 !important;
+  }
+}
+
+/* Tablet/Desktop: footer can be sticky */
+@media (min-width: 768px) {
+  /* If you want it sticky on larger screens */
+  .main-footer {
+    position: sticky;
+    bottom: 0;
+    background: #fff;
+    z-index: 1020;
+  }
+  /* If you're using AdminLTE's fixed mode, this keeps the intent */
+  body.layout-footer-fixed .main-footer {
+    position: sticky;
+  }
+}
+
+
 </style>
