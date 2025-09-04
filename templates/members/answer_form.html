@@ -2,20 +2,112 @@
 {% load crispy_forms_tags %}
 {% block title %}Player Profile{% endblock %}
 {% block content %}
+    <style>
+  /* === Theme === */
+  :root{
+    --accent:#3f8cff;
+    --accent-2:#7c4dff;
+    --accent-soft:#e8f1ff;
+    --accent-soft-2:#efe9ff;
+    --muted:#6c757d;
+    --line:rgba(0,0,0,.08);
+  }
+
+  .page-head { gap:.75rem; }
+  .avatar-md{
+    width:56px; height:56px; line-height:56px;
+    background:linear-gradient(135deg,var(--accent),var(--accent-2));
+    color:#fff; font-weight:700; border-radius:50%;
+    display:inline-flex; align-items:center; justify-content:center;
+  }
+  .muted-small { color:var(--muted); font-size:.9rem; }
+
+  .card-outline { border:1px solid var(--line); border-radius:.75rem; overflow:hidden; }
+  .card-header { background:linear-gradient(180deg,#fff,#fafafa); padding:.6rem .9rem; }
+  .card-title { font-size:1rem; line-height:1.2; }
+
+  .badge + .badge { margin-left:.35rem; }
+
+  /* ===== Profile card (new) ===== */
+  .profile-hero{
+    background:linear-gradient(135deg,var(--accent),var(--accent-2));
+    border-bottom:1px solid var(--line);
+    padding:.9rem 1rem;
+    border-top-left-radius:.75rem;
+    border-top-right-radius:.75rem;
+  }
+  .avatar-lg{
+    width:72px; height:72px; border-radius:50%;
+    background:rgba(255,255,255,.15);
+    color:#fff; font-weight:700; font-size:1.25rem;
+    display:inline-flex; align-items:center; justify-content:center;
+    border:2px solid rgba(255,255,255,.35);
+  }
+  .chip{
+    display:inline-flex; align-items:center;
+    padding:.25rem .55rem; border-radius:999px;
+    font-size:.9rem; line-height:1;
+    border:1px solid var(--line);
+    background:#fff;
+  }
+  .chip--soft{
+    background:var(--accent-soft);
+    border-color:rgba(63,140,255,.25);
+    color:#1c2b3a;
+  }
+  @media (max-width:575.98px){
+    .avatar-lg{ display:none !important; }
+    .profile-hero{ padding:.8rem .9rem; }
+  }
+
+  /* (legacy widget styles still used elsewhere) */
+  .widget-user-header{
+    background:linear-gradient(135deg,var(--accent),var(--accent-2)) !important;
+  }
+  .widget-user-username { font-size:1.05rem; }
+  .card-widget .badge { vertical-align:middle; }
+
+  /* Prose + errors */
+  .prose ul { margin-left:1.25rem; }
+  .prose h4, .prose h5 { margin:.25rem 0 .5rem; }
+  .error-highlight { box-shadow:0 0 0 .25rem rgba(220,53,69,.25); }
+
+  /* Form blocks */
+  .form-block{
+    border:1px solid var(--line);
+    border-radius:.6rem;
+    padding:1rem;
+    margin-bottom:.9rem;
+  }
+  .form-block .badge-info{
+    background:var(--accent-soft);
+    color:#1c2b3a;
+    border:1px solid rgba(63,140,255,.25);
+  }
+
+  /* Sticky save bar on desktop */
+  @media (min-width:992px){
+    .content .container-fluid .col-lg-8 form .save-card{
+      position:sticky; bottom:0; z-index:5;
+    }
+  }
+
+  /* Tables / lists */
+  .list-group-item { display:flex; justify-content:space-between; align-items:center; }
+
+  /* Buttons */
+  .btn-outline-primary{ border-color:rgba(63,140,255,.35); }
+  .btn-outline-info{ border-color:rgba(0,123,255,.25); }
+    </style>
     <div class="content-header pb-0">
         <div class="container-fluid">
             <div class="row mb-2 align-items-center">
-                <div class="col-sm-7 d-flex align-items-center">
+                <div class="col-sm-7 d-flex align-items-center page-head">
                     <!-- Avatar -->
-                    <div class="rounded-circle bg-light border text-center mr-3"
-                         style="width:56px;
-                                height:56px;
-                                line-height:56px">
-                        <span class="text-muted font-weight-bold">
-                            {% with fn=player.first_name|default_if_none:"" ln=player.last_name|default_if_none:"" %}
-                                {{ fn|default:"?"|slice:":1" }}{{ ln|default:""|slice:":1" }}
-                            {% endwith %}
-                        </span>
+                    <div class="avatar-md mr-3">
+                        {% with fn=player.first_name|default_if_none:"" ln=player.last_name|default_if_none:"" %}
+                            {{ fn|default:"?"|slice:":1" }}{{ ln|default:""|slice:":1" }}
+                        {% endwith %}
                     </div>
                     <div>
                         <h1 class="m-0 h4">{{ player.first_name|default:"Player" }} {{ player.last_name }}</h1>
@@ -24,7 +116,12 @@
                                 <span class="badge badge-secondary mr-1"><i class="fas fa-user mr-1"></i>{{ player.player_type }}</span>
                             {% endif %}
                             {% if player.get_relation_display %}
-                                <span class="badge badge-light border text-dark"><i class="far fa-heart mr-1"></i>{{ player.get_relation_display }}</span>
+                                <span class="badge"
+                                      style="background:var(--accent-soft-2);
+                                             color:#4a3b8f;
+                                             border:1px solid rgba(124,77,255,.25)">
+                                    <i class="far fa-heart mr-1"></i>{{ player.get_relation_display }}
+                                </span>
                             {% endif %}
                         </div>
                     </div>
@@ -50,48 +147,51 @@
     <div class="content">
         <div class="container-fluid">
             <div class="row">
-                <!-- LEFT: Profile summary + teams -->
+                <!-- LEFT -->
                 <div class="col-12 col-lg-4">
-                    <!-- Profile widget -->
-                    <div class="card card-widget widget-user mb-3">
-                        <div class="widget-user-header bg-primary text-white">
-                            <h3 class="widget-user-username mb-0">{{ player.first_name|default:"Player" }} {{ player.last_name }}</h3>
-                            <h5 class="widget-user-desc mb-0">
-                                {% if player.player_type %}{{ player.player_type }}{% endif %}
-                                {% if player.get_relation_display %}• {{ player.get_relation_display }}{% endif %}
-                            </h5>
+                    <!-- Profile summary (new) -->
+                    <div class="card card-outline mb-3">
+                        <div class="profile-hero d-flex align-items-center">
+                            <!-- Avatar: hidden on mobile to avoid overlap -->
+                            <div class="avatar-lg d-none d-sm-flex mr-3">
+                                {% with fn=player.first_name|default_if_none:"" ln=player.last_name|default_if_none:"" %}
+                                    {{ fn|default:"?"|slice:":1" }}{{ ln|default:""|slice:":1" }}
+                                {% endwith %}
+                            </div>
+                            <div class="py-2">
+                                <div class="h5 mb-0 text-white">{{ player.first_name|default:"Player" }} {{ player.last_name }}</div>
+                                <div class="text-white-50 small">
+                                    {% if player.player_type %}{{ player.player_type }}{% endif %}
+                                    {% if player.get_relation_display %}• {{ player.get_relation_display }}{% endif %}
+                                </div>
+                            </div>
                         </div>
-                        <div class="widget-user-image">
-                            <img class="img-circle elevation-2"
-                                 src="https://ui-avatars.com/api/?name={{ player.first_name|urlencode }}+{{ player.last_name|urlencode }}&background=0D8ABC&color=fff"
-                                 alt="Player Avatar">
-                        </div>
-                        <div class="card-body pt-4">
-                            <div class="d-flex flex-wrap gap-1">
+                        <div class="card-body">
+                            <div class="d-flex flex-wrap">
                                 {% if player.date_of_birth %}
-                                    <span class="badge badge-light border mr-1 mb-1">
+                                    <span class="chip chip--soft mr-2 mb-2">
                                         <i class="far fa-calendar-alt mr-1"></i> {{ player.date_of_birth|date:"j M Y" }}
                                     </span>
                                 {% endif %}
                                 {% if player.gender %}
-                                    <span class="badge badge-light border mr-1 mb-1">
+                                    <span class="chip chip--soft mr-2 mb-2">
                                         <i class="fas fa-venus-mars mr-1"></i> {{ player.get_gender_display|default:player.gender }}
                                     </span>
                                 {% endif %}
                                 {% if player.email %}
-                                    <span class="badge badge-light border mr-1 mb-1">
+                                    <span class="chip chip--soft mr-2 mb-2">
                                         <i class="far fa-envelope mr-1"></i> {{ player.email }}
                                     </span>
                                 {% endif %}
                             </div>
                             {% if player.answers_pct is not None %}
                                 <div class="mt-3">
-                                    <div class="d-flex justify-content-between small mb-1">
-                                        <span class="text-muted">Profile completeness</span>
-                                        <span class="text-muted">{{ player.answers_pct }}%</span>
+                                    <div class="d-flex justify-content-between small mb-1 text-muted">
+                                        <span>Profile completeness</span>
+                                        <span>{{ player.answers_pct }}%</span>
                                     </div>
                                     <div class="progress" style="height:8px;">
-                                        <div class="progress-bar {% if player.answers_pct >= 80 %}bg-success {% elif player.answers_pct >= 40 %}bg-warning {% else %}bg-danger{% endif %}"
+                                        <div class="progress-bar {% if player.answers_pct >= 80 %}bg-success{% elif player.answers_pct >= 40 %}bg-warning{% else %}bg-danger{% endif %}"
                                              role="progressbar"
                                              style="width: {{ player.answers_pct }}%"
                                              aria-valuenow="{{ player.answers_pct }}"
@@ -101,29 +201,21 @@
                                 </div>
                             {% endif %}
                         </div>
-                        <div class="card-footer d-flex justify-content-end">
-                            <a href="{% url 'answer' player.public_id %}"
-                               class="btn btn-sm btn-primary mr-2">
-                                <i class="fas fa-edit mr-1"></i> Update Profile
-                            </a>
-                            <a href="{% url 'player_edit' public_id=player.public_id %}"
-                               class="btn btn-sm btn-outline-primary">
-                                <i class="fas fa-user-cog mr-1"></i> Edit Details
-                            </a>
-                        </div>
+                        <!-- Footer actions removed (no Update Profile here).
+       If you want Edit Details down here too, add it back later. -->
                     </div>
                     <!-- Teams card -->
-                    <div class="card card-outline card-info mb-3">
+                    <div class="card card-outline mb-3">
                         <div class="card-header py-2 d-flex align-items-center">
                             <h3 class="card-title mb-0">
-                                <i class="fas fa-users mr-1"></i> Teams
+                                <i class="fas fa-users mr-1" style="color:var(--accent-2);"></i> Teams
                             </h3>
                         </div>
                         <div class="card-body p-0">
                             {% if team_memberships %}
                                 <ul class="list-group list-group-flush">
                                     {% for m in team_memberships %}
-                                        <li class="list-group-item d-flex justify-content-between align-items-start">
+                                        <li class="list-group-item">
                                             <div class="mr-2">
                                                 <div class="font-weight-semibold">{{ m.team.name }}</div>
                                                 <div class="small text-muted">
@@ -145,7 +237,7 @@
                         </div>
                     </div>
                 </div>
-                <!-- RIGHT: Dynamic sections form -->
+                <!-- RIGHT: Dynamic sections form (NO collapses) -->
                 <div class="col-12 col-lg-8">
                     <form method="post" novalidate>
                         {% csrf_token %}
@@ -156,14 +248,12 @@
                                 <div>
                                     <strong>We couldn’t save yet — please review the items below.</strong>
                                     <ul class="mb-0 mt-2 pl-3">
-                                        {# Non-field errors #}
                                         {% for err in form.non_field_errors %}<li>{{ err }}</li>{% endfor %}
-                                        {# Per-field errors (pre-resolved in the view) #}
                                         {% for e in error_summary %}
                                             <li>
                                                 <a href="#group-{{ e.name }}"
-                                                   class="text-white text-underline"
-                                                   style="text-decoration: underline">{{ e.label }}</a>: {{ e.message|striptags }}
+                                                   class="text-white"
+                                                   style="text-decoration:underline">{{ e.label }}</a>: {{ e.message|striptags }}
                                             </li>
                                         {% endfor %}
                                     </ul>
@@ -171,29 +261,18 @@
                             </div>
                         {% endif %}
                         {% for cat in grouped_fields.values %}
-                            <div class="card card-outline card-primary mb-3">
-                                <div class="card-header d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <div class="h6 mb-0">{{ cat.name }}</div>
-                                        {% if cat.description_html %}<div class="text-muted small prose">{{ cat.description_html|safe }}</div>{% endif %}
-                                    </div>
-                                    <button class="btn btn-tool"
-                                            type="button"
-                                            data-bs-toggle="collapse"
-                                            data-bs-target="#section-{{ forloop.counter }}"
-                                            aria-expanded="true"
-                                            aria-controls="section-{{ forloop.counter }}">
-                                        <i class="fas fa-minus"></i>
-                                    </button>
+                            <div class="card card-outline mb-3">
+                                <div class="card-header py-2">
+                                    <h3 class="card-title mb-0">{{ cat.name }}</h3>
+                                    {% if cat.description_html %}<div class="muted-small mt-1 prose">{{ cat.description_html|safe }}</div>{% endif %}
                                 </div>
-                                <div id="section-{{ forloop.counter }}" class="card-body collapse show">
+                                <div class="card-body">
                                     {% for item in cat.items %}
                                         {% if item.main %}
                                             {% if item.override_template %}
                                                 {% include item.override_template with field=item.main item=item player=player only %}
                                             {% else %}
-                                                <div class="border rounded p-3 mb-3 shadow-sm"
-                                                     id="group-{{ item.main.name }}">
+                                                <div class="form-block shadow-sm" id="group-{{ item.main.name }}">
                                                     {% if item.desc_html %}<div class="prose text-muted small mb-2">{{ item.desc_html|safe }}</div>{% endif %}
                                                     <div class="d-flex justify-content-between align-items-start">
                                                         <div class="flex-grow-1">{{ item.main|as_crispy_field }}</div>
@@ -213,17 +292,14 @@
                                             {% endif %}
                                         {% endif %}
                                         {% if not item.main and item.detail %}
-                                            <div class="border rounded p-3 mb-3 shadow-sm"
-                                                 id="group-{{ item.detail.name }}">
-                                                {{ item.detail|as_crispy_field }}
-                                            </div>
+                                            <div class="form-block shadow-sm" id="group-{{ item.detail.name }}">{{ item.detail|as_crispy_field }}</div>
                                         {% endif %}
                                     {% endfor %}
                                 </div>
                             </div>
                         {% endfor %}
                         <!-- Sticky action bar -->
-                        <div class="card mb-5">
+                        <div class="card mb-5 save-card card-outline">
                             <div class="card-body d-flex justify-content-between flex-wrap">
                                 <div class="text-muted small mb-2 mb-sm-0">
                                     <i class="far fa-save mr-1"></i> Make sure details are accurate before saving.
@@ -241,75 +317,48 @@
                     </form>
                 </div>
             </div>
+            <!-- /row -->
         </div>
     </div>
     <script>
-document.addEventListener("DOMContentLoaded", function() {
-  // Toggle detail fields
-  function initDetailToggles(root) {
-    const inputs = root.querySelectorAll("input[type=checkbox], input[type=radio]");
-    inputs.forEach(function(input) {
-      const detailGroup = document.getElementById("group-" + input.name + "_detail");
-      if (!detailGroup) return;
-      function apply() {
-        const on = (input.type === "checkbox")
-          ? input.checked
-          : !!root.querySelector('input[name="' + input.name + '"]:checked');
-        detailGroup.classList.toggle("d-none", !on);
-        if (!on) {
-          const first = detailGroup.querySelector("input, textarea, select");
-          if (first) {
-            if (first.tagName === "SELECT") first.selectedIndex = 0;
-            else first.value = "";
+  document.addEventListener("DOMContentLoaded", function() {
+    // Toggle detail fields (unchanged)
+    function initDetailToggles(root) {
+      const inputs = root.querySelectorAll("input[type=checkbox], input[type=radio]");
+      inputs.forEach(function(input) {
+        const detailGroup = document.getElementById("group-" + input.name + "_detail");
+        if (!detailGroup) return;
+        function apply() {
+          const on = (input.type === "checkbox")
+            ? input.checked
+            : !!root.querySelector('input[name="' + input.name + '"]:checked');
+          detailGroup.classList.toggle("d-none", !on);
+          if (!on) {
+            const first = detailGroup.querySelector("input, textarea, select");
+            if (first) {
+              if (first.tagName === "SELECT") first.selectedIndex = 0;
+              else first.value = "";
+            }
           }
         }
-      }
-      apply();
-      input.addEventListener("change", apply);
-    });
-  }
-  initDetailToggles(document);
-
-  // Collapse icons
-  document.querySelectorAll('[data-bs-toggle="collapse"]').forEach(btn => {
-    const icon = btn.querySelector("i");
-    const target = document.querySelector(btn.getAttribute("data-bs-target"));
-    if (!icon || !target) return;
-    const updateIcon = () => {
-      const expanded = target.classList.contains("show");
-      icon.classList.toggle("fa-minus", expanded);
-      icon.classList.toggle("fa-plus", !expanded);
-    };
-    target.addEventListener("shown.bs.collapse", updateIcon);
-    target.addEventListener("hidden.bs.collapse", updateIcon);
-    updateIcon();
-  });
-
-  // Auto scroll to first error
-  {% if form.errors and error_summary %}
-    const firstKey = "{{ error_summary.0.name }}";
-    if (firstKey) {
-      const block = document.getElementById("group-" + firstKey);
-      if (block) {
-        block.scrollIntoView({ behavior: "smooth", block: "center" });
-        block.classList.add("error-highlight");
-        setTimeout(() => block.classList.remove("error-highlight"), 1500);
-      }
+        apply();
+        input.addEventListener("change", apply);
+      });
     }
-  {% endif %}
+    initDetailToggles(document);
 
-});
+    // Auto scroll to first error
+    {% if form.errors and error_summary %}
+      const firstKey = "{{ error_summary.0.name }}";
+      if (firstKey) {
+        const block = document.getElementById("group-" + firstKey);
+        if (block) {
+          block.scrollIntoView({ behavior: "smooth", block: "center" });
+          block.classList.add("error-highlight");
+          setTimeout(() => block.classList.remove("error-highlight"), 1500);
+        }
+      }
+    {% endif %}
+  });
     </script>
-    <style>
-.widget-user-username { font-size: 1.05rem; }
-.card-widget .badge { vertical-align: middle; }
-.badge + .badge { margin-left: .25rem; }
-.font-weight-semibold { font-weight: 600; }
-.prose ul { margin-left: 1.25rem; }
-.prose h4, .prose h5 { margin:.25rem 0 .5rem; }
-.error-highlight { box-shadow: 0 0 0 0.25rem rgba(220,53,69,.25); }
-@media (min-width: 992px) {
-  .content .container-fluid .col-lg-8 form .card:last-child { position: sticky; bottom: 0; z-index: 5; }
-}
-    </style>
 {% endblock %}

@@ -22,6 +22,7 @@ from django.utils.safestring import mark_safe
 from django.views.generic import CreateView, TemplateView, UpdateView
 
 from club.models import ClubNotice, QuickLink
+from spond_integration.models import SpondAttendance
 from tasks.events import emit
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -126,22 +127,55 @@ def _md(text: str) -> str:
 
 @login_required
 def dashboard(request):
-    """Show current user's players + tasks panel."""
+    """Player dashboard: players, quick tasks, widgets, notices, quick links."""
+    # Players owned by the current user (keep your scope rule here)
     players = (
         request.user.players.select_related("player_type")
         .prefetch_related("team_memberships__team")
         .all()
     )
+    player_ids = list(players.values_list("id", flat=True))
 
-    # Try to pull "open" tasks for this user (best-effort across varying schemas)
+    # ----- KPI widgets -----
+    # Active subscriptions across these players
+    active_subscriptions_count = 0
+    if player_ids:
+        try:
+            from memberships.models import Subscription
+
+            active_subscriptions_count = Subscription.objects.filter(
+                player_id__in=player_ids, status="active"
+            ).count()
+        except Exception:
+            active_subscriptions_count = 0
+
+    # Spond: unanswered ("unknown") for FUTURE events
+    spond_pending_count = 0
+    if player_ids:
+        try:
+            # Models live in the `spond` app you shared above
+            now = timezone.now()
+            spond_pending_count = (
+                SpondAttendance.objects.filter(
+                    member__player_links__active=True,  # SpondMember -> PlayerSpondLink
+                    member__player_links__player_id__in=player_ids,
+                    status="unknown",
+                    event__start_at__gte=now,  # only future events
+                )
+                .values_list("id", flat=True)  # de-duplicate
+                .distinct()
+                .count()
+            )
+        except Exception:
+            spond_pending_count = 0
+
+    # ----- Tasks (best-effort across schemas) -----
     pending_tasks = []
     user = request.user
     try:
-        from tasks.models import (  # import here to avoid hard dependency at import time
-            Task,
-        )
+        from tasks.models import Task  # soft dependency
 
-        # detect assignee field
+        # detect assignee-like field
         assignee_field = None
         for candidate in ("assignee", "assigned_to", "user", "owner", "created_for"):
             if hasattr(Task, candidate):
@@ -151,7 +185,6 @@ def dashboard(request):
         qs = Task.objects.all()
         base_q = Q(**{assignee_field: user}) if assignee_field else Q()
 
-        # open / pending
         open_states = ["open", "todo", "pending", "in_progress", "new"]
         if hasattr(Task, "status"):
             qs = qs.filter(base_q, status__in=open_states)
@@ -164,9 +197,9 @@ def dashboard(request):
 
         qs = qs.order_by("due_at", "-created_at")[:10]
 
-        # attach URLs if missing (derive from known patterns)
+        # attach URL when obvious (keep defensive)
         player_pub_ids = {p.id: p.public_id for p in players}
-        pending = []
+        tmp = []
         for t in qs:
             url = getattr(t, "url", None)
             kind = getattr(t, "kind", "")
@@ -182,20 +215,15 @@ def dashboard(request):
                         url = t.get_absolute_url()
                     except Exception:
                         pass
-
-            # setattr(t, "url", url)  # transient attribute for templates
-
-            pending.append(t)
-
-        pending_tasks = pending
-
+            tmp.append(t)
+        pending_tasks = tmp
     except Exception:
         pending_tasks = []
 
-    # Fallback "virtual" tasks if none present
+    # Fallback “virtual” tasks if there are none
     if not pending_tasks:
         for p in players:
-            answers_complete = None
+            # answers
             try:
                 answers_complete = (
                     p.answers_complete()
@@ -203,8 +231,7 @@ def dashboard(request):
                     else getattr(p, "answers_complete", None)
                 )
             except Exception:
-                pass
-
+                answers_complete = None
             if answers_complete is False:
                 pending_tasks.append(
                     type(
@@ -218,13 +245,12 @@ def dashboard(request):
                     )()
                 )
 
-            has_active_membership = None
+            # membership
             try:
                 ham = getattr(p, "has_active_membership", None)
                 has_active_membership = ham() if callable(ham) else ham
             except Exception:
-                pass
-
+                has_active_membership = None
             if has_active_membership is False:
                 pending_tasks.append(
                     type(
@@ -237,16 +263,17 @@ def dashboard(request):
                         },
                     )()
                 )
-
         pending_tasks = pending_tasks[:10]
 
-    notices = ClubNotice.objects.filter(active=True)
-    quick_links = QuickLink.objects.filter(active=True)
-
-    def wallet_flags(request):
-        from django.conf import settings
-
-        return {"WALLET_APPLE_ENABLED": getattr(settings, "WALLET_APPLE_ENABLED", False)}
+    # Notices & Quick Links
+    try:
+        notices = ClubNotice.objects.filter(active=True).order_by("-created_at")[:6]
+    except Exception:
+        notices = []
+    try:
+        quick_links = QuickLink.objects.filter(active=True).order_by("display_order", "title")[:10]
+    except Exception:
+        quick_links = []
 
     return render(
         request,
@@ -256,6 +283,8 @@ def dashboard(request):
             "pending_tasks": pending_tasks,
             "notices": notices,
             "quick_links": quick_links,
+            "active_subscriptions_count": active_subscriptions_count,
+            "spond_pending_count": spond_pending_count,
         },
     )
 

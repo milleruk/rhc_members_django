@@ -24,13 +24,143 @@ https://docs.github.com/assets/cb-41128/mw-1440/images/help/writing/alerts-rende
 
 ## [In Development] - Unreleased
 
-<!--
-Section Order:
 
-### Added
-### Fixed
-### Changed
-### Deprecated
-### Removed
-### Security
+<!--
+
+Unrelease notes
+
+Adds a clean accent palette (easy to tweak via CSS variables).
+
+Colourful tab pills, headers, chips, and boolean pills.
+
+No item counts in group headers (as requested).
+
+Chevron aligned right, collapses on mobile, expands on md+.
+
+Keeps all your existing logic/permissions.
+
 -->
+
+## [0.0.9-alpha] - 2025-09-04
+
+### Features
+- Incident reporting module with automatic task generation and review workflow.
+- Permissions for incidents: access app, submit, assign, complete review, delete, and view sensitive reports.
+- MFA enforcement mixin for staff area (`RequireMFAMixin`).
+- Social login providers added (GitHub, Google, Facebook, Apple, Instagram) – Facebook and Apple marked as “in development”.
+- Extra links added to login and signup pages (Forgot password, Resend confirmation, Register new account).
+- Test suite started for `staff` app.
+- Developer helper scripts (`dev.sh`, `commit.sh`, `devmenu.sh`) and alias (`rhcdev`).
+- **Dashboard KPIs**:
+  - Active subscriptions count across all players for the signed-in user.
+  - Pending Spond responses count (`status="unknown"` for future events).
+- **Player Detail**:
+  - Active subscriptions card (visible to all staff who can view the player).
+  - Desktop: full-width bar; Mobile: standalone card placed after Answers.
+  - Answers shown first on mobile for quick access.
+
+### Fixes
+- Player delete button now works correctly from dashboard.
+- `NoReverseMatch` errors in tasks view resolved.
+- `Player.full_name` attribute error in wallet pkpass generation fixed.
+- Integrity error on task creation form fixed, dropdown styling improved.
+- TemplateSyntaxError issues in incidents templates resolved.
+- Spond pending counter now correctly filters for `status="unknown"` and future events.
+- Active subscriptions widget now respects player visibility, not gated to superusers.
+
+### DevOps
+- Celery beat switched to DatabaseScheduler for runtime schedule updates.
+- GitHub Actions CI updated with linting (flake8, black, isort).
+- Dockerfile reduced from ~80 lines to ~40.
+
+### UI/UX
+- Player detail and dashboard templates modernised with accent theme, rounded cards, and consistent spacing.
+- Membership dashboard cards redesigned with clearer headers and grouped actions.
+- Profile answers edit page updated to match theme, with non-collapsible headers.
+- Club notices and quick links restored to dashboard sidebar with new styling.
+- Imports in views tidied up for readability.
+- Mobile tweaks: fixed spacing/overflow issues, improved button group wrapping.
+
+
+---
+
+## [0.0.8-alpha] - 2025-09-02
+
+### Features
+- Membership card generator (Apple Wallet pkpass + digital card output).
+
+### UI/UX
+- Staff functions moved into a dedicated `staff` app for tidier separation.
+- Player views in `members` app updated for more user-friendly experience.
+
+---
+
+## [0.0.7-alpha] - 2025-09-01
+
+### Features
+- Task module implemented with reminders.
+- Celery workers and beat schedule created for automated emails.
+
+### UI/UX
+- Navigation templates and menus reworked.
+- Breadcrumbs and version numbers added to templates.
+
+### DevOps
+- Main `urls.py` restructured.
+
+---
+
+## [0.0.6-alpha] - 2025-08-31
+
+### Features
+- Captains’ team view fixed with new M2M team membership model.
+
+### DevOps
+- Settings moved to `.env` files.
+- Restricted Spond link visibility to full admins.
+
+---
+
+## [0.0.5-alpha] - 2025-08-30
+
+### Features
+- Spond transactions integration.
+
+---
+
+## [0.0.4-alpha] - 2025-08-29
+
+### Features
+- Spond events sync (shows events and players on dashboard).
+
+### UI/UX
+- Membership model updated.
+- Membership forms updated to group dynamic questions by category and display order.
+
+---
+
+## [0.0.3-alpha] - 2025-08-28
+
+### Features
+- Initial Spond events sync.
+
+### UI/UX
+- Locked down team assignment so only certain roles can edit and assign.
+
+---
+
+## [0.0.2-alpha] - 2025-08-28
+
+### Features
+- Team view filter (with unassigned list).
+- Initial Spond integration.
+
+### UI/UX
+- Locked down team assignment so only certain roles can edit and assign.
+
+---
+
+## [0.0.1-alpha] - 2025-08-27
+
+### Features
+- First release for alpha testing.

@@ -1,214 +1,797 @@
 {% extends "base.html" %}
-{% block title %}All Subscriptions{% endblock %}
+{% load crispy_forms_tags %}
+{% block title %}Player · {{ player.first_name }} {{ player.last_name }}{% endblock %}
 {% block content %}
-    <div class="content-header py-2">
-        <div class="container-fluid d-flex justify-content-between align-items-center">
-            <div>
-                <h1 class="m-0 h4">All Subscriptions</h1>
-                <p class="text-muted small mb-0">Search and filter within your staff scope.</p>
+    <style>
+  /* === Accent theme (tweak these to your club colours) === */
+  :root{
+    --accent:#3f8cff;           /* primary accent */
+    --accent-2:#7c4dff;         /* secondary accent */
+    --accent-soft:#e8f1ff;      /* very light accent bg */
+    --accent-soft-2:#efe9ff;    /* very light secondary */
+    --chip-bg:#fff;
+    --muted:#6c757d;
+    --line:rgba(0,0,0,.08);
+  }
+
+  /* General layout + spacing */
+  .page-head { gap:.75rem; }
+  .avatar-xl { width:96px; height:96px; font-size:28px; background:linear-gradient(135deg,var(--accent),var(--accent-2)); }
+  @media (max-width:575.98px){ .avatar-xl{ width:64px; height:64px; font-size:20px; } }
+  .muted-small { color:var(--muted); font-size:.88rem; }
+  .badge + .badge { margin-left:.35rem; }
+  .actions-bar .btn, .actions-bar .dropdown { margin-left:.35rem; margin-bottom:.35rem; }
+  .card-outline { border:1px solid var(--line); border-radius:.75rem; overflow:hidden; }
+  .card-header { padding:.5rem .75rem; background:linear-gradient(180deg,#fff, #fafafa); }
+  .sticky-subheader { position:sticky; top:0; z-index:1; background:#fff; }
+
+  /* Tab styling with colour */
+  .nav-pills { overflow:auto; white-space:nowrap; flex-wrap:nowrap; }
+  .nav-pills .nav-link { border-radius:.6rem; }
+  .nav-pills .nav-link.active{
+    background:linear-gradient(135deg,var(--accent),var(--accent-2));
+  }
+  .nav-pills::-webkit-scrollbar{ display:none; }
+
+  /* Answers: group cards */
+  .answer-group { border:1px solid var(--line); border-radius:.75rem; overflow:hidden; }
+  .answer-group .card-header{
+    background:linear-gradient(180deg,#fff, var(--accent-soft));
+    border-bottom:1px solid var(--line);
+  }
+  .answer-group .card-header h3 { color:#1c2b3a; }
+  .answer-group .card-body{ background:#fff; }
+
+  /* Answers: key–value rows */
+  .answer-kv{
+    display:flex; gap:.75rem; align-items:flex-start;
+    padding:.7rem .25rem; border-bottom:1px dashed var(--line);
+  }
+  .answer-kv:last-child{ border-bottom:0; }
+  .answer-kv .k{ min-width:200px; color:var(--muted); }
+  .answer-kv .v{ flex:1; }
+  @media (max-width:575.98px){
+    .answer-kv{ flex-direction:column; padding:.6rem 0; }
+    .answer-kv .k{ min-width:0; }
+  }
+
+  /* Pretty chips + pills */
+  .chip{
+    display:inline-block; padding:.2rem .6rem; border-radius:16px;
+    background:var(--chip-bg); border:1px solid var(--line);
+    font-size:.9rem; box-shadow:0 1px 0 rgba(0,0,0,.02);
+  }
+  .chip--accent{
+    background:var(--accent-soft); border-color:rgba(63,140,255,.25);
+  }
+  .answer-pill{ min-width:66px; }
+  .answer-pill.badge-success{ background:#20c997; }
+  .answer-pill.badge-secondary{ background:#adb5bd; }
+
+  /* Toggle icon */
+  .answer-toggle .fa-chevron-down{ transition:transform .2s ease; }
+
+  /* Left column stat tiles */
+  .description-block .description-header{ color:#1c2b3a; }
+  .description-text{ color:var(--muted); letter-spacing:.05em; }
+
+  /* Lists */
+  .list-group-item{ display:flex; align-items:center; }
+  .list-group-item i{ width:18px; margin-right:.5rem; text-align:center; color:var(--accent-2); }
+
+  /* Tables: thin borders and subtle zebra */
+  table.table-sm thead{ background:linear-gradient(180deg,#fff,#f7f7fb); }
+  table.table-sm tbody tr + tr td{ border-top:1px solid #f1f2f6; }
+
+  /* Dropdown items: bigger tap targets */
+  .dropdown-menu .dropdown-item{ padding:.55rem .9rem; }
+    </style>
+    <div class="content-header pb-0">
+        <div class="container-fluid">
+            <!-- Breadcrumbs -->
+            <div class="row align-items-center mb-2">
+                <div class="col">
+                    <ol class="breadcrumb mb-0">
+                        <li class="breadcrumb-item">
+                            <a href="{% url 'dashboard' %}">Home</a>
+                        </li>
+                        <li class="breadcrumb-item">
+                            <a href="{% url 'staff:player_list' %}">Players</a>
+                        </li>
+                        <li class="breadcrumb-item active">{{ player.first_name }} {{ player.last_name }}</li>
+                    </ol>
+                </div>
             </div>
-            <div>
-                <a class="btn btn-sm btn-outline-secondary"
-                   href="{% url 'staff:memberships_overview' %}">Back to Overview</a>
+            <!-- Header -->
+            <div class="row align-items-center">
+                <div class="col-md-8 d-flex page-head">
+                    <div class="img-circle elevation-2 d-inline-flex align-items-center justify-content-center text-white avatar-xl">
+                        {{ player.first_name|default:"?"|slice:":1" }}{{ player.last_name|default:""|slice:":1" }}
+                    </div>
+                    <div class="py-2">
+                        <h1 class="h4 mb-1">{{ player.first_name }} {{ player.last_name }}</h1>
+                        <div class="muted-small d-flex flex-wrap align-items-center">
+                            {% if player.player_type %}<span class="badge badge-secondary mb-1">{{ player.player_type }}</span>{% endif %}
+                            {% if player.get_relation_display %}
+                                <span class="badge mb-1"
+                                      style="background:var(--accent-soft-2);
+                                             color:#4a3b8f;
+                                             border:1px solid rgba(124,77,255,.25)">{{ player.get_relation_display }}</span>
+                            {% endif %}
+                            {% if player.date_of_birth %}
+                                <span class="badge mb-1"
+                                      style="background:var(--accent-soft);
+                                             color:#1c2b3a;
+                                             border:1px solid rgba(63,140,255,.25)">
+                                    <i class="far fa-calendar-alt mr-1"></i>{{ player.date_of_birth|date:"Y-m-d" }}
+                                </span>
+                            {% endif %}
+                            {% if player.get_gender_display %}
+                                <span class="badge mb-1"
+                                      style="background:#f6f7fb;
+                                             color:#1c2b3a;
+                                             border:1px solid #e6e7ee">
+                                    <i class="fas fa-venus-mars mr-1"></i>{{ player.get_gender_display }}
+                                </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                <!-- Actions -->
+                <div class="col-md-4 d-flex justify-content-md-end flex-wrap align-items-start">
+                    {% if can_edit_player %}
+                        <!-- Desktop buttons -->
+                        <div class="actions-bar d-none d-sm-flex">
+                            <a href="{% url 'player_edit' public_id=player.public_id %}"
+                               class="btn btn-outline-primary btn-sm">
+                                <i class="fas fa-user-cog mr-1"></i> Edit Details
+                            </a>
+                            <a href="{% url 'answer' player.public_id %}"
+                               class="btn btn-primary btn-sm">
+                                <i class="fas fa-edit mr-1"></i> Update Answers
+                            </a>
+                            <a href="{% url 'memberships:choose' player.id %}"
+                               class="btn btn-info btn-sm">
+                                <i class="fas fa-id-badge mr-1"></i> Membership
+                            </a>
+                            {% if can_hijack and player_created_by %}
+                                <form method="post" action="{% url 'hijack:acquire' %}" class="d-inline">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="user_pk" value="{{ player_created_by.pk }}">
+                                    <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                                    <button type="submit" class="btn btn-outline-dark btn-sm">
+                                        <i class="fas fa-user-secret mr-1"></i> Hijack Creator
+                                    </button>
+                                </form>
+                            {% endif %}
+                            <div class="dropdown">
+                                <button class="btn btn-outline-secondary btn-sm dropdown-toggle"
+                                        data-toggle="dropdown">More</button>
+                                <div class="dropdown-menu dropdown-menu-right">
+                                    <a class="dropdown-item text-danger"
+                                       href="#"
+                                       onclick="event.preventDefault(); if(confirm('Delete this player? This cannot be undone.')) { document.getElementById('player-delete-form').submit(); }">
+                                        <i class="fas fa-trash mr-2"></i> Delete Player
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Mobile 3-dot menu -->
+                        <div class="dropdown d-sm-none">
+                            <button class="btn btn-outline-secondary btn-sm dropdown-toggle"
+                                    data-toggle="dropdown"
+                                    aria-label="Player actions">
+                                <i class="fas fa-ellipsis-h"></i>
+                            </button>
+                            <div class="dropdown-menu dropdown-menu-right">
+                                <a class="dropdown-item"
+                                   href="{% url 'player_edit' public_id=player.public_id %}">
+                                    <i class="fas fa-user-cog mr-2"></i> Edit Details
+                                </a>
+                                <a class="dropdown-item" href="{% url 'answer' player.public_id %}">
+                                    <i class="fas fa-edit mr-2"></i> Update Answers
+                                </a>
+                                <a class="dropdown-item" href="{% url 'memberships:choose' player.id %}">
+                                    <i class="fas fa-id-badge mr-2"></i> Membership
+                                </a>
+                                {% if can_hijack and player_created_by %}
+                                    <form method="post" action="{% url 'hijack:acquire' %}">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="user_pk" value="{{ player_created_by.pk }}">
+                                        <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                                        <button type="submit" class="dropdown-item">
+                                            <i class="fas fa-user-secret mr-2"></i> Hijack Creator
+                                        </button>
+                                    </form>
+                                {% endif %}
+                                <div class="dropdown-divider"></div>
+                                <a class="dropdown-item text-danger"
+                                   href="#"
+                                   onclick="event.preventDefault(); if(confirm('Delete this player? This cannot be undone.')) { document.getElementById('player-delete-form').submit(); }">
+                                    <i class="fas fa-trash mr-2"></i> Delete Player
+                                </a>
+                            </div>
+                        </div>
+                        <form id="player-delete-form"
+                              method="post"
+                              action="{% url 'player_delete' player.public_id %}"
+                              class="d-none">
+                            {% csrf_token %}
+                        </form>
+                    {% endif %}
+                </div>
             </div>
         </div>
     </div>
     <section class="content">
         <div class="container-fluid">
-            <!-- Filters -->
-            <form class="card card-body mb-3" method="get" action="">
-                <div class="form-row">
-                    <div class="col-md-3">
-                        <label class="small text-muted mb-1">Search</label>
-                        <input type="text"
-                               class="form-control form-control-sm"
-                               name="q"
-                               value="{{ values.q }}"
-                               placeholder="Player or product...">
-                    </div>
-                    <div class="col-md-2">
-                        <label class="small text-muted mb-1">Status</label>
-                        <select name="status" class="form-control form-control-sm">
-                            <option value="" {% if not values.status %}selected{% endif %}>Any</option>
-                            {% for s in statuses %}
-                                <option value="{{ s }}" {% if values.status == s %}selected{% endif %}>{{ s|capfirst }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <div class="col-md-2">
-                        <label class="small text-muted mb-1">Season</label>
-                        <select name="season" class="form-control form-control-sm">
-                            <option value="" {% if not values.season %}selected{% endif %}>Any</option>
-                            {% for s in seasons %}
-                                <option value="{{ s.id }}"
-                                        {% if values.season|add:'' == s.id|add:'' %}selected{% endif %}>
-                                    {{ s.name }}
-                                </option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <div class="col-md-2">
-                        <label class="small text-muted mb-1">Product</label>
-                        <select name="product" class="form-control form-control-sm">
-                            <option value="" {% if not values.product %}selected{% endif %}>Any</option>
-                            {% for p in products %}
-                                <option value="{{ p.id }}"
-                                        {% if values.product|add:'' == p.id|add:'' %}selected{% endif %}>
-                                    {{ p.name }}
-                                </option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <div class="col-md-2">
-                        <label class="small text-muted mb-1">Team</label>
-                        <select name="team" class="form-control form-control-sm">
-                            <option value="" {% if not values.team %}selected{% endif %}>Any</option>
-                            {% for t in teams %}
-                                <option value="{{ t.id }}"
-                                        {% if values.team|add:'' == t.id|add:'' %}selected{% endif %}>
-                                    {{ t.name }}
-                                </option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <div class="col-md-1">
-                        <label class="small text-muted mb-1">Type</label>
-                        <select name="player_type" class="form-control form-control-sm">
-                            <option value="" {% if not values.player_type %}selected{% endif %}>Any</option>
-                            {% for pt in player_types %}
-                                <option value="{{ pt.id }}"
-                                        {% if values.player_type|add:'' == pt.id|add:'' %}selected{% endif %}>
-                                    {{ pt.name }}
-                                </option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                </div>
-                <div class="mt-2 d-flex">
-                    <button class="btn btn-sm btn-primary mr-2" type="submit">Filter</button>
-                    <a class="btn btn-sm btn-light"
-                       href="{% url 'staff:memberships_list' %}">Reset</a>
-                </div>
-            </form>
-            <!-- Results -->
-            <div class="card">
-                <div class="card-body p-0">
-                    <table class="table table-sm mb-0">
-                        <thead>
-                            <tr>
-                                <th>Player</th>
-                                <th>Type</th>
-                                <th>Product</th>
-                                <th>Season</th>
-                                <th>Status</th>
-                                <th>Started</th>
-                                <th class="text-right">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for s in subscriptions %}
-                                <tr>
-                                    <td>{{ s.player.first_name }} {{ s.player.last_name }}</td>
-                                    <td>{{ s.player.player_type.name|default:"—" }}</td>
-                                    <td>{{ s.product.name|default:"—" }}</td>
-                                    <td>{{ s.season.name|default:"—" }}</td>
-                                    <td>
-                                        {% if s.status == 'active' %}
-                                            <span class="badge badge-success">Active</span>
-                                        {% elif s.status == 'pending' %}
-                                            <span class="badge badge-info">Pending</span>
-                                        {% elif s.status == 'paused' %}
-                                            <span class="badge badge-warning">Paused</span>
-                                        {% elif s.status == 'cancelled' %}
-                                            <span class="badge badge-danger">Cancelled</span>
-                                        {% else %}
-                                            <span class="badge badge-secondary">{{ s.status|capfirst|default:'—' }}</span>
-                                        {% endif %}
-                                    </td>
-                                    <td>{{ s.started_at|date:"Y-m-d" }}</td>
-                                    <td class="text-right">
-                                        <a class="btn btn-xs btn-outline-secondary"
-                                           href="{% url 'staff:player_detail' s.player_id %}">Player</a>
-                                        {% if s.status == 'pending' and perms.memberships.activate_subscription %}
-                                            <form method="post"
-                                                  action="{% url 'staff:activate_subscription' s.id %}"
-                                                  class="d-inline">
-                                                {% csrf_token %}
-                                                <button type="submit"
-                                                        class="btn btn-xs btn-success"
-                                                        onclick="return confirm('Activate this subscription for {{ s.player.first_name }} {{ s.player.last_name }}?');">
-                                                    Activate
-                                                </button>
-                                            </form>
-                                        {% endif %}
-                                        {% if s.status == 'active' and perms.memberships.set_pending_subscription %}
-                                            <form method="post"
-                                                  action="{% url 'staff:set_pending_subscription' s.id %}"
-                                                  class="d-inline">
-                                                {% csrf_token %}
-                                                <button type="submit"
-                                                        class="btn btn-xs btn-warning"
-                                                        onclick="return confirm('Set subscription for {{ s.player.first_name }} {{ s.player.last_name }} back to Pending?');">
-                                                    Set Pending
-                                                </button>
-                                            </form>
-                                        {% endif %}
-                                        {% if s.status != 'cancelled' and perms.memberships.cancel_subscription %}
-                                            <form method="post"
-                                                  action="{% url 'staff:cancel_subscription' s.id %}"
-                                                  class="d-inline">
-                                                {% csrf_token %}
-                                                <button type="submit"
-                                                        class="btn btn-xs btn-danger"
-                                                        onclick="return confirm('Cancel this subscription for {{ s.player.first_name }} {{ s.player.last_name }}?');">
-                                                    Cancel
-                                                </button>
-                                            </form>
-                                        {% endif %}
-                                    </td>
-                                </tr>
-                            {% empty %}
-                                <tr>
-                                    <td colspan="7" class="text-muted p-3">No subscriptions match your filters.</td>
-                                </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-                {% if is_paginated %}
-                    <div class="card-footer">
-                        {% with qp=request.GET.urlencode %}
-                            <nav>
-                                <ul class="pagination pagination-sm mb-0">
-                                    {% if page_obj.has_previous %}
-                                        <li class="page-item">
-                                            <a class="page-link"
-                                               href="?{% if qp %}{{ qp|cut:'page='|cut:'&&' }}&{% endif %}page={{ page_obj.previous_page_number }}">«</a>
-                                        </li>
-                                    {% else %}
-                                        <li class="page-item disabled">
-                                            <span class="page-link">«</span>
-                                        </li>
-                                    {% endif %}
-                                    <li class="page-item active">
-                                        <span class="page-link">{{ page_obj.number }}</span>
+            <div class="row">
+                <!-- LEFT -->
+                <div class="col-lg-3 col-md-4 order-2 order-md-1 mt-3 mt-md-0">
+                    <div class="card card-outline">
+                        <div class="card-body">
+                            <ul class="list-group list-group-unbordered mb-3">
+                                <li class="list-group-item d-flex justify-content-between">
+                                    <span class="text-muted">Type</span><span>{{ player.player_type|default:"—" }}</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between">
+                                    <span class="text-muted">Relation</span><span>{{ player.get_relation_display|default:"—" }}</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between">
+                                    <span class="text-muted">Gender</span><span>{{ player.get_gender_display|default:"—" }}</span>
+                                </li>
+                                {% if player.date_of_birth %}
+                                    <li class="list-group-item d-flex justify-content-between">
+                                        <span class="text-muted">DOB</span><span>{{ player.date_of_birth|date:"Y-m-d" }}</span>
                                     </li>
-                                    {% if page_obj.has_next %}
-                                        <li class="page-item">
-                                            <a class="page-link"
-                                               href="?{% if qp %}{{ qp|cut:'page='|cut:'&&' }}&{% endif %}page={{ page_obj.next_page_number }}">»</a>
-                                        </li>
-                                    {% else %}
-                                        <li class="page-item disabled">
-                                            <span class="page-link">»</span>
-                                        </li>
-                                    {% endif %}
-                                </ul>
-                            </nav>
-                        {% endwith %}
+                                {% endif %}
+                            </ul>
+                            <div class="row text-center">
+                                <div class="col-6 border-right">
+                                    <div class="description-block mb-0">
+                                        <h5 class="description-header">{{ memberships|length }}</h5>
+                                        <span class="description-text">TEAMS</span>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="description-block mb-0">
+                                        <h5 class="description-header">{{ log_page.paginator.count|default:0 }}</h5>
+                                        <span class="description-text">ACCESS LOGS</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <hr class="my-3">
+                            <div class="muted-small">
+                                Created {{ player.created_at|date:"Y-m-d H:i" }} · Updated {{ player.updated_at|date:"Y-m-d H:i" }}
+                            </div>
+                        </div>
                     </div>
-                {% endif %}
+                    <!-- Quick Admin -->
+                    <div class="card card-outline">
+                        <div class="card-header py-2">
+                            <h3 class="card-title mb-0">
+                                <i class="fas fa-tools mr-1" style="color:var(--accent-2)"></i> Quick Admin
+                            </h3>
+                        </div>
+                        <div class="list-group list-group-flush">
+                            {% if can_edit_player %}
+                                <a class="list-group-item list-group-item-action"
+                                   href="{% url 'player_edit' public_id=player.public_id %}">
+                                    <i class="fas fa-user-cog"></i> Edit player details
+                                </a>
+                                <a class="list-group-item list-group-item-action"
+                                   href="{% url 'answer' player.public_id %}">
+                                    <i class="fas fa-edit"></i> Update profile answers
+                                </a>
+                                <a class="list-group-item list-group-item-action"
+                                   href="{% url 'memberships:choose' player.id %}">
+                                    <i class="fas fa-id-badge"></i> Manage membership
+                                </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                <!-- RIGHT -->
+                <div class="col-lg-9 col-md-8 order-1 order-md-2">
+                    <div class="card card-outline">
+                        <div class="card-header p-2">
+                            <ul class="nav nav-pills">
+                                <li class="nav-item">
+                                    <a class="nav-link active" href="#answers" data-toggle="tab">
+                                        <i class="fas fa-list-ul mr-1"></i> Answers
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" href="#teams" data-toggle="tab">
+                                        <i class="fas fa-users mr-1"></i> Team Memberships
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" href="#logs" data-toggle="tab">
+                                        <i class="fas fa-clipboard-list mr-1"></i> Access Logs
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" href="#spond" data-toggle="tab">
+                                        <i class="fas fa-calendar-check mr-1"></i> Spond
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                        <div class="card-body">
+                            <div class="tab-content">
+                                {# === ANSWERS (colourful, refined) === #}
+                                <div class="tab-pane active" id="answers">
+                                    {% if readonly_answers %}
+                                        <!-- Toolbar -->
+                                        <div class="d-flex flex-wrap align-items-center mb-2">
+                                            <div class="input-group input-group-sm mr-2 mb-2" style="max-width:320px;">
+                                                <div class="input-group-prepend">
+                                                    <span class="input-group-text"
+                                                          style="background:var(--accent-soft);
+                                                                 border-color:rgba(63,140,255,.25)"><i class="fas fa-search" style="color:var(--accent)"></i></span>
+                                                </div>
+                                                <input id="answersFilter"
+                                                       type="text"
+                                                       class="form-control"
+                                                       placeholder="Filter answers…">
+                                            </div>
+                                            <div class="btn-group btn-group-sm mb-2"
+                                                 role="group"
+                                                 aria-label="Expand controls">
+                                                <button id="expandAll" type="button" class="btn btn-outline-secondary">
+                                                    <i class="fas fa-plus-square mr-1" style="color:var(--accent)"></i> Expand all
+                                                </button>
+                                                <button id="collapseAll" type="button" class="btn btn-outline-secondary">
+                                                    <i class="fas fa-minus-square mr-1" style="color:var(--accent-2)"></i> Collapse all
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div id="answers-accordion">
+                                            {% for gid, group in readonly_answers.items %}
+                                                <div class="card answer-group mb-2">
+                                                    <!-- Header: title + right chevron; NO counts -->
+                                                    <div class="card-header py-2 d-flex align-items-center"
+                                                         role="button"
+                                                         data-toggle="collapse"
+                                                         data-target="#group-{{ gid }}"
+                                                         aria-controls="group-{{ gid }}"
+                                                         aria-expanded="false"
+                                                         style="cursor:pointer">
+                                                        <div class="flex-grow-1">
+                                                            <h3 class="card-title mb-0">{{ group.name|default:"General" }}</h3>
+                                                        </div>
+                                                        <button class="btn btn-tool ml-auto answer-toggle"
+                                                                type="button"
+                                                                aria-label="Toggle section">
+                                                            <i class="fas fa-chevron-down" style="color:var(--accent)"></i>
+                                                        </button>
+                                                    </div>
+                                                    <!-- Body: collapsed by default on mobile -->
+                                                    <div id="group-{{ gid }}"
+                                                         class="collapse"
+                                                         data-parent="#answers-accordion">
+                                                        <div class="card-body pt-2">
+                                                            {% if group.description %}
+                                                                <div class="alert mb-3 py-2 px-3"
+                                                                     style="background:var(--accent-soft);
+                                                                            border:1px solid rgba(63,140,255,.25);
+                                                                            color:#1c2b3a">
+                                                                    <i class="far fa-info-circle mr-1"></i>
+                                                                    <span class="small">{{ group.description }}</span>
+                                                                </div>
+                                                            {% endif %}
+                                                            <div class="row">
+                                                                {% for item in group.items %}
+                                                                    <div class="col-xl-6 col-lg-12">
+                                                                        <div class="answer-kv" data-answer-row>
+                                                                            <div class="k" data-answer-key>
+                                                                                {{ item.label }}
+                                                                                {% if item.description %}<div class="muted-small">{{ item.description }}</div>{% endif %}
+                                                                            </div>
+                                                                            <div class="v" data-answer-val>
+                                                                                {% if item.type == "boolean" %}
+                                                                                    {% if item.display == "Yes" %}
+                                                                                        <span class="badge answer-pill badge-success">
+                                                                                            <i class="fas fa-check mr-1"></i> Yes
+                                                                                        </span>
+                                                                                    {% else %}
+                                                                                        <span class="badge answer-pill badge-secondary">
+                                                                                            <i class="fas fa-times mr-1"></i> No
+                                                                                        </span>
+                                                                                    {% endif %}
+                                                                                {% else %}
+                                                                                    {% if item.display %}
+                                                                                        {% if item.display|length <= 28 %}
+                                                                                            <span class="chip chip--accent">{{ item.display }}</span>
+                                                                                        {% else %}
+                                                                                            <span class="text-break">{{ item.display }}</span>
+                                                                                        {% endif %}
+                                                                                    {% else %}
+                                                                                        <span class="text-muted">—</span>
+                                                                                    {% endif %}
+                                                                                {% endif %}
+                                                                                {% if item.detail %}<span class="muted-small ml-1">({{ item.detail }})</span>{% endif %}
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                {% endfor %}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            {% endfor %}
+                                        </div>
+                                    {% else %}
+                                        <p class="text-muted mb-0">No answers recorded yet.</p>
+                                    {% endif %}
+                                </div>
+                                {# === /ANSWERS === #}
+                                <!-- TEAMS -->
+                                <div class="tab-pane" id="teams">
+                                    <div class="card card-outline mb-3">
+                                        <div class="card-header py-2">
+                                            <h3 class="card-title mb-0">Current Assignments</h3>
+                                        </div>
+                                        <!-- Desktop/tablet table -->
+                                        <div class="card-body p-0 d-none d-md-block">
+                                            <div class="table-responsive">
+                                                <table class="table table-sm mb-0">
+                                                    <thead class="text-muted sticky-subheader">
+                                                        <tr>
+                                                            <th>Team</th>
+                                                            <th>Positions</th>
+                                                            <th>Assigned</th>
+                                                            {% if show_team_actions %}<th class="text-right">Actions</th>{% endif %}
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {% for m in memberships %}
+                                                            <tr>
+                                                                <td>{{ m.team.name }}</td>
+                                                                <td>
+                                                                    {% for pos in m.positions.all %}
+                                                                        <span class="badge badge-info mr-1 mb-1">{{ pos.name }}</span>
+                                                                    {% empty %}—
+                                                                    {% endfor %}
+                                                                </td>
+                                                                <td>
+                                                                    <small class="text-muted">{{ m.assigned_by }} · {{ m.assigned_at|date:"Y-m-d H:i" }}</small>
+                                                                </td>
+                                                                {% if show_team_actions %}
+                                                                    <td class="text-right">
+                                                                        <form method="post"
+                                                                              action="{% url 'staff:remove_membership' m.id %}"
+                                                                              class="d-inline">
+                                                                            {% csrf_token %}
+                                                                            <button type="submit" class="btn btn-outline-danger btn-xs">
+                                                                                <i class="fas fa-times mr-1"></i> Remove
+                                                                            </button>
+                                                                        </form>
+                                                                    </td>
+                                                                {% endif %}
+                                                            </tr>
+                                                        {% empty %}
+                                                            <tr>
+                                                                <td colspan="{% if show_team_actions %}4{% else %}3{% endif %}"
+                                                                    class="text-muted">No memberships yet.</td>
+                                                            </tr>
+                                                        {% endfor %}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                        <!-- Mobile cards -->
+                                        <div class="card-body d-block d-md-none">
+                                            {% for m in memberships %}
+                                                <div class="p-2 mb-2"
+                                                     style="border:1px solid var(--line);
+                                                            border-radius:.5rem">
+                                                    <div class="d-flex justify-content-between">
+                                                        <div>
+                                                            <div class="font-weight-bold">{{ m.team.name }}</div>
+                                                            <div class="small">
+                                                                <span class="text-muted">Positions:</span>
+                                                                {% for pos in m.positions.all %}
+                                                                    <span class="badge badge-info mr-1 mb-1">{{ pos.name }}</span>
+                                                                    {% empty %}<span class="text-muted">—</span>
+                                                                {% endfor %}
+                                                            </div>
+                                                            <div class="small text-muted">Assigned {{ m.assigned_at|date:"Y-m-d H:i" }} · {{ m.assigned_by }}</div>
+                                                        </div>
+                                                        {% if show_team_actions %}
+                                                            <form method="post" action="{% url 'staff:remove_membership' m.id %}">
+                                                                {% csrf_token %}
+                                                                <button type="submit" class="btn btn-sm btn-outline-danger">
+                                                                    <i class="fas fa-times"></i>
+                                                                </button>
+                                                            </form>
+                                                        {% endif %}
+                                                    </div>
+                                                </div>
+                                            {% empty %}
+                                                <div class="text-muted">No memberships yet.</div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                    {% if show_team_actions %}
+                                        <div id="add-team-form" class="card card-outline">
+                                            <div class="card-header py-2">
+                                                <h3 class="card-title mb-0">Add Assignment</h3>
+                                            </div>
+                                            <div class="card-body">
+                                                <form method="post">
+                                                    {% csrf_token %}
+                                                    {{ team_form|crispy }}
+                                                    <button type="submit" class="btn btn-success btn-sm">
+                                                        <i class="fas fa-plus mr-1"></i> Assign
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                <!-- /TEAMS -->
+                                <!-- LOGS -->
+                                <div class="tab-pane" id="logs">
+                                    <div class="card card-outline">
+                                        <div class="card-header py-2">
+                                            <h3 class="card-title mb-0">Access Logs</h3>
+                                        </div>
+                                        <!-- Desktop/tablet -->
+                                        <div class="card-body p-0 d-none d-md-block">
+                                            <div class="table-responsive">
+                                                <table class="table table-sm mb-0">
+                                                    <thead class="text-muted sticky-subheader">
+                                                        <tr>
+                                                            <th>User</th>
+                                                            <th>When</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {% for log in log_page %}
+                                                            <tr>
+                                                                <td>{{ log.accessed_by.first_name }} {{ log.accessed_by.last_name }}</td>
+                                                                <td>
+                                                                    <small class="text-muted">{{ log.accessed_at|date:"Y-m-d H:i" }}</small>
+                                                                </td>
+                                                            </tr>
+                                                        {% empty %}
+                                                            <tr>
+                                                                <td colspan="2" class="text-muted">No logs yet.</td>
+                                                            </tr>
+                                                        {% endfor %}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                        <!-- Mobile cards -->
+                                        <div class="card-body d-block d-md-none">
+                                            {% for log in log_page %}
+                                                <div class="p-2 mb-2"
+                                                     style="border:1px solid var(--line);
+                                                            border-radius:.5rem">
+                                                    <div class="font-weight-bold">{{ log.accessed_by.first_name }} {{ log.accessed_by.last_name }}</div>
+                                                    <div class="small text-muted">{{ log.accessed_at|date:"Y-m-d H:i" }}</div>
+                                                </div>
+                                            {% empty %}
+                                                <div class="text-muted">No logs yet.</div>
+                                            {% endfor %}
+                                        </div>
+                                        {% if log_page.has_other_pages %}
+                                            <div class="card-footer bg-white d-flex justify-content-between align-items-center py-2">
+                                                <div>Page {{ log_page.number }} of {{ log_page.paginator.num_pages }}</div>
+                                                <div>
+                                                    {% if log_page.has_previous %}
+                                                        <a class="btn btn-outline-secondary btn-sm"
+                                                           href="?page={{ log_page.previous_page_number }}#logs">
+                                                            <i class="fas fa-chevron-left mr-1"></i> Previous
+                                                        </a>
+                                                    {% endif %}
+                                                    {% if log_page.has_next %}
+                                                        <a class="btn btn-outline-secondary btn-sm ml-1"
+                                                           href="?page={{ log_page.next_page_number }}#logs">
+                                                            Next <i class="fas fa-chevron-right ml-1"></i>
+                                                        </a>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <!-- /LOGS -->
+                                <!-- SPOND -->
+                                <div class="tab-pane" id="spond">
+                                    <div class="card card-outline">
+                                        <div class="card-header py-2">
+                                            <h3 class="card-title mb-0">Spond</h3>
+                                            <div class="card-tools">
+                                                {% if spond_attendances_page %}
+                                                    <span class="badge badge-secondary">{{ spond_attendances_page.paginator.count }} total</span>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                        <!-- Desktop/tablet -->
+                                        <div class="card-body p-0 d-none d-md-block">
+                                            {% if spond_member %}
+                                                {% if spond_attendances_page and spond_attendances_page.object_list %}
+                                                    <div class="table-responsive">
+                                                        <table class="table table-sm table-striped mb-0">
+                                                            <thead class="text-muted sticky-subheader">
+                                                                <tr>
+                                                                    <th style="width:45%;">Event</th>
+                                                                    <th style="width:25%;">Start</th>
+                                                                    <th style="width:15%;">Status</th>
+                                                                    <th style="width:15%;">Notes</th>
+                                                                </tr>
+                                                            </thead>
+                                                            <tbody>
+                                                                {% for att in spond_attendances_page.object_list %}
+                                                                    <tr>
+                                                                        <td class="align-middle">
+                                                                            <strong>{{ att.event.title|default:"(No title)" }}</strong>
+                                                                        </td>
+                                                                        <td class="align-middle">{{ att.event.start_at|date:"D j M Y, H:i" }}</td>
+                                                                        <td class="align-middle">
+                                                                            <span class="badge badge-light">{{ att.status }}</span>
+                                                                        </td>
+                                                                        <td class="align-middle">{{ att.note|default:"—" }}</td>
+                                                                    </tr>
+                                                                {% endfor %}
+                                                            </tbody>
+                                                        </table>
+                                                    </div>
+                                                {% else %}
+                                                    <div class="p-3 text-muted">No Spond attendance records found for this player.</div>
+                                                {% endif %}
+                                            {% else %}
+                                                <div class="p-3">
+                                                    <div class="alert alert-secondary mb-0">
+                                                        <i class="far fa-link mr-1"></i> No active Spond link found for this player.
+                                                    </div>
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                        <!-- Mobile cards -->
+                                        <div class="card-body d-block d-md-none">
+                                            {% if spond_member %}
+                                                {% if spond_attendances_page and spond_attendances_page.object_list %}
+                                                    {% for att in spond_attendances_page.object_list %}
+                                                        <div class="p-2 mb-2"
+                                                             style="border:1px solid var(--line);
+                                                                    border-radius:.5rem">
+                                                            <div class="font-weight-bold">{{ att.event.title|default:"(No title)" }}</div>
+                                                            <div class="small text-muted">{{ att.event.start_at|date:"D j M Y, H:i" }}</div>
+                                                            <div class="mt-1">
+                                                                <span class="badge badge-light">{{ att.status }}</span>
+                                                                <span class="small text-muted ml-1">{{ att.note|default:"—" }}</span>
+                                                            </div>
+                                                        </div>
+                                                    {% endfor %}
+                                                {% else %}
+                                                    <div class="text-muted">No Spond attendance records found for this player.</div>
+                                                {% endif %}
+                                            {% else %}
+                                                <div class="alert alert-secondary mb-0">
+                                                    <i class="far fa-link mr-1"></i> No active Spond link found for this player.
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                        {% if spond_attendances_page and spond_attendances_page.paginator.num_pages > 1 %}
+                                            <div class="card-footer py-2">
+                                                <nav aria-label="Spond pagination">
+                                                    <ul class="pagination pagination-sm mb-0 justify-content-end">
+                                                        {% if spond_attendances_page.has_previous %}
+                                                            <li class="page-item">
+                                                                <a class="page-link"
+                                                                   href="?spond_page={{ spond_attendances_page.previous_page_number }}#spond"
+                                                                   aria-label="Previous">&laquo;</a>
+                                                            </li>
+                                                        {% else %}
+                                                            <li class="page-item disabled">
+                                                                <span class="page-link">&laquo;</span>
+                                                            </li>
+                                                        {% endif %}
+                                                        <li class="page-item disabled">
+                                                            <span class="page-link">Page {{ spond_attendances_page.number }} of {{ spond_attendances_page.paginator.num_pages }}</span>
+                                                        </li>
+                                                        {% if spond_attendances_page.has_next %}
+                                                            <li class="page-item">
+                                                                <a class="page-link"
+                                                                   href="?spond_page={{ spond_attendances_page.next_page_number }}#spond"
+                                                                   aria-label="Next">&raquo;</a>
+                                                            </li>
+                                                        {% else %}
+                                                            <li class="page-item disabled">
+                                                                <span class="page-link">&raquo;</span>
+                                                            </li>
+                                                        {% endif %}
+                                                    </ul>
+                                                </nav>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <!-- /SPOND -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- /RIGHT -->
             </div>
         </div>
     </section>
+    <script>
+  (function () {
+    // Mobile-first: collapsed by default. Expand on md+.
+    var isMdUp = window.matchMedia("(min-width: 768px)").matches;
+    var accordion = document.getElementById("answers-accordion");
+    if (!accordion) return;
+
+    if (isMdUp) {
+      accordion.querySelectorAll(".collapse").forEach(function (el) {
+        el.classList.add("show");
+        var icon = el.previousElementSibling && el.previousElementSibling.querySelector(".answer-toggle i");
+        if (icon) icon.style.transform = "rotate(180deg)";
+      });
+    }
+
+    // Expand/Collapse all
+    var expandBtn = document.getElementById("expandAll");
+    var collapseBtn = document.getElementById("collapseAll");
+    if (expandBtn) expandBtn.addEventListener("click", function(){
+      accordion.querySelectorAll(".collapse").forEach(function (el) {
+        if (!el.classList.contains("show")) $(el).collapse("show");
+      });
+    });
+    if (collapseBtn) collapseBtn.addEventListener("click", function(){
+      accordion.querySelectorAll(".collapse.show").forEach(function (el) {
+        $(el).collapse("hide");
+      });
+    });
+
+    // Rotate chevron on show/hide
+    $(accordion).on("show.bs.collapse", function (ev) {
+      var header = ev.target.previousElementSibling;
+      var icon = header && header.querySelector(".answer-toggle i");
+      if (icon) icon.style.transform = "rotate(180deg)";
+      header && header.setAttribute("aria-expanded", "true");
+    });
+    $(accordion).on("hide.bs.collapse", function (ev) {
+      var header = ev.target.previousElementSibling;
+      var icon = header && header.querySelector(".answer-toggle i");
+      if (icon) icon.style.transform = "rotate(0deg)";
+      header && header.setAttribute("aria-expanded", "false");
+    });
+
+    // Client-side filtering (labels + values)
+    var filter = document.getElementById("answersFilter");
+    if (filter) {
+      filter.addEventListener("input", function () {
+        var q = (this.value || "").toLowerCase().trim();
+
+        accordion.querySelectorAll(".answer-group").forEach(function(group){
+          var rows = group.querySelectorAll("[data-answer-row]");
+          var anyVisible = false;
+
+          rows.forEach(function(row){
+            var key = (row.querySelector("[data-answer-key]")?.innerText || "").toLowerCase();
+            var val = (row.querySelector("[data-answer-val]")?.innerText || "").toLowerCase();
+            var hit = !q || key.indexOf(q) > -1 || val.indexOf(q) > -1;
+            row.style.display = hit ? "" : "none";
+            if (hit) anyVisible = true;
+          });
+
+          var body = group.querySelector(".collapse");
+          if (!anyVisible) {
+            if (body && body.classList.contains("show")) $(body).collapse("hide");
+            group.style.opacity = .6;
+          } else {
+            group.style.opacity = 1;
+          }
+        });
+      });
+    }
+  })();
+    </script>
 {% endblock %}

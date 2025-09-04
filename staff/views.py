@@ -15,7 +15,6 @@ from django.utils.timezone import now
 from django.views.decorators.http import require_POST
 from django.views.generic import DetailView, ListView, TemplateView
 
-# import from other apps (no circulars)
 from members.forms import TeamAssignmentForm
 from members.models import (
     DynamicQuestion,
@@ -25,6 +24,8 @@ from members.models import (
     Team,
     TeamMembership,
 )
+
+# import from other apps (no circulars)
 from memberships.models import Subscription
 
 try:
@@ -382,6 +383,23 @@ class PlayerDetailView(LoginRequiredMixin, PermissionRequiredMixin, DetailView):
                 "player_created_by": getattr(player, "created_by", None),
             }
         )
+
+        active_subs_qs = (
+            Subscription.objects.filter(player=player, status="active")
+            .select_related("product", "season")
+            .order_by("-started_at")
+        )
+
+        # Who is allowed to see subs? (set to True if anyone who can view this page may see them)
+        can_view_subs = (
+            user.is_superuser
+            or user.has_perm("memberships.view_subscription")
+            or True  # <-- keep True to allow all; remove if you want to gate by perm
+        )
+
+        ctx["can_view_subs"] = can_view_subs
+        ctx["active_subs"] = active_subs_qs if can_view_subs else Subscription.objects.none()
+        ctx["has_active_subs"] = can_view_subs and active_subs_qs.exists()
 
         questions = (
             DynamicQuestion.objects.filter(active=True, applies_to=player.player_type)
