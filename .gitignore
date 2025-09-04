@@ -11,7 +11,10 @@ __pycache__/
 *.pot
 *.pyc
 *.mo
+
+# DB / state
 db.sqlite3
+*/db.sqlite3
 db.sqlite3-journal
 
 # Media & static (optional – if generated)
@@ -19,12 +22,14 @@ media/
 staticfiles/
 documents/
 
-# Virtual environment
+# Virtual environment / Secrets & env
 venv/
 .env/
 ENV/
 .venv/
 .env
+.env.*
+!.env.example
 
 # IDE / Editor
 .vscode/
