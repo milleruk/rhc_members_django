@@ -48,7 +48,22 @@ jobs:
       DJANGO_SETTINGS_MODULE: hockey_club.settings
       PYTHONDONTWRITEBYTECODE: 1
       PYTHONUNBUFFERED: 1
-      SECRET_KEY: dummy-but-long-enough-1234567890abcdefghijklmnopqrstuvwxyzXYZ
+
+      # ---- CI-safe Django env ----
+      DEBUG: "true"  # avoid prod-only guards during CI
+      SECRET_KEY: "ci-test-secret-not-for-prod"
+      ALLOWED_HOSTS: "localhost,127.0.0.1,testserver"
+      CSRF_TRUSTED_ORIGINS: "http://localhost:8000,http://127.0.0.1:8000"
+      EMAIL_BACKEND: "django.core.mail.backends.console.EmailBackend"
+      REDIS_URL: "redis://localhost:6379/0"   # Celery not run in CI, but keeps settings happy
+      WALLET_APPLE_ENABLED: "false"           # prevent walletpass import chain
+
+      # (optional) make intention explicit
+      ACCOUNT_DEFAULT_HTTP_PROTOCOL: "http"
+
+      # Use SQLite fallback by leaving DATABASE_URL unset
+      # DATABASE_URL: ""
+
     steps:
       - uses: actions/checkout@v4
 
