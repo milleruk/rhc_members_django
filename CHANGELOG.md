@@ -41,6 +41,30 @@ Keeps all your existing logic/permissions.
 
 -->
 
+## [0.1.0-beta] - 2025-09-04
+
+### Highlights
+- 🎉 First **beta release** — feature-complete and considered ready for wider testing.
+- All core modules (members, memberships, tasks, incidents, staff) are functional and integrated.
+- Permissions and MFA checks in place for staff-only areas.
+- Social login added (GitHub, Google, Instagram; Apple & Facebook marked as in-development).
+- Celery beat switched to DatabaseScheduler for runtime schedule updates.
+- Membership card generator and Apple Wallet pkpass working end-to-end.
+
+### Improvements
+- Player dashboard polished: delete, edit, and add flows fully working.
+- Membership and subscription flows tidied for production readiness.
+- Staff area has dedicated test suite scaffolding in place.
+- UI tweaks: breadcrumbs, quick links, clearer login/signup extras.
+
+### Fixes
+- Multiple `NoReverseMatch` and `TemplateSyntaxError` issues resolved.
+- Integrity error on task creation fixed, with improved dropdown styling.
+- Incident workflow bugs squashed; tasks auto-generate and cascade delete with incidents.
+
+---
+
+
 ## [0.0.9-alpha] - 2025-09-04
 
 ### Features
