@@ -293,27 +293,6 @@ SOCIALACCOUNT_PROVIDERS = {
         "SCOPE": ["profile", "email"],
         "AUTH_PARAMS": {"access_type": "online"},
     },
-    "github": {
-        "APP": {
-            "client_id": env("SOCIAL_GITHUB_CLIENT_ID"),
-            "secret": env("SOCIAL_GITHUB_SECRET"),
-            "key": "",
-        }
-    },
-    "apple": {
-        "APP": {
-            "client_id": env("SOCIAL_APPLE_CLIENT_ID"),
-            "secret": env("SOCIAL_APPLE_SECRET"),
-            "key": "",
-        }
-    },
-    "facebook": {
-        "APP": {
-            "client_id": env("SOCIAL_FACEBOOK_CLIENT_ID"),
-            "secret": env("SOCIAL_FACEBOOK_SECRET"),
-            "key": "",
-        }
-    },
 }
 
 # ---------------------------------------------------------------------

@@ -1,174 +1,207 @@
 {% extends "base.html" %}
 {% block title %}Incidents{% endblock %}
 {% block content %}
-    <style>
-  :root{ --accent:#3f8cff; --accent-2:#7c4dff; --line:rgba(0,0,0,.08); }
-  .card-outline{ border:1px solid var(--line); border-radius:.75rem; overflow:hidden; }
-  .card-header{ background:linear-gradient(180deg,#fff,#fafafa); padding:.6rem .9rem; }
-  .status-badge{ font-weight:600; }
-  .btn-compact{ padding:.25rem .5rem; }
-
-  @media (min-width: 768px){
-    .table-responsive thead th{ position:sticky; top:0; background:#fff; z-index:1; }
-  }
-
-  /* Mobile cards */
-  .i-card{ border:1px solid var(--line); border-radius:.75rem; background:#fff; padding:.75rem .85rem; }
-  .i-card + .i-card{ margin-top:.75rem; }
-  .i-row{ display:flex; justify-content:space-between; align-items:center; gap:.5rem; }
-  .i-sub{ color:#6c757d; font-size:.92rem; }
-  .i-meta .badge{ margin-right:.35rem; margin-bottom:.35rem; }
-    </style>
-    <div class="content-header pb-0">
-        <div class="container-fluid d-flex justify-content-between align-items-center">
-            <h1 class="m-0">Incidents</h1>
+    <div class="container-fluid py-3">
+        <!-- Header -->
+        <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+            <h4 class="mb-0">
+                <i class="fas fa-clipboard-list me-2"></i>Incidents
+            </h4>
             <div>
                 {% if perms.incidents.submit_incident %}
-                    <a href="{% url 'incidents:add' %}" class="btn btn-primary">
-                        <i class="fas fa-plus mr-1"></i> New Incident
+                    <a href="{% url 'incidents:add' %}"
+                       class="btn btn-primary smart-rounded">
+                        <i class="fas fa-plus me-1"></i> New Incident
                     </a>
                 {% endif %}
             </div>
         </div>
-    </div>
-    <section class="content">
-        <div class="container-fluid">
-            <!-- Filters -->
-            <form class="card card-outline mb-3" method="get">
-                <div class="card-body py-2">
-                    <div class="form-row align-items-end">
-                        <div class="col-12 col-md-6 mb-2 mb-md-0">
-                            <label class="small text-muted mb-1">Search</label>
-                            <div class="input-group">
-                                <div class="input-group-prepend">
-                                    <span class="input-group-text"><i class="fas fa-search"></i></span>
-                                </div>
-                                <input type="text"
-                                       name="q"
-                                       value="{{ request.GET.q }}"
-                                       class="form-control"
-                                       placeholder="Summary, description, location…">
-                            </div>
+        <!-- KPI Cards -->
+        <div class="row g-3 mb-4">
+            <div class="col-6 col-md-3">
+                <div class="card card-soft rounded-3 shadow-sm text-center">
+                    <div class="card-body">
+                        <div class="small text-muted mb-1">
+                            <i class="fas fa-clipboard-list me-1"></i>Total
                         </div>
-                        <div class="col-8 col-md-4 mb-2 mb-md-0">
-                            <label class="small text-muted mb-1">Status</label>
-                            <select name="status" class="form-control">
-                                <option value="">All statuses</option>
-                                {% for val,label in view.model.Status.choices %}
-                                    <option value="{{ val }}"
-                                            {% if request.GET.status == val %}selected{% endif %}>{{ label }}</option>
-                                {% endfor %}
-                            </select>
+                        <div class="h4 mb-0">{{ kpi.total }}</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="card card-soft rounded-3 shadow-sm text-center">
+                    <div class="card-body">
+                        <div class="small text-muted mb-1">
+                            <i class="fas fa-exclamation-circle me-1"></i>Open
                         </div>
-                        <div class="col-4 col-md-2 text-right">
-                            <button class="btn btn-outline-secondary btn-block">
-                                <i class="fas fa-filter mr-1"></i> Filter
-                            </button>
+                        <div class="h4 mb-0 text-warning">{{ kpi.open }}</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="card card-soft rounded-3 shadow-sm text-center">
+                    <div class="card-body">
+                        <div class="small text-muted mb-1">
+                            <i class="fas fa-user-check me-1"></i>Mine
+                        </div>
+                        <div class="h4 mb-0 text-primary">{{ kpi.mine }}</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="card card-soft rounded-3 shadow-sm text-center">
+                    <div class="card-body">
+                        <div class="small text-muted mb-1">
+                            <i class="fas fa-check-circle me-1"></i>Closed
+                        </div>
+                        <div class="h4 mb-0 text-success">{{ kpi.closed }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Filters -->
+        <div class="card card-soft rounded-3 shadow-sm mb-4">
+            <div class="card-body">
+                <form method="get" class="row g-3 align-items-end">
+                    <div class="col-md-6">
+                        <label class="form-label small text-muted">Search</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-search"></i></span>
+                            <input type="text"
+                                   name="q"
+                                   value="{{ request.GET.q }}"
+                                   class="form-control"
+                                   placeholder="Summary, description, location…">
                         </div>
                     </div>
-                    {% if request.GET.q or request.GET.status %}
-                        <div class="mt-2">
-                            <span class="text-muted small mr-2">Active filters:</span>
-                            {% if request.GET.q %}
-                                <a href="?{% if request.GET.status %}status={{ request.GET.status }}{% endif %}"
-                                   class="badge badge-light border">
-                                    <i class="fas fa-search mr-1"></i>{{ request.GET.q }} <i class="fas fa-times ml-1"></i>
-                                </a>
-                            {% endif %}
-                            {% if request.GET.status %}
-                                <a href="?{% if request.GET.q %}q={{ request.GET.q|urlencode }}{% endif %}"
-                                   class="badge badge-light border">
-                                    Status: {{ request.GET.status|title }} <i class="fas fa-times ml-1"></i>
-                                </a>
-                            {% endif %}
-                            <a href="{% url 'incidents:list' %}" class="badge badge-secondary">Clear all</a>
-                        </div>
-                    {% endif %}
-                </div>
-            </form>
-            <!-- Desktop/Tablet TABLE -->
-            <div class="card card-outline d-none d-md-block">
-                <div class="card-body p-0">
-                    <div class="table-responsive">
-                        <table class="table table-sm table-hover mb-0">
-                            <thead>
+                    <div class="col-md-4">
+                        <label class="form-label small text-muted">Status</label>
+                        <select name="status" class="form-control">
+                            <option value="">All statuses</option>
+                            {% for val,label in view.model.Status.choices %}
+                                <option value="{{ val }}"
+                                        {% if request.GET.status == val %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <button class="btn btn-primary w-100 smart-rounded" type="submit">
+                            <i class="fas fa-filter me-1"></i>Filter
+                        </button>
+                    </div>
+                </form>
+                {% if request.GET.q or request.GET.status %}
+                    <div class="mt-2">
+                        <span class="text-muted small me-2">Active filters:</span>
+                        {% if request.GET.q %}
+                            <a href="?{% if request.GET.status %}status={{ request.GET.status }}{% endif %}"
+                               class="badge badge-light border">
+                                <i class="fas fa-search me-1"></i>{{ request.GET.q }}
+                                <i class="fas fa-times ms-1"></i>
+                            </a>
+                        {% endif %}
+                        {% if request.GET.status %}
+                            <a href="?{% if request.GET.q %}q={{ request.GET.q|urlencode }}{% endif %}"
+                               class="badge badge-light border">
+                                Status: {{ request.GET.status|title }}
+                                <i class="fas fa-times ms-1"></i>
+                            </a>
+                        {% endif %}
+                        <a href="{% url 'incidents:list' %}" class="badge badge-soft-secondary">Clear all</a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        <!-- Desktop TABLE -->
+        <div class="card card-soft rounded-3 shadow-sm d-none d-md-block">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Date/Time</th>
+                                <th>Summary</th>
+                                <th>Team</th>
+                                <th>Assigned to</th>
+                                <th>Treatment</th>
+                                <th>Status</th>
+                                <th class="text-end">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for i in incidents %}
                                 <tr>
-                                    <th>Date/Time</th>
-                                    <th>Summary</th>
-                                    <th>Team</th>
-                                    <th>Assigned to</th>
-                                    <th>Treatment</th>
-                                    <th>Status</th>
-                                    <th class="text-right">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for i in incidents %}
-                                    <tr>
-                                        <td class="align-middle">{{ i.incident_datetime|date:"Y-m-d H:i" }}</td>
-                                        <td class="align-middle">
-                                            <a href="{% url 'incidents:detail' i.pk %}">{{ i.summary }}</a>
-                                            {% if i.is_sensitive %}<span class="badge badge-dark ml-1">Sensitive</span>{% endif %}
-                                            <div class="small text-muted">{{ i.location|default:"—" }} · {{ i.get_activity_type_display }}</div>
-                                        </td>
-                                        <td class="align-middle">{{ i.team|default:"—" }}</td>
-                                        <td class="align-middle">{{ i.assigned_to|default:"—" }}</td>
-                                        <td class="align-middle">{{ i.get_treatment_level_display }}</td>
-                                        <td class="align-middle">
-                                            {% if i.status == 'closed' %}
-                                                <span class="badge badge-success status-badge">{{ i.get_status_display }}</span>
-                                            {% elif i.status == 'action_required' %}
-                                                <span class="badge badge-danger status-badge">{{ i.get_status_display }}</span>
-                                            {% elif i.status == 'assigned' %}
-                                                <span class="badge badge-warning status-badge">{{ i.get_status_display }}</span>
-                                            {% elif i.status == 'submitted' %}
-                                                <span class="badge badge-info status-badge">{{ i.get_status_display }}</span>
-                                            {% else %}
-                                                <span class="badge badge-secondary status-badge">{{ i.get_status_display }}</span>
-                                            {% endif %}
-                                        </td>
-                                        <td class="align-middle text-right">
-                                            <a href="{% url 'incidents:detail' i.pk %}"
-                                               class="btn btn-compact btn-outline-primary mr-1"
-                                               title="View">
-                                                <i class="fas fa-eye"></i>
-                                            </a>
-                                            {% if perms.incidents.change_incident and i.status != 'closed' %}
+                                    <td class="align-middle">{{ i.incident_datetime|date:"Y-m-d H:i" }}</td>
+                                    <td class="align-middle">
+                                        <a href="{% url 'incidents:detail' i.pk %}">{{ i.summary }}</a>
+                                        {% if i.is_sensitive %}<span class="badge bg-dark ms-1">Sensitive</span>{% endif %}
+                                        <div class="small text-muted">{{ i.location|default:"—" }} · {{ i.get_activity_type_display }}</div>
+                                    </td>
+                                    <td class="align-middle">{{ i.team|default:"—" }}</td>
+                                    <td class="align-middle">{{ i.assigned_to|default:"—" }}</td>
+                                    <td class="align-middle">{{ i.get_treatment_level_display }}</td>
+                                    <td class="align-middle">
+                                        {% if i.status == 'closed' %}
+                                            <span class="badge badge-soft-success status-badge">{{ i.get_status_display }}</span>
+                                        {% elif i.status == 'action_required' %}
+                                            <span class="badge badge-soft-danger status-badge">{{ i.get_status_display }}</span>
+                                        {% elif i.status == 'assigned' %}
+                                            <span class="badge badge-soft-warning status-badge">{{ i.get_status_display }}</span>
+                                        {% elif i.status == 'submitted' %}
+                                            <span class="badge badge-soft-info status-badge">{{ i.get_status_display }}</span>
+                                        {% else %}
+                                            <span class="badge badge-soft-secondary status-badge">{{ i.get_status_display }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="align-middle text-end">
+                                        <a href="{% url 'incidents:detail' i.pk %}"
+                                           class="btn btn-compact btn-outline-primary me-1"
+                                           title="View">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        {% if i.status != 'closed' %}
+                                            {# Edit button #}
+                                            {% if perms.incidents.change_incident %}
                                                 {% if not i.assigned_to or i.assigned_to == user %}
                                                     <a href="{% url 'incidents:edit' i.pk %}"
-                                                       class="btn btn-compact btn-outline-secondary mr-1"
+                                                       class="btn btn-compact btn-outline-secondary me-1"
                                                        title="Edit">
                                                         <i class="fas fa-edit"></i>
                                                     </a>
                                                 {% endif %}
                                             {% endif %}
+                                            {# Assign to me #}
                                             {% if perms.incidents.assign_incident and i.status == 'submitted' and not i.assigned_to %}
                                                 <form method="post"
                                                       action="{% url 'incidents:assign_to_me' i.pk %}"
-                                                      class="d-inline mr-1">
+                                                      class="d-inline me-1">
                                                     {% csrf_token %}
                                                     <button class="btn btn-compact btn-outline-primary" title="Assign to me">
                                                         <i class="fas fa-user-check"></i>
                                                     </button>
                                                 </form>
                                             {% endif %}
-                                            {% if perms.incidents.assign_incident and i.assigned_to == user %}
-                                                {% if i.status == 'assigned' or i.status == 'action_required' %}
-                                                    <form method="post"
-                                                          action="{% url 'incidents:unassign' i.pk %}"
-                                                          class="d-inline mr-1">
-                                                        {% csrf_token %}
-                                                        <button class="btn btn-compact btn-outline-secondary" title="Unassign">
-                                                            <i class="fas fa-unlock"></i>
-                                                        </button>
-                                                    </form>
+                                            {# Unassign #}
+                                            {% if perms.incidents.assign_incident %}
+                                                {% if i.assigned_to == user %}
+                                                    {% if i.status == 'assigned' or i.status == 'action_required' %}
+                                                        <form method="post"
+                                                              action="{% url 'incidents:unassign' i.pk %}"
+                                                              class="d-inline me-1">
+                                                            {% csrf_token %}
+                                                            <button class="btn btn-compact btn-outline-secondary" title="Unassign">
+                                                                <i class="fas fa-unlock"></i>
+                                                            </button>
+                                                        </form>
+                                                    {% endif %}
                                                 {% endif %}
                                             {% endif %}
+                                            {# Complete / Close #}
                                             {% if perms.incidents.complete_review and i.assigned_to == user %}
                                                 {% if i.status == 'assigned' %}
                                                     <form method="post"
                                                           action="{% url 'incidents:mark_action_required' i.pk %}"
-                                                          class="d-inline mr-1">
+                                                          class="d-inline me-1">
                                                         {% csrf_token %}
                                                         <button class="btn btn-compact btn-outline-warning"
                                                                 title="Mark action required">
@@ -177,7 +210,7 @@
                                                     </form>
                                                     <form method="post"
                                                           action="{% url 'incidents:close' i.pk %}"
-                                                          class="d-inline mr-1">
+                                                          class="d-inline me-1">
                                                         {% csrf_token %}
                                                         <button class="btn btn-compact btn-outline-success"
                                                                 title="Close (no further action)">
@@ -195,92 +228,98 @@
                                                     </form>
                                                 {% endif %}
                                             {% endif %}
-                                        </td>
-                                    </tr>
-                                {% empty %}
-                                    <tr>
-                                        <td colspan="7" class="text-center text-muted p-4">No incidents found.</td>
-                                    </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% empty %}
+                                <tr>
+                                    <td colspan="7" class="text-center text-muted p-4">No incidents found.</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
                 </div>
-                {% if is_paginated %}
-                    <div class="card-footer">{% include "partials/pagination.html" %}</div>
-                {% endif %}
             </div>
-            <!-- Mobile LIST -->
-            <div class="d-block d-md-none">
-                {% if incidents %}
-                    {% for i in incidents %}
-                        <div class="i-card">
-                            <div class="i-row">
-                                <div class="i-sub">
-                                    <i class="far fa-clock mr-1"></i>{{ i.incident_datetime|date:"Y-m-d H:i" }}
-                                </div>
-                                <div>
-                                    {% if i.status == 'closed' %}
-                                        <span class="badge badge-success status-badge">{{ i.get_status_display }}</span>
-                                    {% elif i.status == 'action_required' %}
-                                        <span class="badge badge-danger status-badge">{{ i.get_status_display }}</span>
-                                    {% elif i.status == 'assigned' %}
-                                        <span class="badge badge-warning status-badge">{{ i.get_status_display }}</span>
-                                    {% elif i.status == 'submitted' %}
-                                        <span class="badge badge-info status-badge">{{ i.get_status_display }}</span>
-                                    {% else %}
-                                        <span class="badge badge-secondary status-badge">{{ i.get_status_display }}</span>
-                                    {% endif %}
-                                </div>
+            {% if is_paginated %}
+                <div class="card-footer">{% include "partials/pagination.html" %}</div>
+            {% endif %}
+        </div>
+        <!-- Mobile CARDS -->
+        <div class="d-block d-md-none">
+            {% if incidents %}
+                {% for i in incidents %}
+                    <div class="card card-soft rounded-3 shadow-sm mb-2 p-2">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="small text-muted">
+                                <i class="far fa-clock me-1"></i>{{ i.incident_datetime|date:"Y-m-d H:i" }}
                             </div>
-                            <div class="mt-1">
-                                <a href="{% url 'incidents:detail' i.pk %}" class="font-weight-bold">{{ i.summary }}</a>
-                                {% if i.is_sensitive %}<span class="badge badge-dark ml-1">Sensitive</span>{% endif %}
-                                <div class="i-sub">{{ i.location|default:"—" }} · {{ i.get_activity_type_display }}</div>
-                            </div>
-                            <div class="i-meta mt-2">
-                                <span class="badge badge-light border"><i class="fas fa-users mr-1"></i>{{ i.team|default:"—" }}</span>
-                                <span class="badge badge-light border"><i class="fas fa-user-tie mr-1"></i>{{ i.assigned_to|default:"—" }}</span>
-                                <span class="badge badge-light border"><i class="fas fa-briefcase-medical mr-1"></i>{{ i.get_treatment_level_display }}</span>
-                            </div>
-                            <div class="d-flex justify-content-between align-items-center mt-2">
+                            {% if i.status == 'closed' %}
+                                <span class="badge badge-soft-success">{{ i.get_status_display }}</span>
+                            {% elif i.status == 'action_required' %}
+                                <span class="badge badge-soft-danger">{{ i.get_status_display }}</span>
+                            {% elif i.status == 'assigned' %}
+                                <span class="badge badge-soft-warning">{{ i.get_status_display }}</span>
+                            {% elif i.status == 'submitted' %}
+                                <span class="badge badge-soft-info">{{ i.get_status_display }}</span>
+                            {% else %}
+                                <span class="badge badge-soft-secondary">{{ i.get_status_display }}</span>
+                            {% endif %}
+                        </div>
+                        <div class="mt-1">
+                            <a href="{% url 'incidents:detail' i.pk %}" class="fw-semibold">{{ i.summary }}</a>
+                            {% if i.is_sensitive %}<span class="badge bg-dark ms-1">Sensitive</span>{% endif %}
+                            <div class="small text-muted">{{ i.location|default:"—" }} · {{ i.get_activity_type_display }}</div>
+                        </div>
+                        <div class="mt-2 small">
+                            <span class="badge badge-light border me-1"><i class="fas fa-users me-1"></i>{{ i.team|default:"—" }}</span>
+                            <span class="badge badge-light border me-1"><i class="fas fa-user-tie me-1"></i>{{ i.assigned_to|default:"—" }}</span>
+                            <span class="badge badge-light border"><i class="fas fa-briefcase-medical me-1"></i>{{ i.get_treatment_level_display }}</span>
+                        </div>
+                        <div class="d-flex align-items-center justify-content-between mt-2">
+                            <div class="btn-group w-100">
                                 <a href="{% url 'incidents:detail' i.pk %}"
-                                   class="btn btn-sm btn-outline-primary">
-                                    <i class="fas fa-eye mr-1"></i> View
+                                   class="btn btn-sm btn-outline-primary smart-rounded">
+                                    <i class="fas fa-eye me-1"></i> View
                                 </a>
-                                <div class="dropdown">
-                                    <button class="btn btn-sm btn-outline-secondary dropdown-toggle"
+                                {% if i.status != 'closed' %}
+                                    <button class="btn btn-sm btn-outline-secondary dropdown-toggle smart-rounded"
                                             data-toggle="dropdown">Actions</button>
-                                    <div class="dropdown-menu dropdown-menu-right">
-                                        {% if perms.incidents.change_incident and i.status != 'closed' %}
+                                    <div class="dropdown-menu dropdown-menu-end">
+                                        {# Edit #}
+                                        {% if perms.incidents.change_incident %}
                                             {% if not i.assigned_to or i.assigned_to == user %}
                                                 <a class="dropdown-item" href="{% url 'incidents:edit' i.pk %}">
-                                                    <i class="fas fa-edit mr-2"></i> Edit
+                                                    <i class="fas fa-edit me-2"></i> Edit
                                                 </a>
                                             {% endif %}
                                         {% endif %}
+                                        {# Assign to me #}
                                         {% if perms.incidents.assign_incident and i.status == 'submitted' and not i.assigned_to %}
                                             <form method="post"
                                                   action="{% url 'incidents:assign_to_me' i.pk %}"
                                                   class="dropdown-item p-0">
                                                 {% csrf_token %}
                                                 <button class="btn btn-link dropdown-item">
-                                                    <i class="fas fa-user-check mr-2"></i> Assign to me
+                                                    <i class="fas fa-user-check me-2"></i> Assign to me
                                                 </button>
                                             </form>
                                         {% endif %}
-                                        {% if perms.incidents.assign_incident and i.assigned_to == user %}
-                                            {% if i.status == 'assigned' or i.status == 'action_required' %}
-                                                <form method="post"
-                                                      action="{% url 'incidents:unassign' i.pk %}"
-                                                      class="dropdown-item p-0">
-                                                    {% csrf_token %}
-                                                    <button class="btn btn-link dropdown-item">
-                                                        <i class="fas fa-unlock mr-2"></i> Unassign
-                                                    </button>
-                                                </form>
+                                        {# Unassign #}
+                                        {% if perms.incidents.assign_incident %}
+                                            {% if i.assigned_to == user %}
+                                                {% if i.status == 'assigned' or i.status == 'action_required' %}
+                                                    <form method="post"
+                                                          action="{% url 'incidents:unassign' i.pk %}"
+                                                          class="dropdown-item p-0">
+                                                        {% csrf_token %}
+                                                        <button class="btn btn-link dropdown-item">
+                                                            <i class="fas fa-unlock me-2"></i> Unassign
+                                                        </button>
+                                                    </form>
+                                                {% endif %}
                                             {% endif %}
                                         {% endif %}
+                                        {# Complete / Close #}
                                         {% if perms.incidents.complete_review and i.assigned_to == user %}
                                             {% if i.status == 'assigned' %}
                                                 <form method="post"
@@ -288,7 +327,7 @@
                                                       class="dropdown-item p-0">
                                                     {% csrf_token %}
                                                     <button class="btn btn-link dropdown-item">
-                                                        <i class="fas fa-exclamation-triangle mr-2"></i> Mark action required
+                                                        <i class="fas fa-exclamation-triangle me-2"></i> Mark action required
                                                     </button>
                                                 </form>
                                                 <form method="post"
@@ -296,7 +335,7 @@
                                                       class="dropdown-item p-0">
                                                     {% csrf_token %}
                                                     <button class="btn btn-link dropdown-item">
-                                                        <i class="fas fa-check mr-2"></i> Close (no action)
+                                                        <i class="fas fa-check me-2"></i> Close (no action)
                                                     </button>
                                                 </form>
                                             {% elif i.status == 'action_required' %}
@@ -305,25 +344,23 @@
                                                       class="dropdown-item p-0">
                                                     {% csrf_token %}
                                                     <button class="btn btn-link dropdown-item">
-                                                        <i class="fas fa-clipboard-check mr-2"></i> Close (done)
+                                                        <i class="fas fa-clipboard-check me-2"></i> Close (done)
                                                     </button>
                                                 </form>
                                             {% endif %}
                                         {% endif %}
                                     </div>
-                                </div>
+                                {% endif %}
                             </div>
                         </div>
-                    {% endfor %}
-                {% else %}
-                    <div class="card card-outline">
-                        <div class="card-body text-center text-muted">No incidents found.</div>
                     </div>
-                {% endif %}
-                {% if is_paginated %}
-                    <div class="mt-3">{% include "partials/pagination.html" %}</div>
-                {% endif %}
-            </div>
+                {% endfor %}
+            {% else %}
+                <div class="card card-soft rounded-3 shadow-sm text-center text-muted p-3">No incidents found.</div>
+            {% endif %}
+            {% if is_paginated %}
+                <div class="mt-3">{% include "partials/pagination.html" %}</div>
+            {% endif %}
         </div>
-    </section>
+    </div>
 {% endblock %}

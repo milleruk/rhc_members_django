@@ -37,11 +37,11 @@
                 <div class="col-6 col-md-3 mb-3">
                     <a href="#" class="kpi-box kpi-accent">
                         <div class="kpi-icon">
-                            <i class="fas fa-badge-check"></i>
+                            <i class="fas fa-wallet"></i>
                         </div>
                         <div class="kpi-content">
                             <div class="kpi-value">{{ active_subscriptions_count|default:0 }}</div>
-                            <div class="kpi-label">Active Subscriptions</div>
+                            <div class="kpi-label">Active Subs</div>
                         </div>
                     </a>
                 </div>
@@ -57,18 +57,18 @@
                     </a>
                 </div>
                 <div class="col-6 col-md-3 mb-3">
-                    <a href="#" class="kpi-box kpi-dark">
+                    <a href="#" class="kpi-box kpi-accent">
                         <div class="kpi-icon">
-                            <i class="fas fa-calendar-exclamation"></i>
+                            <i class="fas fa-envelope"></i>
                         </div>
                         <div class="kpi-content">
                             <div class="kpi-value">{{ spond_pending_count|default:0 }}</div>
-                            <div class="kpi-label">Spond: Pending RSVPs</div>
+                            <div class="kpi-label">RSVPs</div>
                         </div>
                     </a>
                 </div>
             </div>
-            <!-- MEMBERSHIP CARDS HEADER (removed count badge) -->
+            <!-- MEMBERSHIP CARDS HEADER -->
             <div class="card card-outline mb-3">
                 <div class="card-header d-flex align-items-center justify-content-between">
                     <h3 class="card-title mb-0">
@@ -98,7 +98,6 @@
                                         <div class="mc-inner">
                                             <!-- FRONT -->
                                             <div class="mc-face mc-front">
-                                                <!-- gradient bar -->
                                                 <div class="mc-hero d-flex align-items-center justify-content-between">
                                                     <div class="d-flex align-items-center">
                                                         <div class="mc-avatar mr-2">
@@ -114,7 +113,6 @@
                                                     </div>
                                                     <div class="mc-chip" title="Club chip"></div>
                                                 </div>
-                                                <!-- body -->
                                                 <div class="mc-body">
                                                     <div class="mc-number" title="Membership number">
                                                         <i class="fas fa-id-card-alt mr-2"></i>RHC{{ p.membership_number }}
@@ -201,9 +199,10 @@
                                                                 type="button"
                                                                 id="actionsMenu{{ forloop.counter }}"
                                                                 data-toggle="dropdown"
+                                                                data-bs-toggle="dropdown"
                                                                 aria-haspopup="true"
                                                                 aria-expanded="false">Actions</button>
-                                                        <div class="dropdown-menu dropdown-menu-right w-100"
+                                                        <div class="dropdown-menu dropdown-menu-right dropdown-menu-end w-100"
                                                              aria-labelledby="actionsMenu{{ forloop.counter }}">
                                                             <a class="dropdown-item" href="{% url 'answer' p.public_id %}">
                                                                 <i class="fas fa-edit mr-2"></i> Update Profile
@@ -261,7 +260,6 @@
                         </div>
                     {% endif %}
                 </div>
-                <!-- RIGHT: TASKS / NOTICES / LINKS (unchanged placeholder) -->
                 <!-- RIGHT: TASKS + CLUB NOTICES + QUICK LINKS -->
                 <div class="col-12 col-lg-4">
                     <!-- Tasks (Todo List) -->
@@ -287,7 +285,9 @@
                                             </div>
                                             <span class="text">{{ t.title }} • {{ t.subject }}</span>
                                             {% if t.due_at %}
-                                                <small class="badge badge-light border ml-2"><i class="far fa-clock mr-1"></i>{{ t.due_at|date:"D j M, H:i" }}</small>
+                                                <small class="badge badge-light border ml-2">
+                                                    <i class="far fa-clock mr-1"></i>{{ t.due_at|date:"D j M, H:i" }}
+                                                </small>
                                             {% endif %}
                                             <div class="tools">
                                                 {% if t.url %}
@@ -306,7 +306,7 @@
                             {% endif %}
                         </div>
                     </div>
-                    <!-- Club Notices (Collapsible card + callouts) -->
+                    <!-- Club Notices (Collapsible) -->
                     <div class="card card-outline card-warning mb-3">
                         <div class="card-header">
                             <h3 class="card-title mb-0">
@@ -359,7 +359,6 @@
                                     </a>
                                 {% endfor %}
                             {% else %}
-                                <!-- sensible defaults -->
                                 <a class="list-group-item list-group-item-action d-flex align-items-center"
                                    href="{% url 'memberships:mine' %}">
                                     <i class="fas fa-id-card-alt mr-2"></i><span>My Memberships</span>
@@ -383,157 +382,32 @@
         </div>
         <!-- JS: confirm delete -->
         <script>
-function confirmDelete(publicId, name) {
-  if (confirm('Remove ' + name + '? This cannot be undone.')) {
-    var f = document.getElementById('delete-form-' + publicId);
-    if (f) { f.submit(); }
-  }
-  return false;
-}
+    function confirmDelete(publicId, name) {
+      if (confirm('Remove ' + name + '? This cannot be undone.')) {
+        var f = document.getElementById('delete-form-' + publicId);
+        if (f) { f.submit(); }
+      }
+      return false;
+    }
         </script>
         <!-- JS: flip interactions -->
         <script>
-document.addEventListener('click', function(e) {
-  const btn = e.target.closest('.mc-flip-btn');
-  if (!btn) return;
-  const card = btn.closest('.membership-card');
-  card.classList.toggle('is-flipped');
-});
+    document.addEventListener('click', function(e) {
+      const btn = e.target.closest('.mc-flip-btn');
+      if (!btn) return;
+      const card = btn.closest('.membership-card');
+      card.classList.toggle('is-flipped');
+    });
 
-document.addEventListener('keydown', function(e) {
-  if (!['Enter',' '].includes(e.key)) return;
-  const active = document.activeElement;
-  if (active && active.classList.contains('membership-card')) {
-    e.preventDefault();
-    active.classList.toggle('is-flipped');
-  }
-});
+    document.addEventListener('keydown', function(e) {
+      if (!['Enter',' '].includes(e.key)) return;
+      const active = document.activeElement;
+      if (active && active.classList.contains('membership-card')) {
+        e.preventDefault();
+        active.classList.toggle('is-flipped');
+      }
+    });
         </script>
-        <!-- (printMembershipCard function & styles from your existing template stay as-is) -->
-        <style>
-  /* Theme tokens (align with your other pages) */
-  :root{
-    --accent:#3f8cff;
-    --accent-2:#7c4dff;
-    --accent-soft:#e8f1ff;
-    --muted:#6c757d;
-    --line:rgba(0,0,0,.08);
-  }
-
-  .card-outline{ border:1px solid var(--line); border-radius:.75rem; overflow:hidden; }
-
-  /* KPI boxes */
-  .kpi-box{
-    display:flex; align-items:center;
-    background:linear-gradient(180deg,#fff,#fafafa);
-    border:1px solid var(--line); border-radius:.75rem;
-    padding:.85rem .9rem; box-shadow:0 1px 0 rgba(0,0,0,.03);
-    transition:transform .08s ease, box-shadow .12s ease;
-    color:inherit; text-decoration:none;
-  }
-  .kpi-box:hover{ transform:translateY(-1px); box-shadow:0 4px 14px rgba(0,0,0,.06); text-decoration:none; }
-  .kpi-icon{ width:38px; height:38px; border-radius:12px; display:flex; align-items:center; justify-content:center; margin-right:.7rem; }
-  .kpi-content .kpi-value{ font-weight:800; font-size:1.25rem; line-height:1; }
-  .kpi-content .kpi-label{ font-size:.9rem; color:var(--muted); }
-
-  .kpi-primary .kpi-icon{ background:#e7f0ff; }
-  .kpi-accent  .kpi-icon{ background:#efe9ff; }
-  .kpi-info    .kpi-icon{ background:#e8f7ff; }
-  .kpi-dark    .kpi-icon{ background:#f1f2f6; }
-  .kpi-accent i{ color:#6b4eff; }
-  .kpi-primary i{ color:#2e6ef9; }
-  .kpi-info i{ color:#0ea5e9; }
-  .kpi-dark i{ color:#111827; }
-
-  /* Flip card engine */
-  .membership-card{ position:relative; perspective:1000px; border-radius:14px; }
-  .membership-card:focus{ outline:2px dashed rgba(0,0,0,.2); outline-offset:2px; }
-  .mc-inner{ position:relative; width:100%; min-height:250px; transform-style:preserve-3d; transition:transform .6s cubic-bezier(.22,.61,.36,1); border-radius:14px; }
-  .membership-card.is-flipped .mc-inner{ transform:rotateY(180deg); }
-  .mc-face{ position:absolute; inset:0; border-radius:14px; border:1px solid rgba(0,0,0,.06); backface-visibility:hidden; background:#fff; }
-
-  /* FRONT beautified */
-  .mc-front{ overflow:hidden; }
-  .mc-hero{
-    padding:10px 12px;
-    background:linear-gradient(135deg, var(--accent), var(--accent-2));
-    color:#fff;
-    border-top-left-radius:14px; border-top-right-radius:14px;
-    border-bottom:1px solid rgba(255,255,255,.25);
-  }
-  .mc-avatar{
-    width:44px;height:44px;border-radius:50%;
-    display:inline-flex;align-items:center;justify-content:center;
-    background:rgba(255,255,255,.15);
-    border:2px solid rgba(255,255,255,.35); color:#fff; font-weight:700;
-  }
-  .mc-name{ font-size:1.08rem; font-weight:800; line-height:1.1; }
-  .chip{ display:inline-flex;align-items:center;border:1px solid rgba(255,255,255,.35);border-radius:999px;padding:.1rem .5rem; font-size:.75rem; color:#fff; }
-  .chip-soft{ background:rgba(255,255,255,.12); }
-  .mc-chip{ width:36px;height:26px;border-radius:6px;background:linear-gradient(135deg,#c6cbd1,#9ea5ad);box-shadow:inset 0 0 0 2px rgba(255,255,255,.4),0 1px 2px rgba(0,0,0,.1); }
-
-  .mc-body{ padding:12px; }
-  .mc-number{
-    display:inline-flex;align-items:center;font-variant-numeric:tabular-nums;
-    letter-spacing:.05em;font-weight:800;background:#f8fafc;border:1px dashed rgba(0,0,0,.12);
-    border-radius:8px;padding:6px 10px;
-  }
-  .mc-badges .badge{ vertical-align:middle; }
-
-  .mc-progress{ height:8px;border-radius:6px;background:rgba(0,0,0,.05); }
-
-  /* BACK */
-  .mc-back{ transform:rotateY(180deg); }
-  .mc-strip{ height:40px;border-radius:6px;background:#2c2c2c;display:flex;align-items:center;padding:0 10px; }
-  .mc-note{ color:#e5e7eb; }
-
-  /* Mobile niceties */
-  @media (max-width:575.98px){
-    .mc-inner{ min-height:260px; }
-    .mc-name{ font-size:1.12rem; }
-    .btn-group .btn,.mc-back .btn{ width:100%; }
-    .mc-badges .badge{ margin-bottom:.25rem; }
-    .d-flex.justify-content-between.align-items-center.mt-3{ flex-wrap:wrap; gap:.5rem; }
-    .dropdown-menu.w-100{ min-width:100%!important; }
-  }
-
-  /* backface fixes */
-  .mc-face{ -webkit-backface-visibility:hidden; backface-visibility:hidden; }
-
-/* Tidy action buttons */
-.mc-actions{
-  display:flex; align-items:center; gap:.5rem;
-}
-.btn-action{
-  padding:.45rem .7rem;
-  border-radius:10px;
-  font-weight:600;
-  line-height:1.1;
-  box-shadow:0 1px 0 rgba(0,0,0,.03);
-}
-.btn-action.btn-outline-primary{
-  background:#fff;
-  border-color:rgba(63,140,255,.35);
-}
-.btn-icon{
-  width:36px; height:36px; padding:0;
-  display:inline-flex; align-items:center; justify-content:center;
-  border:1px solid rgba(0,0,0,.1);
-  background:#fff;
-}
-
-/* Make buttons flow nicely on phones */
-@media (max-width:575.98px){
-  .mc-actions{
-    flex-wrap:wrap;
-  }
-  .mc-actions .btn-action{
-    flex:1 1 calc(50% - .25rem);
-  }
-  .mc-actions .btn-icon{
-    flex:0 0 auto; /* keep kebab small */
-  }
-}
-
-        </style>
-    {% endblock %}
+        <!-- THEME-AWARE CSS -->
+    </div>
+{% endblock %}

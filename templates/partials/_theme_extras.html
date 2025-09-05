@@ -1,0 +1,54 @@
+<style>
+  /* Soft card surface that adapts to dark mode */
+  .card-soft { background: var(--card-bg, #fff); }
+  body.dark-mode .card-soft {
+    --card-bg: #1f2937;
+    color: #e5e7eb;
+  }
+
+  /* Rounded helpers */
+  .rounded-3 { border-radius: 0.85rem !important; }
+  .smart-rounded { border-radius: 9999px !important; }
+
+  /* Avatar placeholder */
+  .avatar-soft {
+    width: 32px; height: 32px; border-radius: 50%;
+    background: rgba(0,0,0,.05);
+  }
+  body.dark-mode .avatar-soft { background: rgba(255,255,255,.06); }
+
+  /* Soft badges */
+  .badge-soft-warning { background: rgba(245, 158, 11, .15); color: #b45309; }
+  .badge-soft-success { background: rgba(16, 185, 129, .15); color: #047857; }
+  .badge-soft-secondary { background: rgba(107, 114, 128, .18); color: #374151; }
+  .badge-soft-danger { background: rgba(239, 68, 68, .15); color: #b91c1c; }
+  .badge-soft-info { background: rgba(59, 130, 246, .15); color: #1d4ed8; }
+  .badge-soft-light { background: rgba(148, 163, 184, .15); color: #475569; }
+
+  body.dark-mode .badge-soft-warning { color: #f59e0b; }
+  body.dark-mode .badge-soft-success { color: #10b981; }
+  body.dark-mode .badge-soft-secondary { color: #cbd5e1; }
+  body.dark-mode .badge-soft-danger { color: #ef4444; }
+  body.dark-mode .badge-soft-info { color: #60a5fa; }
+  body.dark-mode .badge-soft-light { color: #cbd5e1; }
+
+  /* Subtle overdue */
+  .subtle-danger { box-shadow: inset 0 0 0 1px rgba(220, 38, 38, .25); }
+
+  /* Inputs in dark mode */
+  body.dark-mode .form-control,
+  body.dark-mode .custom-select {
+    background-color: #111827;
+    border-color: #374151;
+    color: #e5e7eb;
+  }
+  body.dark-mode .form-control::placeholder { color: #9ca3af; }
+
+  /* Outline fixes */
+  body.dark-mode .btn-outline-light { border-color: #4b5563; color: #e5e7eb; }
+  body.dark-mode .btn-outline-secondary { border-color: #64748b; color: #e2e8f0; }
+  body.dark-mode .btn-outline-secondary:hover { background: #334155; color: #fff; }
+
+  /* Focus ring highlight */
+  .ring-focus { box-shadow: 0 0 0 3px rgba(59,130,246,.6) !important; border-radius: 0.85rem; }
+</style>

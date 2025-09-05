@@ -50,13 +50,13 @@
                             {% if open_task_count %}<span class="badge badge-danger navbar-badge">{{ open_task_count }}</span>{% endif %}
                         </a>
                     </li>
-                    <li class="nav-item">
-                        <a href="{% url 'accounts:settings' %}"
-                           class="nav-link {% if p == '/settings/' %}active{% endif %}">
+                    <!--<li class="nav-item">
+                        <a href="{% url 'accounts:settings' %}" class="nav-link {% if p == '/settings/' %}active{% endif %}">
                             <i class="nav-icon fas fa-gear"></i>
                             <p>Account Settings</p>
                         </a>
                     </li>
+                    -->
                     {% if perms.members.view_staff_area %}
                         <li class="nav-header">STAFF</li>
                         <li class="nav-item">

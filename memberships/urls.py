@@ -1,4 +1,5 @@
-from django.urls import path
+from django.shortcuts import redirect
+from django.urls import path, re_path
 
 from . import views
 
@@ -19,4 +20,5 @@ urlpatterns = [
         views.subscription_delete,
         name="subscription_delete",
     ),
+    re_path(r"^.*$", lambda request: redirect("memberships:mine")),
 ]

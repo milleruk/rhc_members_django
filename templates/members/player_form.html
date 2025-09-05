@@ -1,16 +1,107 @@
 {% extends "base.html" %}
 {% load crispy_forms_tags %}
+{% load static %}
+<link rel="stylesheet" href="{% static 'css/theme_extras.css' %}">
+{% block title %}Register Player{% endblock %}
 {% block content %}
-    <div class="card card-primary">
-        <div class="card-header">
-            <h3 class="card-title">Register Player</h3>
-        </div>
-        <div class="card-body">
-            <form method="post">
-                {% csrf_token %}
-                {{ form|crispy }}
-                <button type="submit" class="btn btn-primary">Save</button>
-            </form>
+    <div class="content-header pb-0">
+        <div class="container-fluid">
+            <!-- Breadcrumb / header actions -->
+            <div class="d-flex justify-content-between align-items-center flex-wrap">
+                <ol class="breadcrumb mb-2">
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'dashboard' %}">Home</a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'staff:player_list' %}">Players</a>
+                    </li>
+                    <li class="breadcrumb-item active">Add</li>
+                </ol>
+                <a href="{% url 'dashboard' %}" class="btn btn-info btn-sm mb-2">
+                    <i class="fas fa-arrow-left mr-1"></i> Back to Dashboard
+                </a>
+            </div>
         </div>
     </div>
+    <section class="content">
+        <div class="container-fluid">
+            <!-- Hero -->
+            <div class="hero-card shadow-sm mb-3 rounded-3">
+                <div class="hero-inner d-flex align-items-center justify-content-between">
+                    <div class="d-flex align-items-center">
+                        <div class="hero-avatar mr-3">
+                            <i class="fas fa-user-plus"></i>
+                        </div>
+                        <div>
+                            <h1 class="h4 mb-1">Register Player</h1>
+                            <div class="text small">Create a player profile to manage memberships, teams and answers.</div>
+                        </div>
+                    </div>
+                    <div class="d-none d-sm-block">
+                        <span class="chip">Secure</span>
+                        <span class="chip">GDPR Compliant</span>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <!-- Form -->
+                <div class="col-12 col-lg-8">
+                    <div class="card surface-card card shadow-sm rounded-3">
+                        <div class="card-header surface-header py-2">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-id-card-alt mr-2"></i> Player Details
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <form method="post" novalidate>
+                                {% csrf_token %}
+                                {{ form|crispy }}
+                                <div class="d-flex justify-content-between flex-wrap mt-3">
+                                    <a href="{% url 'dashboard' %}" class="btn btn-info mb-2">
+                                        <i class="fas fa-times mr-1"></i> Cancel
+                                    </a>
+                                    <button type="submit" class="btn btn-primary mb-2">
+                                        <i class="fas fa-save mr-1"></i> Save Player
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                <!-- Helpful info / tips -->
+                <div class="col-12 col-lg-4">
+                    <div class="card surface-card card shadow-sm rounded-3 mb-3">
+                        <div class="card-header surface-header py-2">
+                            <h6 class="mb-0">
+                                <i class="fas fa-lightbulb mr-2"></i> Tips
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <ul class="list-unstyled mb-0 small">
+                                <li class="mb-2">
+                                    <i class="fas fa-check-circle mr-1 text-success"></i> Use a real date of birth for age-group eligibility.
+                                </li>
+                                <li class="mb-2">
+                                    <i class="fas fa-check-circle mr-1 text-success"></i> Choose the correct relation (e.g., Self, Parent/Guardian).
+                                </li>
+                                <li class="mb-0">
+                                    <i class="fas fa-check-circle mr-1 text-success"></i> Player type helps show the right questions later.
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="card surface-card card shadow-sm rounded-3">
+                        <div class="card-header surface-header py-2">
+                            <h6 class="mb-0">
+                                <i class="fas fa-shield-alt mr-2"></i> Privacy
+                            </h6>
+                        </div>
+                        <div class="card-body small">
+                            We process personal data to run the club safely. You can update or request deletion at any time in line with our privacy policy.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
 {% endblock %}

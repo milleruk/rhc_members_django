@@ -1,3 +1,4 @@
+{% load static %}
 <meta charset="UTF-8">
 <title>
     {% block title %}
@@ -20,6 +21,7 @@
 <!-- Bootstrap 4 (AdminLTE dependency) -->
 <link rel="stylesheet"
       href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
+<link rel="stylesheet" href="{% static 'css/theme_extras.css' %}">
 <style>
   .project-card .card-title { line-height: 1.2; max-height: 2.4em; overflow: hidden; }
   .project-card .user-block-img { width: 32px; height: 32px; display: inline-flex; align-items:center; justify-content:center; }

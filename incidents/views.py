@@ -1,12 +1,9 @@
-# incidents/views.py
-
 from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.db.models import Q
-from django.http import HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect
-from django.urls import reverse_lazy
+from django.urls import reverse, reverse_lazy
 from django.utils import timezone
 from django.views import View
 from django.views.generic import CreateView, DetailView, ListView, UpdateView
@@ -15,7 +12,7 @@ from .forms import IncidentActionForm, IncidentForm
 from .models import Incident, IncidentRouting
 
 # -----------------------------
-# Task helpers (defensive: only use fields your Task model actually has)
+# Helpers
 # -----------------------------
 
 
@@ -28,11 +25,17 @@ def _get_task_model():
         return None
 
 
+def _redirect_back(request, incident=None):
+    """Redirect to the referring page if possible, else fallback."""
+    referer = request.META.get("HTTP_REFERER")
+    if referer:
+        return redirect(referer)
+    if incident:
+        return redirect(incident.get_absolute_url())
+    return redirect(reverse("incidents:list"))
+
+
 def _create_team_review_tasks(incident):
-    """
-    Create initial REVIEW tasks to the active routing reviewers.
-    Tasks are flagged as auto and not manually completable when supported.
-    """
     Task = _get_task_model()
     if not Task:
         return
@@ -52,7 +55,6 @@ def _create_team_review_tasks(incident):
         f"Open: {incident.get_absolute_url()}"
     )
 
-    # Preferred M2M assignees path
     if hasattr(Task, "assignees"):
         t = Task.objects.create(
             title=title,
@@ -64,12 +66,8 @@ def _create_team_review_tasks(incident):
         t.assignees.add(*list(reviewers))
         return
 
-    # Fallback: one task per reviewer
     for u in reviewers:
-        kwargs = dict(
-            title=title,
-            description=desc,
-        )
+        kwargs = dict(title=title, description=desc)
         if hasattr(Task, "assigned_to"):
             kwargs["assigned_to"] = u
         if hasattr(Task, "allow_manual_complete"):
@@ -82,20 +80,14 @@ def _create_team_review_tasks(incident):
 
 
 def _close_open_tasks_for_incident_by_tag(tag_prefix, incident):
-    """
-    Soft-close tasks for this incident by matching a tag prefix in the title.
-    If your Task model has a FK to Incident later, replace this with a direct filter.
-    """
     Task = _get_task_model()
     if not Task:
         return
     title_like = f"{tag_prefix} Incident #{incident.pk}"
     qs = Task.objects.all()
-    # narrow cheaply if there is a title field index; otherwise iterate
     for t in qs:
         title = getattr(t, "title", "") or ""
         if title_like in title:
-            # prefer marking complete over deletion unless your policy is hard delete
             if hasattr(t, "is_complete"):
                 t.is_complete = True
                 t.save(update_fields=["is_complete"])
@@ -106,20 +98,10 @@ def _close_open_tasks_for_incident_by_tag(tag_prefix, incident):
                 try:
                     t.delete()
                 except Exception:
-                    # ignore if cannot delete
                     pass
 
 
-# -----------------------------
-# Query helpers
-# -----------------------------
-
-
 def _apply_sensitive_visibility_filter(qs, user):
-    """
-    If user lacks 'incidents.view_sensitive', hide others' sensitive items:
-      show (not sensitive) OR (sensitive & (reported_by=user OR assigned_to=user))
-    """
     if user.has_perm("incidents.view_sensitive"):
         return qs
     return qs.filter(
@@ -135,13 +117,6 @@ def _apply_sensitive_visibility_filter(qs, user):
 
 
 class IncidentListView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
-    """
-    Requires:
-      - incidents.access_app
-      - incidents.view_incident  (Django default view permission)
-      - incidents.view_list
-    """
-
     permission_required = ("incidents.access_app", "incidents.view_incident", "incidents.view_list")
     template_name = "incidents/incident_list.html"
     context_object_name = "incidents"
@@ -162,7 +137,22 @@ class IncidentListView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
             )
         if status:
             qs = qs.filter(status=status)
+
         return qs.select_related("team", "primary_player", "reported_by", "assigned_to")
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        u = self.request.user
+        incidents = Incident.objects.all()
+        incidents = _apply_sensitive_visibility_filter(incidents, u)
+
+        context["kpi"] = {
+            "total": incidents.count(),
+            "open": incidents.exclude(status="closed").count(),
+            "mine": incidents.filter(assigned_to=u).exclude(status="closed").count(),
+            "closed": incidents.filter(status="closed").count(),
+        }
+        return context
 
 
 class IncidentDetailView(LoginRequiredMixin, PermissionRequiredMixin, DetailView):
@@ -174,12 +164,11 @@ class IncidentDetailView(LoginRequiredMixin, PermissionRequiredMixin, DetailView
     def get_queryset(self):
         u = self.request.user
         qs = super().get_queryset()
-        qs = _apply_sensitive_visibility_filter(qs, u)
-        return qs
+        return _apply_sensitive_visibility_filter(qs, u)
 
 
 # -----------------------------
-# Create / Update (edit guards inside dispatch)
+# Create / Update
 # -----------------------------
 
 
@@ -191,11 +180,9 @@ class IncidentCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateView
     success_url = reverse_lazy("incidents:list")
 
     def form_valid(self, form):
-        # Default status: Submitted (internal)
         form.instance.reported_by = self.request.user
         form.instance.status = Incident.Status.SUBMITTED
         res = super().form_valid(form)
-        # Ensure initial review tasks are created even if signals are not wired
         _create_team_review_tasks(self.object)
         messages.success(self.request, "Incident submitted and routed to reviewers.")
         return res
@@ -209,30 +196,25 @@ class IncidentUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView
 
     def dispatch(self, request, *args, **kwargs):
         obj = self.get_object()
-        # Closed incidents are immutable
         if obj.status == Incident.Status.CLOSED:
-            return HttpResponseForbidden("Closed incidents cannot be edited.")
-        # While assigned / action_required, only assignee may edit
+            messages.error(request, "Closed incidents cannot be edited.")
+            return _redirect_back(request, obj)
         if (
             obj.status in (Incident.Status.ASSIGNED, Incident.Status.ACTION_REQUIRED)
             and obj.assigned_to_id
+            and obj.assigned_to_id != request.user.id
         ):
-            if obj.assigned_to_id != request.user.id:
-                return HttpResponseForbidden("Only the assignee can edit this incident.")
+            messages.error(request, "Only the assignee can edit this incident.")
+            return _redirect_back(request, obj)
         return super().dispatch(request, *args, **kwargs)
 
 
 # -----------------------------
-# Action/Review form (review-only fields)
+# Action / Review
 # -----------------------------
 
 
 class IncidentActionView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
-    """
-    Review form for safeguarding/EH fields; status transitions are button-driven.
-    Only assignee may update when assigned/action_required.
-    """
-
     permission_required = ("incidents.access_app", "incidents.complete_review")
     model = Incident
     form_class = IncidentActionForm
@@ -240,17 +222,25 @@ class IncidentActionView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView
 
     def dispatch(self, request, *args, **kwargs):
         obj = self.get_object()
-        # Closed incidents are immutable
         if obj.status == Incident.Status.CLOSED:
-            return HttpResponseForbidden("Closed incidents cannot be edited.")
-        # Only assignee can use review form while assigned/action_required
+            messages.error(request, "Closed incidents cannot be edited.")
+            return _redirect_back(request, obj)
         if (
             obj.status in (Incident.Status.ASSIGNED, Incident.Status.ACTION_REQUIRED)
             and obj.assigned_to_id
+            and obj.assigned_to_id != request.user.id
         ):
-            if obj.assigned_to_id != request.user.id:
-                return HttpResponseForbidden("Only the assignee can update this incident.")
+            messages.error(request, "Only the assignee can update this incident.")
+            return _redirect_back(request, obj)
         return super().dispatch(request, *args, **kwargs)
+
+    def get_form(self, form_class=None):
+        form = super().get_form(form_class)
+        obj = self.get_object()
+        if obj.assigned_to_id != self.request.user.id:
+            for field in form.fields.values():
+                field.disabled = True
+        return form
 
     def form_valid(self, form):
         messages.success(self.request, "Incident updated.")
@@ -270,20 +260,19 @@ class AssignToMeView(LoginRequiredMixin, PermissionRequiredMixin, View):
 
         if incident.status == Incident.Status.CLOSED:
             messages.warning(request, "Incident is already closed.")
-            return redirect(incident.get_absolute_url())
+            return _redirect_back(request, incident)
 
         if incident.assigned_to_id:
             messages.info(request, "Incident is already assigned.")
-            return redirect(incident.get_absolute_url())
+            return _redirect_back(request, incident)
 
         incident.assigned_to = request.user
         incident.assigned_at = timezone.now()
         incident.status = Incident.Status.ASSIGNED
         incident.save(update_fields=["assigned_to", "assigned_at", "status", "last_updated"])
 
-        # Team review tasks will be auto-closed & personal review task created by signals.
         messages.success(request, "You are now assigned to this incident.")
-        return redirect(incident.get_absolute_url())
+        return _redirect_back(request, incident)
 
 
 class UnassignView(LoginRequiredMixin, PermissionRequiredMixin, View):
@@ -294,27 +283,24 @@ class UnassignView(LoginRequiredMixin, PermissionRequiredMixin, View):
 
         if incident.status == Incident.Status.CLOSED:
             messages.warning(request, "Incident is closed.")
-            return redirect(incident.get_absolute_url())
+            return _redirect_back(request, incident)
 
-        # Only current assignee can unassign
         if incident.assigned_to_id and incident.assigned_to_id != request.user.id:
-            return HttpResponseForbidden("Only the current assignee can unassign this incident.")
+            messages.error(request, "Only the current assignee can unassign this incident.")
+            return _redirect_back(request, incident)
 
-        # Close personal tasks for this incident (REVIEW (Assigned), ACTION NEEDED)
         _close_open_tasks_for_incident_by_tag("[REVIEW (Assigned)]", incident)
         _close_open_tasks_for_incident_by_tag("[ACTION NEEDED]", incident)
 
-        # Return to queue
         incident.assigned_to = None
         incident.assigned_at = None
         incident.status = Incident.Status.SUBMITTED
         incident.save(update_fields=["assigned_to", "assigned_at", "status", "last_updated"])
 
-        # Recreate team review tasks so others see it
         _create_team_review_tasks(incident)
 
         messages.info(request, "Incident returned to the review queue.")
-        return redirect(incident.get_absolute_url())
+        return _redirect_back(request, incident)
 
 
 class MarkActionRequiredView(LoginRequiredMixin, PermissionRequiredMixin, View):
@@ -325,9 +311,8 @@ class MarkActionRequiredView(LoginRequiredMixin, PermissionRequiredMixin, View):
 
         if incident.status == Incident.Status.CLOSED:
             messages.warning(request, "Incident is already closed.")
-            return redirect(incident.get_absolute_url())
+            return _redirect_back(request, incident)
 
-        # Ensure an assignee exists (self-assign if needed)
         if not incident.assigned_to_id:
             incident.assigned_to = request.user
             incident.assigned_at = timezone.now()
@@ -335,9 +320,8 @@ class MarkActionRequiredView(LoginRequiredMixin, PermissionRequiredMixin, View):
         incident.status = Incident.Status.ACTION_REQUIRED
         incident.save(update_fields=["assigned_to", "assigned_at", "status", "last_updated"])
 
-        # Signals handle closing personal REVIEW task and creating ACTION NEEDED task
         messages.info(request, "Incident marked as Action Required.")
-        return redirect(incident.get_absolute_url())
+        return _redirect_back(request, incident)
 
 
 class CloseIncidentView(LoginRequiredMixin, PermissionRequiredMixin, View):
@@ -345,13 +329,13 @@ class CloseIncidentView(LoginRequiredMixin, PermissionRequiredMixin, View):
 
     def post(self, request, pk):
         incident = get_object_or_404(Incident, pk=pk)
+
         if incident.status == Incident.Status.CLOSED:
             messages.info(request, "Incident already closed.")
-            return redirect(incident.get_absolute_url())
+            return _redirect_back(request, incident)
 
         incident.status = Incident.Status.CLOSED
         incident.save(update_fields=["status", "last_updated"])
 
-        # Signals will auto-complete any open tasks for this incident
         messages.success(request, "Incident closed.")
-        return redirect(incident.get_absolute_url())
+        return _redirect_back(request, incident)
