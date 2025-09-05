@@ -91,6 +91,8 @@ CSRF_TRUSTED_ORIGINS = env.list("CSRF_TRUSTED_ORIGINS")
 
 SITE_ID = 1
 
+CONSENT_REQUIRED_VERSION = 1
+
 INSTALLED_APPS = [
     # 3rd-party admin UI / tooling
     # "jazzmin",
@@ -127,6 +129,8 @@ INSTALLED_APPS = [
     "tasks",
     "club",
     "incidents",
+    "club_calendar",
+    "consents",
     # Hijack (must be after members so the admin override is visible)
     "hijack",
     "hijack.contrib.admin",
@@ -156,6 +160,7 @@ MIDDLEWARE = [
     "hockey_club.middleware.LoginRequiredMiddleware",
     "hijack.middleware.HijackUserMiddleware",
     "allauth.account.middleware.AccountMiddleware",
+    "consents.middleware.EnforceConsentsMiddleware",
 ]
 
 ROOT_URLCONF = "hockey_club.urls"
@@ -275,6 +280,7 @@ ACCOUNT_FORMS = {
 
 # Force username = email via adapter
 ACCOUNT_ADAPTER = "accounts.adapter.RHCAccountAdapter"
+
 
 # Optional custom whitelist for login-exempt URLs
 LOGIN_EXEMPT_URLS = [

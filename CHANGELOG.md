@@ -41,6 +41,34 @@ Keeps all your existing logic/permissions.
 
 -->
 
+## [v0.4.0-beta] - 2025-09-06
+
+### Added
+- **Consents app** with required consent logging (Terms, Club, England Hockey):
+  - `ConsentLog` model + admin
+  - Versioned consent check via `CONSENT_REQUIRED_VERSION` (settings)
+  - `consents/consents.html` page themed to match auth
+  - Allauth adapter gating users to consents after signup/login until completed
+  - Optional middleware to enforce consents during active sessions
+- **Auth UX refresh (Colorlib-style)**:
+  - New **Login**, **Signup**, **Password Reset**, **Resend Confirmation** templates
+  - Signup: parent/guardian guidance + benefits panel
+  - Inline 2-step signup (details → consents) with JS toggle (graceful fallback)
+- **Legal pages (themed)**:
+  - `Privacy Policy` and `Terms of Service` pages matching the new auth look
+  - Added named routes: `privacy_policy`, `terms`
+- **Calendar groundwork**:
+  - Initial app scaffolding and backend wiring (no menu entry yet; still in development)
+
+### Changed
+- Unified styling across auth + legal pages: rounded cards, split brand pane, dark-mode support
+- Allauth flow: post-login/post-signup now checks required consents and redirects accordingly
+
+### Fixed
+- Corrected permissions for viewing **Documents**, **Quick Links**, and **Policies**
+- Hid **Spond** menu/items from non-staff roles per permission rules
+- Minor template and copy tweaks across auth views for clarity and consistency
+
 ## [0.3.0-beta] - 2025-09-05
 
 ### Added

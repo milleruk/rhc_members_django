@@ -22,6 +22,7 @@ urlpatterns = [
         ResendConfirmationView.as_view(),
         name="account_resend_confirmation",
     ),
+    path("accounts/", include(("consents.urls", "consents"), namespace="consents")),
     path("accounts/", include("allauth.urls")),
     path("accounts/mfa/", include("allauth.mfa.urls")),
     # Settings hub
@@ -43,6 +44,7 @@ urlpatterns = [
     path("spond/", include(("spond_integration.urls", "spond"), namespace="spond")),
     path("staff/", include(("staff.urls", "staff"), namespace="staff")),
     path("incidents/", include(("incidents.urls", "incidents"), namespace="incidents")),
+    path("calendar/", include("club_calendar.urls")),
     # ---- Static pages ----
     path("terms/", TermsView.as_view(), name="terms"),
     path("privacy/", PrivacyView.as_view(), name="privacy_policy"),

@@ -141,21 +141,23 @@
                         {% endif %}
                     {% endif %}
                     <!-- EXTERNAL -->
-                    <li class="nav-header">EXTERNAL</li>
-                    <li class="nav-item">
-                        <a href="{% url 'spond:dashboard' %}"
-                           class="nav-link {% if '/spond/dashboard' in p %}active{% endif %}">
-                            <i class="nav-icon fas fa-users"></i>
-                            <p>Spond Players</p>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a href="{% url 'spond:events_dashboard' %}"
-                           class="nav-link {% if '/spond/events' in p %}active{% endif %}">
-                            <i class="nav-icon fas fa-calendar-alt"></i>
-                            <p>Spond Events</p>
-                        </a>
-                    </li>
+                    {% if perms.members.view_staff_area %}
+                        <li class="nav-header">EXTERNAL</li>
+                        <li class="nav-item">
+                            <a href="{% url 'spond:dashboard' %}"
+                               class="nav-link {% if '/spond/dashboard' in p %}active{% endif %}">
+                                <i class="nav-icon fas fa-users"></i>
+                                <p>Spond Players</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="{% url 'spond:events_dashboard' %}"
+                               class="nav-link {% if '/spond/events' in p %}active{% endif %}">
+                                <i class="nav-icon fas fa-calendar-alt"></i>
+                                <p>Spond Events</p>
+                            </a>
+                        </li>
+                    {% endif %}
                     <!-- RESOURCES -->
                     <li class="nav-header">RESOURCES</li>
                     <li class="nav-item">

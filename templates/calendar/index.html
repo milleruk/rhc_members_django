@@ -1,0 +1,165 @@
+{% extends "base.html" %}
+{% block title %}Club Calendar{% endblock %}
+{% block extra_head %}
+    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.css"
+          rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
+{% endblock %}
+{% block content %}
+    <div class="content-header pb-0">
+        <div class="container-fluid d-flex justify-content-between align-items-center">
+            <h1 class="m-0">
+                <i class="far fa-calendar-alt me-2"></i>Club Calendar
+            </h1>
+            <div>
+                {% if perms.club_calendar.add_event %}
+                    <a href="{% url 'club_calendar:event_add' %}" class="btn btn-primary">
+                        <i class="fas fa-plus me-1"></i> Add Event
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <section class="content">
+        <div class="container-fluid">
+            <div class="row">
+                <!-- Left column -->
+                <div class="col-md-3">
+                    <div class="card card-primary card-outline">
+                        <div class="card-header">
+                            <h3 class="card-title">Topics</h3>
+                        </div>
+                        <div class="card-body">
+                            {% if topics %}
+                                <ul class="list-unstyled mb-0">
+                                    {% for t in topics %}
+                                        <li class="mb-2 d-flex align-items-center">
+                                            <span class="me-2"
+                                                  style="display:inline-block;
+                                                         width:14px;
+                                                         height:14px;
+                                                         border-radius:3px;
+                                                         background:{{ t.color }};
+                                                         border:1px solid rgba(0,0,0,.1)"></span>
+                                            <span class="small">{{ t.name }}</span>
+                                        </li>
+                                    {% endfor %}
+                                </ul>
+                            {% else %}
+                                <p class="text-muted small mb-0">No topics configured yet.</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="card card-secondary">
+                        <div class="card-header">
+                            <h3 class="card-title">Visibility</h3>
+                        </div>
+                        <div class="card-body small">
+                            <p class="mb-2 text-muted">Events are automatically filtered to your Groups/Teams.</p>
+                            <ul class="list-unstyled mb-0">
+                                <li>
+                                    <i class="far fa-check-circle me-1"></i> Public events
+                                </li>
+                                <li>
+                                    <i class="far fa-check-circle me-1"></i> Your groups
+                                </li>
+                                <li>
+                                    <i class="far fa-check-circle me-1"></i> Your teams
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <!-- Calendar column -->
+                <div class="col-md-9">
+                    <div class="card card-primary">
+                        <div class="card-body p-2">
+                            <div id="club-calendar"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    <script>
+(function() {
+  // CSRF helper for POSTs
+  function getCookie(name) {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop().split(";").shift();
+  }
+  const csrftoken = getCookie('csrftoken');
+
+  document.addEventListener("DOMContentLoaded", function () {
+    const calendarEl = document.getElementById("club-calendar");
+
+    const calendar = new FullCalendar.Calendar(calendarEl, {
+      initialView: "dayGridMonth",
+      headerToolbar: {
+        left: "prev,next today",
+        center: "title",
+        right: "dayGridMonth,timeGridWeek,timeGridDay,listWeek"
+      },
+      navLinks: true,
+      nowIndicator: true,
+      selectable: false,
+      editable: false,
+
+      eventClick: function(info) {
+        const seriesId = info.event.extendedProps.seriesId;
+        const isRecurring = info.event.extendedProps.isRecurring;
+        const occStart = info.event.extendedProps.occurrenceStart || info.event.startStr;
+
+        {% if perms.club_calendar.change_event %}
+        const goEditSeries = () =>
+          window.location.href = "{% url 'club_calendar:event_edit' 0 %}".replace("/0/", "/" + seriesId + "/");
+        const goEditThis = () =>
+          window.location.href = "{% url 'club_calendar:edit_occurrence' 0 %}".replace("/0/", "/" + seriesId + "/")
+            + "?occurrence_start=" + encodeURIComponent(occStart);
+        {% else %}
+        const goEditSeries = () => {};
+        const goEditThis = () => {};
+        {% endif %}
+
+        {% if perms.club_calendar.delete_event %}
+        if (isRecurring && occStart) {
+          const choice = window.prompt(
+            "Type:\n  'this'     → delete only this occurrence\n  'editthis' → edit only this occurrence\n" +
+            "  'series'   → delete the whole series\n  'edit'     → edit the series\n\nAnything else cancels."
+          );
+          if (choice === "editthis") { goEditThis(); return; }
+          if (choice === "this") {
+            fetch("{% url 'club_calendar:cancel_occurrence' 0 %}".replace("/0/", "/" + seriesId + "/"), {
+              method: "POST",
+              headers: {"X-CSRFToken": csrftoken, "Content-Type": "application/x-www-form-urlencoded"},
+              body: new URLSearchParams({occurrence_start: occStart}).toString(),
+            }).then(() => calendar.refetchEvents());
+            return;
+          }
+          if (choice === "series") {
+            if (confirm("Delete the entire series? This cannot be undone.")) {
+              window.location.href = "{% url 'club_calendar:event_delete' 0 %}".replace("/0/", "/" + seriesId + "/");
+            }
+            return;
+          }
+          if (choice === "edit") { goEditSeries(); return; }
+          return;
+        }
+        {% endif %}
+
+        // Fallback: edit series if allowed
+        goEditSeries();
+      },
+
+      events: {
+        url: "{% url 'club_calendar:events_feed' %}",
+        failure: function() { console.error("Failed to load events"); }
+      },
+    });
+
+    calendar.render();
+  });
+})();
+    </script>
+{% endblock %}

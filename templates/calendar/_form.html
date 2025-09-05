@@ -1,0 +1,136 @@
+{% load crispy_forms_tags %}
+<form method="post" novalidate>
+    {% csrf_token %}
+    {{ form.non_field_errors }}
+    {{ form.title|as_crispy_field }}
+    {{ form.description|as_crispy_field }}
+    <div class="row">
+        <div class="col-md-6">{{ form.start|as_crispy_field }}</div>
+        <div class="col-md-6">{{ form.end|as_crispy_field }}</div>
+    </div>
+    <div class="form-check mb-3">
+        {{ form.all_day }}
+        <label class="form-check-label" for="{{ form.all_day.id_for_label }}">All day</label>
+    </div>
+    {{ form.location|as_crispy_field }}
+    {{ form.topic|as_crispy_field }}
+    <div class="row">
+        <div class="col-md-6">{{ form.visible_to_groups|as_crispy_field }}</div>
+        <div class="col-md-6">{{ form.visible_to_teams|as_crispy_field }}</div>
+    </div>
+    <hr class="my-3">
+    <h6 class="mb-2">
+        <i class="far fa-redo me-1"></i> Recurrence
+    </h6>
+    {{ form.recurrence_pattern|as_crispy_field }}
+    <div id="recurrence-days-wrap" class="mb-2" style="display:none;">{{ form.recurrence_days|as_crispy_field }}</div>
+    <div class="row">
+        <div class="col-md-6">{{ form.recurrence_end|as_crispy_field }}</div>
+    </div>
+    <!-- Human-readable preview -->
+    <div class="alert alert-info py-2 px-3 small mb-3"
+         id="recurrence-preview"
+         style="display:none">
+        <strong>Repeats:</strong> <span id="recurrence-preview-text"></span>
+    </div>
+    <div class="d-flex gap-2">
+        <button class="btn btn-primary" type="submit">Save</button>
+        <a class="btn btn-secondary" href="{% url 'club_calendar:index' %}">Cancel</a>
+    </div>
+</form>
+<script>
+(function() {
+  const patternEl = document.getElementById("id_recurrence_pattern");
+  const daysWrap = document.getElementById("recurrence-days-wrap");
+  const daysInputs = document.querySelectorAll("#recurrence-days-wrap input[type=checkbox]");
+  const startEl = document.getElementById("id_start");
+  const untilEl = document.getElementById("id_recurrence_end");
+  const previewBox = document.getElementById("recurrence-preview");
+  const previewText = document.getElementById("recurrence-preview-text");
+
+  const WEEKDAY_NAME = {MO:"Monday", TU:"Tuesday", WE:"Wednesday", TH:"Thursday", FR:"Friday", SA:"Saturday", SU:"Sunday"};
+
+  function getSelectedDays() {
+    const sel = [];
+    daysInputs.forEach(cb => { if (cb.checked) sel.push(cb.value); });
+    return sel;
+  }
+
+  function weekdayFromDateStr(dtStr) {
+    try {
+      if (!dtStr) return null;
+      // dtStr is "YYYY-MM-DDTHH:MM"
+      const d = new Date(dtStr);
+      // JS: 0=Sun..6=Sat => map
+      const map = ["SU","MO","TU","WE","TH","FR","SA"];
+      return map[d.getDay()];
+    } catch(e){ return null; }
+  }
+
+  function humanList(items) {
+    if (!items || !items.length) return "";
+    if (items.length === 1) return items[0];
+    return items.slice(0, -1).join(", ") + " and " + items[items.length-1];
+  }
+
+  function updateUIVisibility() {
+    const pat = patternEl.value;
+    daysWrap.style.display = (pat === "WEEKLY" || pat === "BIWEEKLY") ? "" : "none";
+  }
+
+  function updatePreview() {
+    const pat = patternEl.value;
+    if (!pat) {
+      previewBox.style.display = "none";
+      previewText.textContent = "";
+      return;
+    }
+
+    let text = "";
+    const startWk = weekdayFromDateStr(startEl?.value);
+    const until = untilEl?.value ? new Date(untilEl.value) : null;
+    const untilNice = until ? until.toLocaleString() : null;
+
+    if (pat === "DAILY") {
+      text = "Every day";
+    } else if (pat === "WEEKLY") {
+      let days = getSelectedDays();
+      if (!days.length && startWk) days = [startWk];
+      const names = days.map(d => WEEKDAY_NAME[d] || d);
+      text = "Every week on " + humanList(names);
+    } else if (pat === "BIWEEKLY") {
+      let days = getSelectedDays();
+      if (!days.length && startWk) days = [startWk];
+      const names = days.map(d => WEEKDAY_NAME[d] || d);
+      text = "Every 2 weeks on " + humanList(names);
+    } else if (pat === "MONTHLY") {
+      // Same day each month based on start date:
+      let dayNum = null;
+      if (startEl?.value) dayNum = new Date(startEl.value).getDate();
+      text = dayNum ? `Every month on day ${dayNum}` : "Every month";
+    }
+
+    if (untilNice) {
+      text += ` until ${untilNice}`;
+    }
+
+    previewText.textContent = text;
+    previewBox.style.display = "";
+  }
+
+  function wire() {
+    if (!patternEl) return;
+    patternEl.addEventListener("change", () => { updateUIVisibility(); updatePreview(); });
+    daysInputs.forEach(cb => cb.addEventListener("change", updatePreview));
+    if (startEl) startEl.addEventListener("change", updatePreview);
+    if (untilEl) untilEl.addEventListener("change", updatePreview);
+
+    updateUIVisibility();
+    updatePreview();
+  }
+
+  document.addEventListener("DOMContentLoaded", wire);
+  // In case this script runs before DOMContentLoaded (some template stacks), call immediately too:
+  wire();
+})();
+</script>

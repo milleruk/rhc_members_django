@@ -1,83 +1,148 @@
 {% extends "base_auth.html" %}
-{% block title %}Privacy Policy{% endblock %}
+{% load i18n %}
+{% block title %}
+    {% trans "Privacy Policy" %}
+{% endblock %}
 {% block content %}
-    <div class="register-box">
-        <div class="register-logo">
-            <b>Redditch Hockey Club</b>
-            <br>
-            Privacy Policy
-        </div>
-        <div class="card">
-            <div class="card-body register-card-body">
-                <p class="login-box-msg">How we collect, use and protect your information</p>
-                <div class="content text-sm">
-                    <h5>1. Introduction</h5>
-                    <p>
-                        This Privacy Policy explains how Redditch Hockey Club (“the Club”) collects, stores,
-                        and uses personal information provided through the Registration Portal. We are committed
-                        to protecting your privacy and complying with the UK General Data Protection Regulation (UK GDPR).
-                    </p>
-                    <h5>2. Information We Collect</h5>
-                    <p>When you register, we may collect the following information:</p>
-                    <ul>
-                        <li>Full name, date of birth, and gender</li>
-                        <li>Contact details (email, phone, address)</li>
-                        <li>Emergency contact details</li>
-                        <li>Medical information relevant to safe participation in hockey</li>
-                        <li>Membership status (senior, junior, player type)</li>
-                        <li>Parental/guardian details for players under 18</li>
-                    </ul>
-                    <h5>3. How We Use Your Information</h5>
-                    <p>We use personal data for the following purposes:</p>
-                    <ul>
-                        <li>Managing club membership records</li>
-                        <li>Communicating important club information</li>
-                        <li>Organising training sessions, matches, and competitions</li>
-                        <li>Ensuring the safety and wellbeing of all players</li>
-                        <li>Meeting reporting requirements of hockey governing bodies</li>
-                    </ul>
-                    <h5>4. Sharing of Information</h5>
-                    <p>Your information will only be shared with:</p>
-                    <ul>
-                        <li>Club coaches and captains for training, selection, and match administration</li>
-                        <li>Relevant hockey governing bodies (e.g. England Hockey) where required</li>
-                        <li>Medical professionals in the event of an emergency</li>
-                    </ul>
-                    <p>We will never sell or share your information with third parties for marketing purposes.</p>
-                    <h5>5. Data Security</h5>
-                    <p>
-                        Your personal data is stored securely within the Registration Portal and protected by
-                        appropriate technical and organisational measures. Access is restricted based on role
-                        (player, parent/guardian, captain, coach, administrator).
-                    </p>
-                    <h5>6. Data Retention</h5>
-                    <p>
-                        We will retain your information for as long as you are a member of the Club. After
-                        membership ends, data may be retained for a maximum of 3 years unless required longer
-                        by law or safeguarding regulations.
-                    </p>
-                    <h5>7. Your Rights</h5>
-                    <p>Under UK GDPR, you have the right to:</p>
-                    <ul>
-                        <li>Access the personal data we hold about you</li>
-                        <li>Request corrections to inaccurate information</li>
-                        <li>Request deletion of your data (subject to legal obligations)</li>
-                        <li>Restrict or object to the processing of your data</li>
-                    </ul>
-                    <p>To exercise these rights, please contact us using the details below.</p>
-                    <h5>8. Contact</h5>
-                    <p>
-                        If you have any questions about this Privacy Policy or how your data is handled,
-                        please contact the Club Committee:
-                        <br>
-                        <a href="mailto:contact@redditchhc.co.uk">info@redditchhc.co.uk</a>
-                    </p>
-                </div>
-                <div class="mt-3 d-flex justify-content-between">
-                    <a href="{% url 'signup' %}" class="btn btn-outline-secondary">
-                        <i class="fas fa-arrow-left mr-1"></i> Back to Signup
-                    </a>
-                    <span class="text-muted small">Last updated: {{ last_updated|default:"–" }}</span>
+    <style>
+  .auth-wrap{min-height:100vh;background:linear-gradient(135deg,#f3f6ff 0,#eef3ff 40%,#e9f3ff 100%);display:flex;align-items:center}
+  .auth-card{backdrop-filter:saturate(180%) blur(8px);border:0;border-radius:1.25rem;box-shadow:0 20px 60px rgba(23,28,38,.12);overflow:hidden}
+  .brand-pane{
+    background:radial-gradient(1200px 600px at -10% -20%,rgba(92,123,255,.18),transparent 60%),
+               linear-gradient(140deg,#5c7bff 0%,#7aa8ff 55%,#88e0ff 100%);
+    color:#fff;position:relative
+  }
+  .brand-pane:before,.brand-pane:after{content:"";position:absolute;border-radius:999px;filter:blur(16px);opacity:.25}
+  .brand-pane:before{width:220px;height:220px;background:#fff;top:-40px;right:-40px}
+  .brand-pane:after{width:160px;height:160px;background:#00204a;bottom:-30px;left:-30px}
+  .brand-logo{display:inline-flex;align-items:baseline;color:#fff;text-decoration:none;font-weight:800;letter-spacing:.5px;font-size:clamp(1.4rem,2.2vw,2rem)}
+  .form-pane{background:#fff}
+  .title{font-weight:800;letter-spacing:.3px}
+  .subtle{color:#6b7280}
+  .toc{background:#f8fafc;border:1px dashed #e5e7eb;border-radius:.9rem;padding:1rem}
+  .toc a{display:block;margin:.2rem 0}
+  .content-body h5{margin-top:1.25rem}
+  .btn-rounded{border-radius:.9rem}
+
+  /* Dark */
+  .dark .auth-wrap{background:linear-gradient(135deg,#0b1220 0,#0e1729 60%,#0b1328 100%)}
+  .dark .auth-card{background:#0f172a;box-shadow:0 20px 60px rgba(0,0,0,.55)}
+  .dark .form-pane{background:#0f172a;color:#e5e7eb}
+  .dark .subtle{color:#9ca3af}
+  .dark .toc{background:#0b1220;border-color:#1f2937}
+    </style>
+    <div class="auth-wrap py-4">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-12 col-lg-10">
+                    <div class="card auth-card">
+                        <div class="row g-0">
+                            <!-- Left brand pane -->
+                            <div class="col-lg-4 brand-pane p-4 p-md-5 d-none d-lg-flex flex-column justify-content-between">
+                                <div>
+                                    <a href="{% url 'dashboard' %}" class="brand-logo"><span>Redditch</span>&nbsp;<span>HC</span></a>
+                                    <h2 class="mt-3">{% trans "Privacy Policy" %}</h2>
+                                    <p class="mb-0">{% trans "How we collect, use and protect your information." %}</p>
+                                </div>
+                                <div class="mt-4">
+                                    <a href="{% url 'account_signup' %}"
+                                       class="btn btn-light btn-rounded w-100 mb-2">
+                                        <i class="fas fa-user-plus me-1"></i> {% trans "Back to Signup" %}
+                                    </a>
+                                    <a href="{% url 'terms' %}"
+                                       class="btn btn-outline-light btn-rounded w-100">
+                                        <i class="fas fa-file-alt me-1"></i> {% trans "Read Terms of Service" %}
+                                    </a>
+                                </div>
+                            </div>
+                            <!-- Right content pane -->
+                            <div class="col-lg-8 form-pane p-4 p-md-5">
+                                <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+                                    <h1 class="h4 title mb-2">{% trans "Privacy Policy" %}</h1>
+                                    <span class="subtle small">{% trans "Last updated" %}: {{ last_updated|default:"–" }}</span>
+                                </div>
+                                <div class="toc mb-4 small">
+                                    <strong class="d-block mb-1">{% trans "On this page" %}</strong>
+                                    <a href="#intro">1. {% trans "Introduction" %}</a>
+                                    <a href="#collect">2. {% trans "Information We Collect" %}</a>
+                                    <a href="#use">3. {% trans "How We Use Your Information" %}</a>
+                                    <a href="#share">4. {% trans "Sharing of Information" %}</a>
+                                    <a href="#security">5. {% trans "Data Security" %}</a>
+                                    <a href="#retention">6. {% trans "Data Retention" %}</a>
+                                    <a href="#rights">7. {% trans "Your Rights" %}</a>
+                                    <a href="#contact">8. {% trans "Contact" %}</a>
+                                </div>
+                                <div class="content-body text-sm">
+                                    <h5 id="intro">1. {% trans "Introduction" %}</h5>
+                                    <p>
+                                        {% blocktrans %}This Privacy Policy explains how Redditch Hockey Club (“the Club”) collects, stores, and uses personal information provided through the Members’ Portal. We are committed to protecting your privacy and complying with the UK General Data Protection Regulation (UK GDPR).{% endblocktrans %}
+                                    </p>
+                                    <h5 id="collect">2. {% trans "Information We Collect" %}</h5>
+                                    <p>{% trans "When you register, we may collect the following information:" %}</p>
+                                    <ul>
+                                        <li>{% trans "Full name, date of birth, and gender" %}</li>
+                                        <li>{% trans "Contact details (email, phone, address)" %}</li>
+                                        <li>{% trans "Emergency contact details" %}</li>
+                                        <li>{% trans "Medical information relevant to safe participation in hockey" %}</li>
+                                        <li>{% trans "Membership status (senior, junior, player type)" %}</li>
+                                        <li>{% trans "Parental/guardian details for players under 18" %}</li>
+                                    </ul>
+                                    <h5 id="use">3. {% trans "How We Use Your Information" %}</h5>
+                                    <p>{% trans "We use personal data for the following purposes:" %}</p>
+                                    <ul>
+                                        <li>{% trans "Managing club membership records" %}</li>
+                                        <li>{% trans "Communicating important club information" %}</li>
+                                        <li>{% trans "Organising training sessions, matches, and competitions" %}</li>
+                                        <li>{% trans "Ensuring the safety and wellbeing of all players" %}</li>
+                                        <li>{% trans "Meeting reporting requirements of hockey governing bodies" %}</li>
+                                    </ul>
+                                    <h5 id="share">4. {% trans "Sharing of Information" %}</h5>
+                                    <p>{% trans "Your information will only be shared with:" %}</p>
+                                    <ul>
+                                        <li>{% trans "Club coaches and captains for training, selection, and match administration" %}</li>
+                                        <li>{% trans "Relevant hockey governing bodies (e.g. England Hockey) where required" %}</li>
+                                        <li>{% trans "Medical professionals in the event of an emergency" %}</li>
+                                    </ul>
+                                    <p class="mb-0">
+                                        {% trans "We will never sell or share your information with third parties for marketing purposes." %}
+                                    </p>
+                                    <h5 id="security" class="mt-4">5. {% trans "Data Security" %}</h5>
+                                    <p>
+                                        {% trans "Your personal data is stored securely within the Members’ Portal and protected by appropriate technical and organisational measures. Access is restricted based on role (player, parent/guardian, captain, coach, administrator)." %}
+                                    </p>
+                                    <h5 id="retention">6. {% trans "Data Retention" %}</h5>
+                                    <p>
+                                        {% trans "We will retain your information for as long as you are a member of the Club. After membership ends, data may be retained for a maximum of 3 years unless required longer by law or safeguarding regulations." %}
+                                    </p>
+                                    <h5 id="rights">7. {% trans "Your Rights" %}</h5>
+                                    <p>{% trans "Under UK GDPR, you have the right to:" %}</p>
+                                    <ul>
+                                        <li>{% trans "Access the personal data we hold about you" %}</li>
+                                        <li>{% trans "Request corrections to inaccurate information" %}</li>
+                                        <li>{% trans "Request deletion of your data (subject to legal obligations)" %}</li>
+                                        <li>{% trans "Restrict or object to the processing of your data" %}</li>
+                                    </ul>
+                                    <p>{% trans "To exercise these rights, please contact us using the details below." %}</p>
+                                    <h5 id="contact">8. {% trans "Contact" %}</h5>
+                                    <p>
+                                        {% blocktrans %}If you have any questions about this Privacy Policy or how your data is handled, please contact the Club Committee:{% endblocktrans %}
+                                        <br>
+                                        <a href="mailto:info@redditchhc.co.uk">info@redditchhc.co.uk</a>
+                                    </p>
+                                </div>
+                                <div class="mt-4 d-flex justify-content-between flex-wrap gap-2">
+                                    <a href="{% url 'account_signup' %}"
+                                       class="btn btn-outline-secondary btn-rounded">
+                                        <i class="fas fa-arrow-left me-1"></i> {% trans "Back to Signup" %}
+                                    </a>
+                                    <span class="subtle small">{% trans "Last updated" %}: {{ last_updated|default:"–" }}</span>
+                                </div>
+                            </div>
+                            <!-- /form-pane -->
+                        </div>
+                        <!-- /row -->
+                    </div>
+                    <!-- /card -->
                 </div>
             </div>
         </div>

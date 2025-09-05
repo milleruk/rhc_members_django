@@ -1,22 +1,19 @@
-# accounts/adapter.py
+# accounts/adapters.py
 from allauth.account.adapter import DefaultAccountAdapter
+from django.shortcuts import resolve_url
+
+from consents.models import user_has_required_consents
 
 
 class RHCAccountAdapter(DefaultAccountAdapter):
-    """
-    Custom adapter to activate accounts once the email is confirmed.
-    """
+    def _consent_or(self, request, fallback):
+        user = getattr(request, "user", None)
+        if user and user.is_authenticated and not user_has_required_consents(user):
+            return resolve_url("consents:consents")  # <-- namespaced
+        return resolve_url(fallback)
 
-    def confirm_email(self, request, email_address):
-        """
-        Called by Allauth when a confirmation link is used.
-        Make the user active after their email is verified.
-        """
-        # Let allauth mark the email as verified / set primary if needed
-        resp = super().confirm_email(request, email_address)
+    def get_login_redirect_url(self, request):
+        return self._consent_or(request, "dashboard")
 
-        user = email_address.user
-        if not user.is_active:
-            user.is_active = True
-            user.save(update_fields=["is_active"])
-        return resp
+    def get_signup_redirect_url(self, request):
+        return self._consent_or(request, "dashboard")

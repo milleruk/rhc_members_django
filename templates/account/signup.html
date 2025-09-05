@@ -5,7 +5,7 @@
 {% endblock %}
 {% block content %}
     <style>
-  /* ==== Colorlib-style (login-form-07) inspired signup ==== */
+  /* Layout shell (matches your new login/signup styling) */
   .auth-wrap {
     min-height: 100vh;
     background: linear-gradient(135deg, #f3f6ff 0%, #eef3ff 40%, #e9f3ff 100%);
@@ -13,93 +13,91 @@
   }
   .auth-card {
     backdrop-filter: saturate(180%) blur(8px);
-    border: 0;
-    border-radius: 1.25rem;
-    box-shadow: 0 20px 60px rgba(23, 28, 38, 0.12);
+    border: 0; border-radius: 1.25rem;
+    box-shadow: 0 20px 60px rgba(23,28,38,.12);
     overflow: hidden;
   }
-  .brand-pane {
-    background: radial-gradient(1200px 600px at -10% -20%, rgba(92, 123, 255, 0.18), transparent 60%),
-                linear-gradient(140deg, #5c7bff 0%, #7aa8ff 55%, #88e0ff 100%);
-    color: #fff; position: relative;
+  .form-pane { background:#fff; }
+  .benefits-pane {
+    background: #ffffff;
+    position: relative;
   }
-  .brand-pane:before,
-  .brand-pane:after {
-    content: ""; position: absolute; border-radius: 999px; filter: blur(16px); opacity: .25;
+  .benefits-pane:before {
+    content:""; position:absolute; inset:-20% -10% auto auto;
+    background: radial-gradient(420px 420px at 85% 15%, rgba(92,123,255,.08), transparent 60%),
+                radial-gradient(360px 360px at 60% 50%, rgba(0,32,74,.05), transparent 65%);
+    width:120%; height:120%; pointer-events:none;
   }
-  .brand-pane:before { width: 220px; height: 220px; background: #ffffff; top: -40px; right: -40px; }
-  .brand-pane:after  { width: 160px; height: 160px; background: #00204a; bottom: -30px; left: -30px; }
-  .brand-logo {
-    display: inline-flex; align-items: baseline;
-    font-weight: 800; letter-spacing: .5px; text-decoration: none; color: #fff;
-    font-size: clamp(1.4rem, 2.2vw, 2rem);
+  .title { font-weight: 800; letter-spacing:.3px; }
+  .subtle { color:#6b7280; font-size:.95rem; }
+
+  /* Info banner */
+  .info-banner {
+    border-radius: .9rem;
+    border: 1px solid #cfe4ff;
+    background: #eaf3ff;
+    color: #113a72;
+    padding: .9rem 1rem;
   }
-  .brand-pane h2 { font-weight: 800; line-height: 1.1; margin-top: .75rem; }
-  .brand-pane p  { opacity: .95; }
-  .muted-link, .muted-link:hover { color: rgba(255,255,255,0.95); text-decoration: underline; }
+  .info-banner i { opacity:.9; }
 
-  .form-pane { background: #fff; }
-  .form-pane .title { font-weight: 800; letter-spacing: .3px; }
-  .subtle { color: #6b7280; font-size: .95rem; }
+  /* Inputs/Buttons */
+  .input-group .form-control { border-radius:.9rem; }
+  .input-group-text { border-radius:.9rem; }
+  .btn-rounded { border-radius:.9rem; }
 
-  .input-group .form-control { border-radius: .9rem; }
-  .input-group-text { border-radius: .9rem; }
-  .form-control.is-invalid { box-shadow: 0 0 0 .2rem rgba(220,53,69,.1); }
-
-  .btn-rounded { border-radius: .9rem; }
-  .divider { position: relative; text-align: center; margin: 1rem 0 1.25rem; }
-  .divider span { background: #fff; padding: 0 .75rem; position: relative; z-index: 1; color: #6b7280; font-size: .9rem; }
-  .divider:before { content: ""; position: absolute; left: 0; right: 0; top: 50%; border-top: 1px dashed #e5e7eb; }
-  .notice {
-    background: #eef2ff; border: 1px solid #e0e7ff; color: #1e3a8a;
-    border-radius: .9rem; padding: .75rem .9rem;
+  /* Benefits list */
+  .benefits h3 { font-weight:800; }
+  .benefit {
+    display:flex; gap:.9rem; align-items:flex-start;
+    padding:.75rem 0; border-bottom: 1px dashed #e5e7eb;
   }
+  .benefit:last-child { border-bottom:0; }
+  .benefit i {
+    flex:0 0 auto; font-size:1.1rem;
+    background:#eef2ff; border:1px solid #e0e7ff;
+    width:2.25rem; height:2.25rem; border-radius:.6rem;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .benefit strong { display:block; }
+  .benefit p { margin:0; color:#6b7280; }
 
-  /* Dark mode: toggle .dark on <html> or <body> in your base */
+  /* Dark mode */
   .dark .auth-wrap { background: linear-gradient(135deg, #0b1220 0%, #0e1729 60%, #0b1328 100%); }
-  .dark .auth-card { background: #0f172a; box-shadow: 0 20px 60px rgba(0,0,0,.55); }
-  .dark .form-pane { background: #0f172a; color: #e5e7eb; }
-  .dark .divider span { background: #0f172a; color: #9ca3af; }
-  .dark .divider:before { border-top-color: #1f2937; }
-  .dark .notice { background: #0b2546; border-color: #143a66; color: #cde1ff; }
-  .dark .subtle { color: #9ca3af; }
+  .dark .auth-card { background:#0f172a; box-shadow:0 20px 60px rgba(0,0,0,.55); }
+  .dark .form-pane { background:#0f172a; color:#e5e7eb; }
+  .dark .subtle { color:#9ca3af; }
   .dark .input-group .form-control,
-  .dark .input-group-text {
-    background: #0b1220; border-color: #1f2a44; color: #e5e7eb;
-  }
+  .dark .input-group-text { background:#0b1220; border-color:#1f2a44; color:#e5e7eb; }
+  .dark .info-banner { background:#0b2546; border-color:#143a66; color:#cde1ff; }
+  .dark .benefits-pane { background:#0f172a; }
+  .dark .benefit { border-bottom-color:#1f2937; }
+  .dark .benefit i { background:#0b2546; border-color:#143a66; color:#cde1ff; }
     </style>
     <div class="auth-wrap py-4">
         <div class="container">
             {% include "partials/messages.html" %}
-            <!-- Main Card -->
             <div class="row justify-content-center">
-                <div class="col-12 col-lg-10">
+                <div class="col-12 col-xxl-11">
                     <div class="card auth-card">
                         <div class="row g-0">
-                            <!-- Brand / Left -->
-                            <div class="col-lg-6 brand-pane p-4 p-md-5 d-none d-lg-flex flex-column justify-content-between">
-                                <div>
-                                    <a href="{% url 'dashboard' %}" class="brand-logo">
-                                        <span>Redditch</span>&nbsp;<span>HC</span>
-                                    </a>
-                                    <h2 class="mt-3">{% trans "Create your account" %}</h2>
-                                    <p class="mb-0">{% trans "It only takes a minute to get started." %}</p>
-                                </div>
-                                <div class="small mt-4">
-                                    <span class="opacity-75">{% trans "By creating an account you agree to our" %}</span>
-                                    &nbsp;<a class="muted-link" href="{% url 'terms' %}">{% trans "Terms" %}</a>
-                                    &amp; <a class="muted-link" href="{% url 'privacy_policy' %}">{% trans "Privacy" %}</a>.
-                                </div>
-                            </div>
-                            <!-- Form / Right -->
-                            <div class="col-lg-6 form-pane p-4 p-md-5">
+                            <!-- LEFT: Signup form -->
+                            <div class="col-lg-7 form-pane p-4 p-md-5">
                                 <h1 class="h3 title mb-1">{% trans "Join Redditch HC" %}</h1>
-                                <p class="subtle mb-4">{% trans "Sign up with a social account or email." %}</p>
+                                <p class="subtle mb-4">{% trans "Create your account to manage memberships and players." %}</p>
+                                <!-- Child signup helper -->
+                                <div class="info-banner d-flex align-items-start mb-4">
+                                    <i class="fas fa-info-circle me-2 mt-1"></i>
+                                    <div>
+                                        <strong>{% trans "Signing up your child?" %}</strong>
+                                        <div class="small">
+                                            {% trans "Please register your own details as a parent/guardian now. You’ll add your child’s details in the next step." %}
+                                        </div>
+                                    </div>
+                                </div>
                                 <!-- Social providers -->
                                 {% include "socialaccount/snippets/provider_list.html" %}
-                                <div class="divider">
-                                    <span>{% trans "or sign up with email" %}</span>
-                                </div>
+                                <div class="my-3 text-center text-muted small">{% trans "or continue with email" %}</div>
                                 {% if form.non_field_errors %}
                                     <div class="alert alert-danger mb-3">
                                         <strong>{% trans "Please fix the errors below" %}</strong>
@@ -110,27 +108,18 @@
                                 {% endif %}
                                 <form method="post" action="{% url 'account_signup' %}" novalidate>
                                     {% csrf_token %}
-                                    <!-- First / Last name -->
                                     <div class="row">
                                         {% if form.first_name %}
                                             <div class="col-md-6 mb-3">
                                                 <label for="{{ form.first_name.id_for_label }}" class="form-label">{% trans "First name" %}</label>
-                                                {% if form.first_name.errors %}
-                                                    {% render_field form.first_name class="form-control is-invalid" autocomplete="given-name" placeholder="First name" %}
-                                                {% else %}
-                                                    {% render_field form.first_name class="form-control" autocomplete="given-name" placeholder="First name" %}
-                                                {% endif %}
+                                                {% render_field form.first_name class+="form-control" autocomplete="given-name" placeholder="First name" %}
                                                 {% for e in form.first_name.errors %}<div class="invalid-feedback d-block">{{ e }}</div>{% endfor %}
                                             </div>
                                         {% endif %}
                                         {% if form.last_name %}
                                             <div class="col-md-6 mb-3">
                                                 <label for="{{ form.last_name.id_for_label }}" class="form-label">{% trans "Last name" %}</label>
-                                                {% if form.last_name.errors %}
-                                                    {% render_field form.last_name class="form-control is-invalid" autocomplete="family-name" placeholder="Last name" %}
-                                                {% else %}
-                                                    {% render_field form.last_name class="form-control" autocomplete="family-name" placeholder="Last name" %}
-                                                {% endif %}
+                                                {% render_field form.last_name class+="form-control" autocomplete="family-name" placeholder="Last name" %}
                                                 {% for e in form.last_name.errors %}<div class="invalid-feedback d-block">{{ e }}</div>{% endfor %}
                                             </div>
                                         {% endif %}
@@ -138,11 +127,7 @@
                                     {% if form.username %}
                                         <div class="mb-3">
                                             <label for="{{ form.username.id_for_label }}" class="form-label">{% trans "Username" %}</label>
-                                            {% if form.username.errors %}
-                                                {% render_field form.username class="form-control is-invalid" autocomplete="username" placeholder="Username" %}
-                                            {% else %}
-                                                {% render_field form.username class="form-control" autocomplete="username" placeholder="Username" %}
-                                            {% endif %}
+                                            {% render_field form.username class+="form-control" autocomplete="username" placeholder="Username" %}
                                             {% for e in form.username.errors %}<div class="invalid-feedback d-block">{{ e }}</div>{% endfor %}
                                         </div>
                                     {% endif %}
@@ -150,11 +135,7 @@
                                         <div class="mb-3">
                                             <label for="{{ form.email.id_for_label }}" class="form-label">{% trans "Email" %}</label>
                                             <div class="input-group">
-                                                {% if form.email.errors %}
-                                                    {% render_field form.email class="form-control is-invalid" autocomplete="email" placeholder="name@example.com" %}
-                                                {% else %}
-                                                    {% render_field form.email class="form-control" autocomplete="email" placeholder="name@example.com" %}
-                                                {% endif %}
+                                                {% render_field form.email class+="form-control" autocomplete="email" placeholder="name@example.com" %}
                                                 <span class="input-group-text"><i class="fas fa-envelope"></i></span>
                                             </div>
                                             {% for e in form.email.errors %}<div class="invalid-feedback d-block">{{ e }}</div>{% endfor %}
@@ -165,11 +146,7 @@
                                             <div class="col-md-6 mb-3">
                                                 <label for="{{ form.password1.id_for_label }}" class="form-label">{% trans "Password" %}</label>
                                                 <div class="input-group">
-                                                    {% if form.password1.errors %}
-                                                        {% render_field form.password1 class="form-control is-invalid" autocomplete="new-password" placeholder="Password" %}
-                                                    {% else %}
-                                                        {% render_field form.password1 class="form-control" autocomplete="new-password" placeholder="Password" %}
-                                                    {% endif %}
+                                                    {% render_field form.password1 class+="form-control" autocomplete="new-password" placeholder="Password" %}
                                                     <span class="input-group-text"><i class="fas fa-lock"></i></span>
                                                 </div>
                                                 {% for e in form.password1.errors %}<div class="invalid-feedback d-block">{{ e }}</div>{% endfor %}
@@ -179,11 +156,7 @@
                                             <div class="col-md-6 mb-3">
                                                 <label for="{{ form.password2.id_for_label }}" class="form-label">{% trans "Confirm password" %}</label>
                                                 <div class="input-group">
-                                                    {% if form.password2.errors %}
-                                                        {% render_field form.password2 class="form-control is-invalid" autocomplete="new-password" placeholder="Password (again)" %}
-                                                    {% else %}
-                                                        {% render_field form.password2 class="form-control" autocomplete="new-password" placeholder="Password (again)" %}
-                                                    {% endif %}
+                                                    {% render_field form.password2 class+="form-control" autocomplete="new-password" placeholder="Password (again)" %}
                                                     <span class="input-group-text"><i class="fas fa-lock"></i></span>
                                                 </div>
                                                 {% for e in form.password2.errors %}<div class="invalid-feedback d-block">{{ e }}</div>{% endfor %}
@@ -192,11 +165,7 @@
                                     </div>
                                     {% if form.agree_to_terms %}
                                         <div class="form-check mb-3">
-                                            {% if form.agree_to_terms.errors %}
-                                                {% render_field form.agree_to_terms class="form-check-input is-invalid" %}
-                                            {% else %}
-                                                {% render_field form.agree_to_terms class="form-check-input" %}
-                                            {% endif %}
+                                            {% render_field form.agree_to_terms class+="form-check-input" %}
                                             <label class="form-check-label" for="{{ form.agree_to_terms.id_for_label }}">{% trans "I agree to the terms" %}</label>
                                             {% for e in form.agree_to_terms.errors %}<div class="invalid-feedback d-block">{{ e }}</div>{% endfor %}
                                         </div>
@@ -206,15 +175,15 @@
                                                name="{{ redirect_field_name }}"
                                                value="{{ redirect_field_value }}">
                                     {% endif %}
-                                    <button type="submit" class="btn btn-primary btn-rounded w-100 py-2">{% trans "Register" %}</button>
+                                    <button type="submit" class="btn btn-primary btn-rounded w-100 py-2">{% trans "Create account" %}</button>
                                 </form>
-                                <!-- Helpful links -->
+                                <!-- Helper links -->
                                 <div class="mt-4">
                                     <div class="row g-2">
                                         <div class="col-12 col-md-6">
                                             <a href="{% url 'account_login' %}"
                                                class="btn btn-outline-primary btn-rounded w-100">
-                                                <i class="fas fa-sign-in-alt me-1"></i> {% trans "Login" %}
+                                                <i class="fas fa-sign-in-alt me-1"></i> {% trans "I already have an account" %}
                                             </a>
                                         </div>
                                         <div class="col-12 col-md-6">
@@ -223,24 +192,69 @@
                                                 <i class="fas fa-unlock-alt me-1"></i> {% trans "Forgot password?" %}
                                             </a>
                                         </div>
-                                        <div class="col-12">
-                                            <a href="{% url 'account_resend_confirmation' %}"
-                                               class="btn btn-outline-info btn-rounded w-100">
-                                                <i class="fas fa-envelope me-1"></i> {% trans "Resend confirmation email" %}
-                                            </a>
-                                        </div>
                                     </div>
                                 </div>
-                                <!-- Dev note for providers -->
                                 <div class="mt-3 subtle small">
                                     <em>{% trans "Facebook and Apple sign-in are currently in development." %}</em>
                                 </div>
                             </div>
-                            <!--/form-pane-->
+                            <!-- RIGHT: Benefits panel -->
+                            <div class="col-lg-5 benefits-pane p-4 p-md-5">
+                                <h3 class="mb-3">{% trans "Get these benefits" %}</h3>
+                                <div class="benefits">
+                                    <div class="benefit">
+                                        <i class="fas fa-users"></i>
+                                        <div>
+                                            <strong>{% trans "Manage your players" %}</strong>
+                                            <p>{% trans "Add children, update details, and manage emergency contacts in one place." %}</p>
+                                        </div>
+                                    </div>
+                                    <div class="benefit">
+                                        <i class="fas fa-id-card-alt"></i>
+                                        <div>
+                                            <strong>{% trans "Digital membership card" %}</strong>
+                                            <p>{% trans "Instantly access your member card for events and discounts." %}</p>
+                                        </div>
+                                    </div>
+                                    <div class="benefit">
+                                        <i class="fas fa-credit-card"></i>
+                                        <div>
+                                            <strong>{% trans "Memberships & payments" %}</strong>
+                                            <p>{% trans "Choose the right membership and pay securely online." %}</p>
+                                        </div>
+                                    </div>
+                                    <div class="benefit">
+                                        <i class="fas fa-bell"></i>
+                                        <div>
+                                            <strong>{% trans "Task reminders & updates" %}</strong>
+                                            <p>{% trans "Stay on top of renewals and important club tasks with notifications." %}</p>
+                                        </div>
+                                    </div>
+                                    <div class="benefit">
+                                        <i class="fas fa-flag"></i>
+                                        <div>
+                                            <strong>{% trans "Incident reporting" %}</strong>
+                                            <p>{% trans "Report and track incidents securely with role-based notifications." %}</p>
+                                        </div>
+                                    </div>
+                                    <div class="benefit">
+                                        <i class="fas fa-shield-alt"></i>
+                                        <div>
+                                            <strong>{% trans "Privacy-first" %}</strong>
+                                            <p>{% trans "Your data is protected and only visible to the right club roles." %}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <hr class="my-4">
+                                <div class="subtle small">
+                                    <strong>{% trans "Parents & guardians" %}</strong> —
+                                    {% trans "Create your own account first. You’ll add your child after registration." %}
+                                </div>
+                            </div>
                         </div>
-                        <!--/row-->
+                        <!-- /row -->
                     </div>
-                    <!--/card-->
+                    <!-- /card -->
                 </div>
             </div>
         </div>
