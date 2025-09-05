@@ -4,7 +4,8 @@
         <i class="far fa-bell"></i>
         {% if open_task_count %}<span class="badge badge-warning navbar-badge">{{ open_task_count }}</span>{% endif %}
     </a>
-    <div class="dropdown-menu dropdown-menu-lg dropdown-menu-right">
+    <div class="dropdown-menu dropdown-menu-xl dropdown-menu-right">
+        {# <- xl #}
         <span class="dropdown-item dropdown-header">{{ open_task_count|default:0 }} Notifications</span>
         {% if task_notifications %}
             <div class="dropdown-divider"></div>
@@ -34,3 +35,119 @@
            class="dropdown-item dropdown-footer">See All Tasks</a>
     </div>
 </li>
+{% if perms.members.view_staff_area %}
+    <li class="nav-item dropdown">
+        <a class="nav-link"
+           data-toggle="dropdown"
+           href="#"
+           title="Pending subscriptions">
+            <i class="fas fa-id-card-alt"></i>
+            {% if pending_membership_count|default:0 > 0 %}
+                <span class="badge badge-info navbar-badge">
+                    {% if pending_membership_count > 99 %}
+                        99+
+                    {% else %}
+                        {{ pending_membership_count }}
+                    {% endif %}
+                </span>
+            {% endif %}
+        </a>
+        <div class="dropdown-menu dropdown-menu-xl dropdown-menu-right">
+            <span class="dropdown-item dropdown-header">{{ pending_membership_count|default:0 }} Pending Subscriptions</span>
+            {% if pending_subscriptions %}
+                <div class="dropdown-divider"></div>
+                {% for sub in pending_subscriptions %}
+                    <a href="{{ sub.url }}" class="dropdown-item d-flex align-items-start">
+                        <i class="mr-2 mt-1 fas fa-user-plus text-info"></i>
+                        <div class="flex-fill">
+                            <div class="small font-weight-bold text-wrap">{{ sub.player }} → {{ sub.product }}</div>
+                            <div class="text-muted small">Season: {{ sub.season }} • Started {{ sub.started_at|date:"Y-m-d" }}</div>
+                        </div>
+                    </a>
+                    {% if not forloop.last %}<div class="dropdown-divider"></div>{% endif %}
+                {% endfor %}
+            {% else %}
+                <div class="dropdown-divider"></div>
+                <div class="dropdown-item text-muted small">No pending subscriptions.</div>
+            {% endif %}
+            <div class="dropdown-divider"></div>
+            <a href="{% url 'staff:memberships_list' %}"
+               class="dropdown-item dropdown-footer">See All Subscriptions</a>
+        </div>
+    </li>
+{% endif %}
+{% if perms.incidents.access_app %}
+    <li class="nav-item dropdown">
+        <a class="nav-link"
+           data-toggle="dropdown"
+           href="#"
+           title="Open incidents">
+            <i class="fas fa-notes-medical"></i>
+            {% if incidents_open_count|default:0 > 0 %}
+                <span class="badge badge-danger navbar-badge">
+                    {% if incidents_open_count > 99 %}
+                        99+
+                    {% else %}
+                        {{ incidents_open_count }}
+                    {% endif %}
+                </span>
+            {% endif %}
+        </a>
+        <div class="dropdown-menu dropdown-menu-xl dropdown-menu-right">
+            <span class="dropdown-item dropdown-header">{{ incidents_open_count|default:0 }} Open Incidents</span>
+            {% if incident_notifications %}
+                <div class="dropdown-divider"></div>
+                {% for inc in incident_notifications %}
+                    <a href="{{ inc.url }}" class="dropdown-item d-flex align-items-start">
+                        <i class="mr-2 mt-1 {% if inc.severity == 'high' %}fas fa-exclamation-circle text-danger {% elif inc.severity == 'medium' %}fas fa-exclamation-triangle text-warning {% else %}far fa-clipboard text-muted{% endif %}"></i>
+                        <div class="flex-fill">
+                            <div class="small font-weight-bold text-wrap">
+                                [{{ inc.status|upper }}] Incident #{{ inc.number }}: {{ inc.title }}
+                            </div>
+                            {% if inc.subject %}<div class="text-muted small text-truncate">{{ inc.subject }}</div>{% endif %}
+                            <div class="text-muted text-sm">
+                                {% if inc.updated_at %}
+                                    Updated {{ inc.updated_at|naturaltime }}
+                                {% else %}
+                                    No date
+                                {% endif %}
+                                {% if inc.assignee %}• Assigned to {{ inc.assignee }}{% endif %}
+                            </div>
+                        </div>
+                    </a>
+                    {% if not forloop.last %}<div class="dropdown-divider"></div>{% endif %}
+                {% endfor %}
+            {% else %}
+                <div class="dropdown-divider"></div>
+                <div class="dropdown-item text-muted small">No open incidents.</div>
+            {% endif %}
+            <div class="dropdown-divider"></div>
+            <a href="{% url 'incidents:list' %}"
+               class="dropdown-item dropdown-footer">See All Incidents</a>
+        </div>
+    </li>
+{% endif %}
+<style>
+    /* Wider tasks dropdown without breaking on mobile */
+.navbar .dropdown-menu.dropdown-menu-xl {
+  min-width: 420px;        /* wider than default */
+  max-width: 90vw;         /* keep it responsive */
+}
+
+/* Improve readability inside the dropdown */
+.navbar .dropdown-menu .dropdown-item .small.text-wrap {
+  white-space: normal;     /* let titles wrap to multiple lines */
+}
+
+.navbar .dropdown-menu .dropdown-item i.mr-2 {
+  width: 18px;             /* align icons vertically */
+  text-align: center;
+}
+
+/* Optional: keep header/footer visually distinct in dark mode */
+.navbar .dropdown-menu .dropdown-header,
+.navbar .dropdown-menu .dropdown-footer {
+  font-weight: 600;
+}
+
+</style>

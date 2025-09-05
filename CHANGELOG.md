@@ -41,6 +41,26 @@ Keeps all your existing logic/permissions.
 
 -->
 
+## [0.2.0-beta] - 2025-09-05
+
+### Changed
+- Sidebar navigation re-ordered for better usability:
+  - General (Dashboard, Add Player, My Subscriptions, My Tasks)
+  - Staff Tools (Staff Dashboard, Manage Players, Membership Overview, Manage Subscriptions, Incidents, Task management)
+  - External (Spond Players, Spond Events)
+  - Resources (Club Policies, Club Documents, Useful Links)
+  - Administration (Site Admin)
+- Renamed several menu items for clarity:
+  - "All Subscriptions" → "Manage Subscriptions"
+  - "Player List" → "Manage Players"
+  - "Memberships" → "Membership Overview"
+  - "My Memberships" → "My Subscriptions"
+- Unified badge styles and colours across nav + sidebar:
+  - Tasks = Yellow (warning)
+  - Incidents = Red (danger)
+  - Pending Subscriptions = Blue (info)
+
+
 ## [0.1.0-beta] - 2025-09-04
 
 ### Highlights

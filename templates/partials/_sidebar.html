@@ -20,6 +20,7 @@
         {% with request.path as p %}
             <nav class="mt-3">
                 <ul class="nav nav-pills nav-sidebar flex-column" role="menu">
+                    <!-- GENERAL -->
                     <li class="nav-header">GENERAL</li>
                     <li class="nav-item">
                         <a href="{% url 'dashboard' %}"
@@ -31,34 +32,30 @@
                     <li class="nav-item">
                         <a href="{% url 'player_add' %}"
                            class="nav-link {% if '/players/add' in p %}active{% endif %}">
-                            <i class="nav-icon fas fa-users"></i>
-                            <p>Add a Player</p>
+                            <i class="nav-icon fas fa-user-plus"></i>
+                            <p>Add Player</p>
                         </a>
                     </li>
                     <li class="nav-item">
                         <a href="{% url 'memberships:mine' %}"
                            class="nav-link {% if '/memberships/mine' in p %}active{% endif %}">
-                            <i class="nav-icon fas fa-users"></i>
-                            <p>Your Subscriptions</p>
+                            <i class="nav-icon fas fa-id-card"></i>
+                            <p>My Subscriptions</p>
                         </a>
                     </li>
                     <li class="nav-item">
                         <a href="{% url 'tasks:my_list' %}"
                            class="nav-link {% if request.path|slice:':7' == '/tasks/' %}active{% endif %}">
                             <i class="nav-icon fas fa-check-square"></i>
-                            <p>My Tasks</p>
-                            {% if open_task_count %}<span class="badge badge-danger navbar-badge">{{ open_task_count }}</span>{% endif %}
+                            <p>
+                                My Tasks
+                                {% if open_task_count %}<span class="right badge badge-warning">{{ open_task_count }}</span>{% endif %}
+                            </p>
                         </a>
                     </li>
-                    <!--<li class="nav-item">
-                        <a href="{% url 'accounts:settings' %}" class="nav-link {% if p == '/settings/' %}active{% endif %}">
-                            <i class="nav-icon fas fa-gear"></i>
-                            <p>Account Settings</p>
-                        </a>
-                    </li>
-                    -->
                     {% if perms.members.view_staff_area %}
-                        <li class="nav-header">STAFF</li>
+                        <!-- STAFF TOOLS -->
+                        <li class="nav-header">STAFF TOOLS</li>
                         <li class="nav-item">
                             <a href="{% url 'staff:home' %}"
                                class="nav-link {% if request.path == '/staff/' %}active{% endif %}">
@@ -70,81 +67,87 @@
                             <a href="{% url 'staff:player_list' %}"
                                class="nav-link {% if request.path|slice:':14' == '/staff/players' %}active{% endif %}">
                                 <i class="nav-icon fas fa-users"></i>
-                                <p>Player List</p>
+                                <p>Manage Players</p>
                             </a>
                         </li>
                         <li class="nav-item">
                             <a href="{% url 'staff:memberships_overview' %}"
                                class="nav-link {% if request.path == '/staff/memberships/' %}active{% endif %}">
                                 <i class="nav-icon fas fa-id-card-alt"></i>
-                                <p>Memberships</p>
+                                <p>Membership Overview</p>
                             </a>
                         </li>
                         <li class="nav-item">
                             <a href="{% url 'staff:memberships_list' %}"
-                               class="nav-link {% if request.path|slice:':19' == '/staff/memberships' and request.path != '/staff/memberships/' %}active{% endif %}">
+                               class="nav-link {% if '/staff/memberships' in request.path and request.path != '/staff/memberships/' %}active{% endif %}">
                                 <i class="nav-icon fas fa-list"></i>
-                                <p>All Subscriptions</p>
+                                <p>
+                                    Subscriptions
+                                    {% if pending_membership_count|default:0 > 0 %}
+                                        <span class="right badge badge-info">{{ pending_membership_count }}</span>
+                                    {% endif %}
+                                </p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="{% url 'incidents:list' %}"
+                               class="nav-link {% if '/incidents/' in request.path %}active{% endif %}">
+                                <i class="nav-icon fas fa-notes-medical"></i>
+                                <p>
+                                    Incidents
+                                    {% if incidents_open_count|default:0 > 0 %}
+                                        <span class="right badge badge-danger">{{ incidents_open_count }}</span>
+                                    {% endif %}
+                                </p>
                             </a>
                         </li>
                         {% if perms.tasks.add_task %}
                             <li class="nav-item">
                                 <a href="{% url 'tasks:create' %}"
                                    class="nav-link {% if request.path == '/tasks/new/' %}active{% endif %}">
-                                    <i class="nav-icon fas fa-check-square"></i>
+                                    <i class="nav-icon fas fa-plus-square"></i>
                                     <p>Create Task</p>
                                 </a>
                             </li>
                             <li class="nav-item">
                                 <a href="{% url 'tasks:bulk_generate' %}"
                                    class="nav-link {% if request.path == '/tasks/generate/' %}active{% endif %}">
-                                    <i class="nav-icon fas fa-check-square"></i>
-                                    <p>Create Bulk Tasks</p>
+                                    <i class="nav-icon fas fa-tasks"></i>
+                                    <p>Bulk Tasks</p>
                                 </a>
                             </li>
                         {% endif %}
-                        {% if perms.incidents.access_app %}
-                            <li class="nav-item">
-                                <a href="{% url 'incidents:list' %}" class="nav-link">
-                                    <i class="nav-icon fas fa-notes-medical"></i>
-                                    <p>
-                                        Incidents
-                                        {% if INCIDENTS_ASSIGNED_OPEN_COUNT %}
-                                            <span class="right badge badge-warning">{{ INCIDENTS_ASSIGNED_OPEN_COUNT }}</span>
-                                        {% endif %}
-                                    </p>
-                                </a>
-                            </li>
-                        {% endif %}
-                        <li class="nav-header">SPOND</li>
-                        <li class="nav-item">
-                            <a href="{% url 'spond:dashboard' %}"
-                               class="nav-link {% if '/spond/dashboard' in p %}active{% endif %}">
-                                <i class="nav-icon fas fa-users"></i>
-                                <p>Spond Players</p>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="{% url 'spond:events_dashboard' %}"
-                               class="nav-link {% if '/spond/events' in p %}active{% endif %}">
-                                <i class="nav-icon fas fa-users"></i>
-                                <p>Spond Events</p>
-                            </a>
-                        </li>
                     {% endif %}
-                    <li class="nav-header">CLUB RESOURCES</li>
+                    <!-- EXTERNAL -->
+                    <li class="nav-header">EXTERNAL</li>
+                    <li class="nav-item">
+                        <a href="{% url 'spond:dashboard' %}"
+                           class="nav-link {% if '/spond/dashboard' in p %}active{% endif %}">
+                            <i class="nav-icon fas fa-users"></i>
+                            <p>Spond Players</p>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{% url 'spond:events_dashboard' %}"
+                           class="nav-link {% if '/spond/events' in p %}active{% endif %}">
+                            <i class="nav-icon fas fa-calendar-alt"></i>
+                            <p>Spond Events</p>
+                        </a>
+                    </li>
+                    <!-- RESOURCES -->
+                    <li class="nav-header">RESOURCES</li>
                     <li class="nav-item">
                         <a href="{% url 'resources:policy_list' %}"
                            class="nav-link {% if '/resources/policies' in p %}active{% endif %}">
                             <i class="nav-icon fas fa-shield-alt"></i>
-                            <p>Policies</p>
+                            <p>Club Policies</p>
                         </a>
                     </li>
                     <li class="nav-item">
                         <a href="{% url 'resources:document_list' %}"
                            class="nav-link {% if '/resources/documents' in p %}active{% endif %}">
                             <i class="nav-icon fas fa-folder-open"></i>
-                            <p>Documents</p>
+                            <p>Club Documents</p>
                         </a>
                     </li>
                     <li class="nav-item">
@@ -155,6 +158,7 @@
                         </a>
                     </li>
                     {% if user.is_staff or user.is_superuser %}
+                        <!-- ADMIN -->
                         <li class="nav-header">ADMINISTRATION</li>
                         <li class="nav-item">
                             <a href="{% url 'admin:index' %}"
