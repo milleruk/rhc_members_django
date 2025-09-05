@@ -26,7 +26,15 @@ def navbar_incidents(request):
     from incidents.models import Incident  # your model
 
     # Define "open" statuses for your app
-    open_statuses = ["new", "open", "review", "assigned"]  # adjust if needed
+    open_statuses = [
+        "new",
+        "open",
+        "review",
+        "assigned",
+        "action required",
+        "submitted",
+        "Submitted (internal)",
+    ]  # adjust if needed
 
     # ✅ Use assigned_to, and order by last_updated
     qs = Incident.objects.filter(status__in=open_statuses, assigned_to=user).order_by(

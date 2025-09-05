@@ -93,7 +93,9 @@ SITE_ID = 1
 
 INSTALLED_APPS = [
     # 3rd-party admin UI / tooling
-    "jazzmin",
+    # "jazzmin",
+    "jet",
+    "jet.dashboard",
     "widget_tweaks",
     "rest_framework",
     # Django
@@ -144,6 +146,7 @@ LOGOUT_REDIRECT_URL = "dashboard"
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -156,6 +159,9 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = "hockey_club.urls"
+
+JET_DEFAULT_THEME = "default"
+JET_SIDE_MENU_COMPACT = True
 
 TEMPLATES = [
     {
@@ -175,6 +181,8 @@ TEMPLATES = [
                 "hockey_club.context_processors.portal_breadcrumbs",
                 "incidents.context_processors.navbar_incidents",
                 "staff.context_processors.pending_subscriptions_badge",
+                "spond_integration.context_processors.navbar_spond_unlinked",
+                "staff.context_processors.memberships_overview_gaps",
             ],
         },
     },
@@ -218,12 +226,13 @@ USE_TZ = True
 # ---------------------------------------------------------------------
 # Static files
 # ---------------------------------------------------------------------
-STATIC_URL = "static/"
+STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 if (BASE_DIR / "static").exists():
     STATICFILES_DIRS = [BASE_DIR / "static"]
 else:
     STATICFILES_DIRS = []
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 # ---------------------------------------------------------------------
 # Email / SMTP

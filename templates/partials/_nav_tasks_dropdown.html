@@ -127,6 +127,91 @@
         </div>
     </li>
 {% endif %}
+{% if perms.members.view_staff_area %}
+    <li class="nav-item dropdown">
+        <a class="nav-link"
+           data-toggle="dropdown"
+           href="#"
+           title="Players with active subs but no Spond link">
+            <i class="fas fa-link"></i>
+            {% if spond_unlinked_count|default:0 > 0 %}
+                <span class="badge badge-primary navbar-badge">
+                    {% if spond_unlinked_count > 99 %}
+                        99+
+                    {% else %}
+                        {{ spond_unlinked_count }}
+                    {% endif %}
+                </span>
+            {% endif %}
+        </a>
+        <div class="dropdown-menu dropdown-menu-xl dropdown-menu-right">
+            <span class="dropdown-item dropdown-header">{{ spond_unlinked_count|default:0 }} Players need Spond link</span>
+            {% if spond_unlinked_players %}
+                <div class="dropdown-divider"></div>
+                {% for row in spond_unlinked_players %}
+                    <a href="{{ row.url }}" class="dropdown-item d-flex align-items-start">
+                        <i class="mr-2 mt-1 fas fa-user-tag text-primary"></i>
+                        <div class="flex-fill">
+                            <div class="small font-weight-bold text-wrap">{{ row.player }}</div>
+                            <div class="text-muted small">Player ID: {{ row.player_id }}</div>
+                        </div>
+                    </a>
+                    {% if not forloop.last %}<div class="dropdown-divider"></div>{% endif %}
+                {% endfor %}
+            {% else %}
+                <div class="dropdown-divider"></div>
+                <div class="dropdown-item text-muted small">All set — no unlinked players.</div>
+            {% endif %}
+            <div class="dropdown-divider"></div>
+            <a href="{% url 'staff:player_list' %}"
+               class="dropdown-item dropdown-footer">Open Manage Dashboard</a>
+        </div>
+    </li>
+{% endif %}
+{# NO CURRENT SUBSCRIPTION — Dropdown (grey) #}
+{% if perms.members.view_staff_area %}
+    <li class="nav-item dropdown">
+        <a class="nav-link"
+           data-toggle="dropdown"
+           href="#"
+           title="Players without a current subscription">
+            <i class="fas fa-user-times"></i>
+            {% if missing_sub_count|default:0 > 0 %}
+                <span class="badge badge-secondary navbar-badge">
+                    {% if missing_sub_count > 99 %}
+                        99+
+                    {% else %}
+                        {{ missing_sub_count }}
+                    {% endif %}
+                </span>
+            {% endif %}
+        </a>
+        <div class="dropdown-menu dropdown-menu-xl dropdown-menu-right">
+            <span class="dropdown-item dropdown-header">
+                {{ missing_sub_count|default:0 }} Players without current subscription
+            </span>
+            {% if missing_sub_players %}
+                <div class="dropdown-divider"></div>
+                {% for row in missing_sub_players %}
+                    <a href="{{ row.url }}" class="dropdown-item d-flex align-items-start">
+                        <i class="mr-2 mt-1 fas fa-user-tag text-muted"></i>
+                        <div class="flex-fill">
+                            <div class="small font-weight-bold text-wrap">{{ row.player }}</div>
+                            <div class="text-muted small">Player ID: {{ row.player_id }}</div>
+                        </div>
+                    </a>
+                    {% if not forloop.last %}<div class="dropdown-divider"></div>{% endif %}
+                {% endfor %}
+            {% else %}
+                <div class="dropdown-divider"></div>
+                <div class="dropdown-item text-muted small">All set — everyone has a subscription.</div>
+            {% endif %}
+            <div class="dropdown-divider"></div>
+            <a href="{% url 'staff:memberships_overview' %}"
+               class="dropdown-item dropdown-footer">Open Membership Overview</a>
+        </div>
+    </li>
+{% endif %}
 <style>
     /* Wider tasks dropdown without breaking on mobile */
 .navbar .dropdown-menu.dropdown-menu-xl {

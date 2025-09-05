@@ -67,14 +67,36 @@
                             <a href="{% url 'staff:player_list' %}"
                                class="nav-link {% if request.path|slice:':14' == '/staff/players' %}active{% endif %}">
                                 <i class="nav-icon fas fa-users"></i>
-                                <p>Manage Players</p>
+                                <p>
+                                    Manage Players
+                                    {% if spond_unlinked_count|default:0 > 0 %}
+                                        <span class="right badge badge-primary">
+                                            {% if spond_unlinked_count > 99 %}
+                                                99+
+                                            {% else %}
+                                                {{ spond_unlinked_count }}
+                                            {% endif %}
+                                        </span>
+                                    {% endif %}
+                                </p>
                             </a>
                         </li>
                         <li class="nav-item">
                             <a href="{% url 'staff:memberships_overview' %}"
                                class="nav-link {% if request.path == '/staff/memberships/' %}active{% endif %}">
                                 <i class="nav-icon fas fa-id-card-alt"></i>
-                                <p>Membership Overview</p>
+                                <p>
+                                    Membership Overview
+                                    {% if missing_sub_count|default:0 > 0 %}
+                                        <span class="right badge badge-secondary">
+                                            {% if missing_sub_count > 99 %}
+                                                99+
+                                            {% else %}
+                                                {{ missing_sub_count }}
+                                            {% endif %}
+                                        </span>
+                                    {% endif %}
+                                </p>
                             </a>
                         </li>
                         <li class="nav-item">

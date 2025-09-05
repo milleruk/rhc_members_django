@@ -11,6 +11,10 @@ from members.views import PrivacyView, TermsView
 
 urlpatterns = [
     # ---- Admin & auth ----
+    path("jet/", include("jet.urls", "jet")),  # Django JET URLS
+    path(
+        "jet/dashboard/", include("jet.dashboard.urls", "jet-dashboard")
+    ),  # Django JET dashboard URL
     path("admin/", admin.site.urls),
     path("hijack/", include("hijack.urls")),
     path(

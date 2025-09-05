@@ -41,6 +41,25 @@ Keeps all your existing logic/permissions.
 
 -->
 
+## [0.3.0-beta] - 2025-09-05
+
+### Added
+- **New nav and sidebar indicators:**
+  - Grey (secondary) badge for players without a current subscription in the active season
+  - Blue (primary) badge for players with active subscriptions but no Spond link
+  - Both include detailed dropdowns in the navbar and badge counts in the sidebar
+- Expanded Membership Overview menu item to show missing subscription badge
+
+### Changed
+- Updated login and signup pages with redesigned layout, improved provider buttons, and clearer links
+- Switched admin interface theme to **Django JET** for modernized UI
+- Standardized dropdown width (`dropdown-menu-xl`) and improved readability in task/incident/subscription dropdowns
+
+### Fixed
+- Sidebar badge classes updated (`right badge`) for correct alignment
+
+
+
 ## [0.2.0-beta] - 2025-09-05
 
 ### Changed
