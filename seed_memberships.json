@@ -1,0 +1,1385 @@
+{
+  "_meta": {
+    "version": 3,
+    "notes": "No PlayerAnswer exported."
+  },
+  "memberships": {
+    "seasons": [
+      {
+        "name": "2024/25",
+        "start": "2024-08-27",
+        "end": "2025-06-27",
+        "is_active": false
+      },
+      {
+        "name": "2025/26",
+        "start": "2025-08-27",
+        "end": "2026-04-30",
+        "is_active": true
+      }
+    ],
+    "categories": [
+      {
+        "code": "associate",
+        "label": "Associate Membership",
+        "description": "",
+        "is_selectable": true,
+        "applies_to": [
+          "Senior"
+        ]
+      },
+      {
+        "code": "goal-keeper",
+        "label": "Goal Keeper",
+        "description": "",
+        "is_selectable": true,
+        "applies_to": [
+          "Junior",
+          "Senior"
+        ]
+      },
+      {
+        "code": "guest",
+        "label": "Guest",
+        "description": "",
+        "is_selectable": true,
+        "applies_to": [
+          "Senior"
+        ]
+      },
+      {
+        "code": "senior-member",
+        "label": "Senior Member",
+        "description": "",
+        "is_selectable": true,
+        "applies_to": [
+          "Senior"
+        ]
+      },
+      {
+        "code": "social",
+        "label": "Social Member",
+        "description": "",
+        "is_selectable": true,
+        "applies_to": [
+          "Senior"
+        ]
+      },
+      {
+        "code": "student-apprentice-un-retired",
+        "label": "Students/Apprenticeship/Unemplyed/Retired",
+        "description": ") Full time Students (3+ Days)\r\nb) Apprenticeships\r\nc) Senior Unemployed\r\nd) Retired",
+        "is_selectable": true,
+        "applies_to": [
+          "Senior"
+        ]
+      },
+      {
+        "code": "teen-adult",
+        "label": "Teen Member (Yr8 - Yr13) Playing Adult",
+        "description": "",
+        "is_selectable": true,
+        "applies_to": [
+          "Junior"
+        ]
+      },
+      {
+        "code": "teen-member",
+        "label": "Teen (Yr8 - Yr11) Playing Junior / Badgers",
+        "description": "",
+        "is_selectable": true,
+        "applies_to": [
+          "Junior"
+        ]
+      },
+      {
+        "code": "training-only",
+        "label": "Training",
+        "description": "",
+        "is_selectable": true,
+        "applies_to": [
+          "Junior",
+          "Senior"
+        ]
+      },
+      {
+        "code": "u16-non-member",
+        "label": "U16s non members",
+        "description": "If selected to play in U8 - U14\r\nteams or Badgers, must transition\r\nto U12s or Teen Membe",
+        "is_selectable": true,
+        "applies_to": [
+          "Junior"
+        ]
+      },
+      {
+        "code": "under-12",
+        "label": "U12's Member",
+        "description": "",
+        "is_selectable": true,
+        "applies_to": [
+          "Junior"
+        ]
+      }
+    ],
+    "products": [
+      {
+        "season": "2025/26",
+        "category": "associate",
+        "name": "Associate Member",
+        "sku": "2526asso",
+        "list_price_gbp": "25.00",
+        "active": true,
+        "notes": "Available to community members, teachers etc",
+        "requires_plan": true,
+        "pay_per_match": false,
+        "plans": [
+          {
+            "label": "Full Amount",
+            "instalment_amount_gbp": "25.00",
+            "instalment_count": 1,
+            "frequency": "once",
+            "includes_match_fees": false,
+            "active": true,
+            "display_order": 0
+          }
+        ]
+      },
+      {
+        "season": "2025/26",
+        "category": "goal-keeper",
+        "name": "Goal Keeper",
+        "sku": "2526goal",
+        "list_price_gbp": "50.00",
+        "active": true,
+        "notes": "With OWN Kit Only",
+        "requires_plan": true,
+        "pay_per_match": true,
+        "plans": [
+          {
+            "label": "With own kit",
+            "instalment_amount_gbp": "50.00",
+            "instalment_count": 1,
+            "frequency": "once",
+            "includes_match_fees": false,
+            "active": true,
+            "display_order": 0
+          }
+        ]
+      },
+      {
+        "season": "2025/26",
+        "category": "guest",
+        "name": "Guest Only",
+        "sku": "2526guest",
+        "list_price_gbp": "0.00",
+        "active": true,
+        "notes": "This is at club discretion and is not a membership offer",
+        "requires_plan": false,
+        "pay_per_match": true,
+        "plans": []
+      },
+      {
+        "season": "2024/25",
+        "category": "guest",
+        "name": "Guest Only",
+        "sku": "2425guest",
+        "list_price_gbp": "0.00",
+        "active": true,
+        "notes": "",
+        "requires_plan": true,
+        "pay_per_match": true,
+        "plans": []
+      },
+      {
+        "season": "2025/26",
+        "category": "senior-member",
+        "name": "Senior Member Aged 18 - 64",
+        "sku": "2526senior",
+        "list_price_gbp": "265.00",
+        "active": true,
+        "notes": "If selecting \"Membership Only Pay Match Fee Per Game\" - Pay £6 Per Game is due",
+        "requires_plan": true,
+        "pay_per_match": false,
+        "plans": [
+          {
+            "label": "Standing Order 1",
+            "instalment_amount_gbp": "35.00",
+            "instalment_count": 12,
+            "frequency": "monthly",
+            "includes_match_fees": true,
+            "active": true,
+            "display_order": 0
+          },
+          {
+            "label": "Standing Order 2",
+            "instalment_amount_gbp": "70.00",
+            "instalment_count": 6,
+            "frequency": "monthly",
+            "includes_match_fees": true,
+            "active": true,
+            "display_order": 0
+          },
+          {
+            "label": "Membership Only Pay Match Fee Per Game",
+            "instalment_amount_gbp": "265.00",
+            "instalment_count": 1,
+            "frequency": "once",
+            "includes_match_fees": false,
+            "active": true,
+            "display_order": 0
+          }
+        ]
+      },
+      {
+        "season": "2025/26",
+        "category": "social",
+        "name": "Social Member",
+        "sku": "2526social",
+        "list_price_gbp": "16.00",
+        "active": true,
+        "notes": "Social membership is at the club discretion and for occasional players who do not expect to play the majority of games in a season",
+        "requires_plan": true,
+        "pay_per_match": true,
+        "plans": [
+          {
+            "label": "Membership",
+            "instalment_amount_gbp": "20.00",
+            "instalment_count": 1,
+            "frequency": "once",
+            "includes_match_fees": false,
+            "active": true,
+            "display_order": 0
+          }
+        ]
+      },
+      {
+        "season": "2025/26",
+        "category": "student-apprentice-un-retired",
+        "name": "Students Apprentiships",
+        "sku": "2526stuunapre",
+        "list_price_gbp": "140.00",
+        "active": true,
+        "notes": "a) Full time Students (3+ Days)\r\nb) Apprenticeships\r\nc) Senior Unemployed\r\nd) Retired",
+        "requires_plan": true,
+        "pay_per_match": false,
+        "plans": [
+          {
+            "label": "Standing Order 1",
+            "instalment_amount_gbp": "20.00",
+            "instalment_count": 12,
+            "frequency": "monthly",
+            "includes_match_fees": true,
+            "active": true,
+            "display_order": 0
+          },
+          {
+            "label": "Standing Order 2",
+            "instalment_amount_gbp": "40.00",
+            "instalment_count": 6,
+            "frequency": "monthly",
+            "includes_match_fees": true,
+            "active": true,
+            "display_order": 0
+          },
+          {
+            "label": "Full Amount",
+            "instalment_amount_gbp": "272.00",
+            "instalment_count": 1,
+            "frequency": "once",
+            "includes_match_fees": true,
+            "active": true,
+            "display_order": 0
+          }
+        ]
+      },
+      {
+        "season": "2025/26",
+        "category": "teen-member",
+        "name": "Teen Member (Yr8 - Yr11) Playing Junior / Badgers",
+        "sku": "2526teenbadgers",
+        "list_price_gbp": "80.00",
+        "active": true,
+        "notes": "If selecting \"Membership Only Pay Match Fee Per Game\" - Pay £6 Per Game is due",
+        "requires_plan": true,
+        "pay_per_match": true,
+        "plans": [
+          {
+            "label": "Standing Order 1",
+            "instalment_amount_gbp": "12.50",
+            "instalment_count": 12,
+            "frequency": "monthly",
+            "includes_match_fees": true,
+            "active": true,
+            "display_order": 0
+          },
+          {
+            "label": "Standing Order 2",
+            "instalment_amount_gbp": "25.00",
+            "instalment_count": 6,
+            "frequency": "monthly",
+            "includes_match_fees": true,
+            "active": true,
+            "display_order": 0
+          },
+          {
+            "label": "Membership Only Pay Match Fee Per Game",
+            "instalment_amount_gbp": "80.00",
+            "instalment_count": 1,
+            "frequency": "once",
+            "includes_match_fees": false,
+            "active": true,
+            "display_order": 0
+          }
+        ]
+      },
+      {
+        "season": "2025/26",
+        "category": "teen-adult",
+        "name": "Teen Member (Yr8 - Yr13) Playing Adult",
+        "sku": "2526teenadult",
+        "list_price_gbp": "120.00",
+        "active": true,
+        "notes": "If selecting \"Membership Only Pay Match Fee Per Game\" - Pay £6 Per Game is due",
+        "requires_plan": true,
+        "pay_per_match": true,
+        "plans": [
+          {
+            "label": "Standing Order 1",
+            "instalment_amount_gbp": "17.50",
+            "instalment_count": 12,
+            "frequency": "monthly",
+            "includes_match_fees": true,
+            "active": true,
+            "display_order": 0
+          },
+          {
+            "label": "Standing Order 2",
+            "instalment_amount_gbp": "25.00",
+            "instalment_count": 6,
+            "frequency": "monthly",
+            "includes_match_fees": true,
+            "active": true,
+            "display_order": 0
+          },
+          {
+            "label": "Membership Only Pay Match Fee Per Game",
+            "instalment_amount_gbp": "120.00",
+            "instalment_count": 1,
+            "frequency": "once",
+            "includes_match_fees": false,
+            "active": true,
+            "display_order": 0
+          }
+        ]
+      },
+      {
+        "season": "2025/26",
+        "category": "training-only",
+        "name": "Training",
+        "sku": "2526training",
+        "list_price_gbp": "0.00",
+        "active": true,
+        "notes": "If selected to play in Adult teams or Badgers, must transition to Social or Teen Membership",
+        "requires_plan": false,
+        "pay_per_match": true,
+        "plans": []
+      },
+      {
+        "season": "2025/26",
+        "category": "under-12",
+        "name": "Under 12s",
+        "sku": "2526u12",
+        "list_price_gbp": "60.00",
+        "active": true,
+        "notes": "U12s Membership Sibling Discount: 10% off 2nd child, 20% off 3rd child - First child = £60, Second Child = £54, 3rd Child = £48.60 - Select this option per child and speak with the Club Treasure to arrange payment per child",
+        "requires_plan": true,
+        "pay_per_match": true,
+        "plans": [
+          {
+            "label": "Full Amount",
+            "instalment_amount_gbp": "60.00",
+            "instalment_count": 1,
+            "frequency": "once",
+            "includes_match_fees": false,
+            "active": true,
+            "display_order": 0
+          }
+        ]
+      },
+      {
+        "season": "2025/26",
+        "category": "u16-non-member",
+        "name": "Under 16's Non Members",
+        "sku": "2526u16",
+        "list_price_gbp": "0.00",
+        "active": true,
+        "notes": "If selected to play in U8 - U14 teams or Badgers, must transition to U12s or Teen Member",
+        "requires_plan": false,
+        "pay_per_match": true,
+        "plans": []
+      }
+    ],
+    "addons": [],
+    "match_fees": [
+      {
+        "season": "2025/26",
+        "name": "League Match",
+        "amount_gbp": "6.00",
+        "category": "teen-adult",
+        "product": "2526teenadult",
+        "is_default": false,
+        "active": true
+      },
+      {
+        "season": "2025/26",
+        "name": "League Match",
+        "amount_gbp": "6.00",
+        "category": "teen-member",
+        "product": "2526teenbadgers",
+        "is_default": false,
+        "active": true
+      },
+      {
+        "season": "2025/26",
+        "name": "League Match",
+        "amount_gbp": "12.00",
+        "category": "guest",
+        "product": "2526guest",
+        "is_default": false,
+        "active": true
+      },
+      {
+        "season": "2025/26",
+        "name": "Tournement Games",
+        "amount_gbp": "6.00",
+        "category": "u16-non-member",
+        "product": "2526u12",
+        "is_default": false,
+        "active": true
+      },
+      {
+        "season": "2025/26",
+        "name": "Training",
+        "amount_gbp": "6.00",
+        "category": "training-only",
+        "product": "2526training",
+        "is_default": false,
+        "active": true
+      },
+      {
+        "season": "2025/26",
+        "name": "League Match",
+        "amount_gbp": "6.00",
+        "category": "goal-keeper",
+        "product": "2526goal",
+        "is_default": false,
+        "active": true
+      },
+      {
+        "season": "2025/26",
+        "name": "League Match",
+        "amount_gbp": "20.00",
+        "category": "social",
+        "product": "2526social",
+        "is_default": false,
+        "active": true
+      },
+      {
+        "season": "2025/26",
+        "name": "League Match",
+        "amount_gbp": "6.00",
+        "category": "senior-member",
+        "product": "2526senior",
+        "is_default": false,
+        "active": true
+      }
+    ]
+  },
+  "members": {
+    "player_types": [
+      {
+        "key": "Senior",
+        "label": "Senior",
+        "description": "",
+        "active": true
+      },
+      {
+        "key": "Junior",
+        "label": "Junior",
+        "description": "",
+        "active": true
+      }
+    ],
+    "positions": [
+      {
+        "code": "Defender",
+        "label": "Defender",
+        "description": "",
+        "active": true,
+        "name": "Defender"
+      },
+      {
+        "code": "Midfield",
+        "label": "Midfield",
+        "description": "",
+        "active": true,
+        "name": "Midfield"
+      },
+      {
+        "code": "Forward",
+        "label": "Forward",
+        "description": "",
+        "active": true,
+        "name": "Forward"
+      },
+      {
+        "code": "Captain",
+        "label": "Captain",
+        "description": "",
+        "active": true,
+        "name": "Captain"
+      },
+      {
+        "code": "Goal Keeper",
+        "label": "Goal Keeper",
+        "description": "",
+        "active": true,
+        "name": "Goal Keeper"
+      }
+    ],
+    "question_categories": [
+      {
+        "code": "General",
+        "label": "General",
+        "description": "",
+        "display_order": 0,
+        "active": true,
+        "name": "General"
+      },
+      {
+        "code": "Participant Information",
+        "label": "Participant Information",
+        "description": "",
+        "display_order": 1,
+        "active": true,
+        "name": "Participant Information"
+      },
+      {
+        "code": "Emergency Contact",
+        "label": "Emergency Contact",
+        "description": "",
+        "display_order": 2,
+        "active": true,
+        "name": "Emergency Contact"
+      },
+      {
+        "code": "Medical",
+        "label": "Medical",
+        "description": "In case of emergency, and as part of the club’s responsibility to its membership, ALL club members are required to complete the medical information as accurately as possible. Please indicate if you would like to discuss this privately with us",
+        "display_order": 3,
+        "active": true,
+        "name": "Medical"
+      },
+      {
+        "code": "Consent",
+        "label": "Consent",
+        "description": "",
+        "display_order": 4,
+        "active": true,
+        "name": "Consent"
+      },
+      {
+        "code": "Ethnicity",
+        "label": "Ethnicity",
+        "description": "Whilst it is not compulsory for the following section to be completed, the paragraph below explains why this personal information is considered to be important.\r\n\r\nSport can and does play a major role in promoting the inclusion of all groups in society. However inequalities have existed within sport particularly in relation to gender, race and disability. Sport England and England Hockey are committed to promoting and developing sports equity, which is about fairness in sport, equality of access, recognizing inequalities and taking steps to address them. By monitoring the profile of people in sports clubs, national governing bodies of sport and Sport England can identify any issues relating to under representation of different groups and can develop strategies to ensure that all people have the opportunity in the future to develop and progress in sport.\r\n\r\nEngland Hockey requests this data from clubs as part of the annual affiliation process and completing this data accurately enables the club to give an accurate picture to England Hockey on our membership.",
+        "display_order": 6,
+        "active": true,
+        "name": "Ethnicity"
+      },
+      {
+        "code": "Disability",
+        "label": "Disability",
+        "description": "",
+        "display_order": 7,
+        "active": true,
+        "name": "Disability"
+      },
+      {
+        "code": "Conduct",
+        "label": "Conduct",
+        "description": "",
+        "display_order": 8,
+        "active": true,
+        "name": "Conduct"
+      },
+      {
+        "code": "Additional",
+        "label": "Additional",
+        "description": "",
+        "display_order": 9,
+        "active": true,
+        "name": "Additional"
+      },
+      {
+        "code": "Declare",
+        "label": "Declare",
+        "description": "",
+        "display_order": 99,
+        "active": true,
+        "name": "Declare"
+      }
+    ],
+    "dynamic_questions": [
+      {
+        "code": "medical_conditions_allergy",
+        "text": "Do you have any allergies ?",
+        "help_text": "",
+        "field_type": "text",
+        "required": false,
+        "active": true,
+        "sort_order": 0,
+        "category": "Medical",
+        "applies_to": [
+          "Junior",
+          "Senior"
+        ],
+        "choices": [],
+        "name": null,
+        "label": "Do you have any allergies ?"
+      },
+      {
+        "code": "home_address_firstline",
+        "text": "First Line of Address",
+        "help_text": "First Line of Address",
+        "field_type": "text",
+        "required": true,
+        "active": true,
+        "sort_order": 0,
+        "category": "Participant Information",
+        "applies_to": [
+          "Junior",
+          "Senior"
+        ],
+        "choices": [],
+        "name": null,
+        "label": "First Line of Address"
+      },
+      {
+        "code": "mobile_number",
+        "text": "Mobile Number",
+        "help_text": "Mobile Number",
+        "field_type": "text",
+        "required": true,
+        "active": true,
+        "sort_order": 0,
+        "category": "Participant Information",
+        "applies_to": [
+          "Senior"
+        ],
+        "choices": [],
+        "name": null,
+        "label": "Mobile Number"
+      },
+      {
+        "code": "emergency_name",
+        "text": "Emergency Name",
+        "help_text": "Contact name for emergency",
+        "field_type": "text",
+        "required": true,
+        "active": true,
+        "sort_order": 0,
+        "category": "Emergency Contact",
+        "applies_to": [
+          "Junior",
+          "Senior"
+        ],
+        "choices": [],
+        "name": null,
+        "label": "Emergency Name"
+      },
+      {
+        "code": "emergency_address",
+        "text": "Emergency Address",
+        "help_text": "",
+        "field_type": "text",
+        "required": true,
+        "active": true,
+        "sort_order": 0,
+        "category": "Emergency Contact",
+        "applies_to": [
+          "Junior",
+          "Senior"
+        ],
+        "choices": [],
+        "name": null,
+        "label": "Emergency Address"
+      },
+      {
+        "code": "emergency_relationship",
+        "text": "Emergency Contact Relationship",
+        "help_text": "",
+        "field_type": "text",
+        "required": true,
+        "active": true,
+        "sort_order": 0,
+        "category": "Emergency Contact",
+        "applies_to": [
+          "Junior",
+          "Senior"
+        ],
+        "choices": [],
+        "name": null,
+        "label": "Emergency Contact Relationship"
+      },
+      {
+        "code": "emergency_number",
+        "text": "Emergency Contact Number",
+        "help_text": "",
+        "field_type": "text",
+        "required": true,
+        "active": true,
+        "sort_order": 0,
+        "category": "Emergency Contact",
+        "applies_to": [
+          "Junior",
+          "Senior"
+        ],
+        "choices": [],
+        "name": null,
+        "label": "Emergency Contact Number"
+      },
+      {
+        "code": "emergency_name_2",
+        "text": "Emergency Name Two",
+        "help_text": "",
+        "field_type": "text",
+        "required": true,
+        "active": true,
+        "sort_order": 0,
+        "category": "Emergency Contact",
+        "applies_to": [
+          "Junior"
+        ],
+        "choices": [],
+        "name": null,
+        "label": "Emergency Name Two"
+      },
+      {
+        "code": "emergency_number_2",
+        "text": "Emergency Contact Number Two",
+        "help_text": "",
+        "field_type": "text",
+        "required": true,
+        "active": true,
+        "sort_order": 0,
+        "category": "Emergency Contact",
+        "applies_to": [
+          "Junior"
+        ],
+        "choices": [],
+        "name": null,
+        "label": "Emergency Contact Number Two"
+      },
+      {
+        "code": "emergency_relationship_2",
+        "text": "Emergency Contact Relationship Two",
+        "help_text": "",
+        "field_type": "text",
+        "required": true,
+        "active": true,
+        "sort_order": 0,
+        "category": "Emergency Contact",
+        "applies_to": [
+          "Junior"
+        ],
+        "choices": [],
+        "name": null,
+        "label": "Emergency Contact Relationship Two"
+      },
+      {
+        "code": "medical_conditions_medication",
+        "text": "Do you take any regular medication?",
+        "help_text": "",
+        "field_type": "text",
+        "required": false,
+        "active": true,
+        "sort_order": 0,
+        "category": "Medical",
+        "applies_to": [
+          "Junior",
+          "Senior"
+        ],
+        "choices": [],
+        "name": null,
+        "label": "Do you take any regular medication?"
+      },
+      {
+        "code": "medical_conditions_conditions",
+        "text": "Do you have any long-term conditions, illnesses or injuries?",
+        "help_text": "",
+        "field_type": "text",
+        "required": false,
+        "active": true,
+        "sort_order": 0,
+        "category": "Medical",
+        "applies_to": [
+          "Junior",
+          "Senior"
+        ],
+        "choices": [],
+        "name": null,
+        "label": "Do you have any long-term conditions, illnesses or injuries?"
+      },
+      {
+        "code": "medical_conditions_diet",
+        "text": "Do you have any dietary requirements?",
+        "help_text": "",
+        "field_type": "text",
+        "required": false,
+        "active": true,
+        "sort_order": 0,
+        "category": "Medical",
+        "applies_to": [
+          "Junior",
+          "Senior"
+        ],
+        "choices": [],
+        "name": null,
+        "label": "Do you have any dietary requirements?"
+      },
+      {
+        "code": "medical_conditions_activites",
+        "text": "Are there any activities you cannot participate in?",
+        "help_text": "",
+        "field_type": "text",
+        "required": false,
+        "active": true,
+        "sort_order": 0,
+        "category": "Medical",
+        "applies_to": [
+          "Junior",
+          "Senior"
+        ],
+        "choices": [],
+        "name": null,
+        "label": "Are there any activities you cannot participate in?"
+      },
+      {
+        "code": "medical_consent",
+        "text": "I consent to my medical details to be shared with coaches/leaders for the purposes of the delivery of my safe participation in the hockey club activity",
+        "help_text": "Not providing consent will not affect your membership to the Club, however giving consent to share this information will help club volunteers to know how to respond effectively in the case of any medical emergency",
+        "field_type": "text",
+        "required": false,
+        "active": true,
+        "sort_order": 0,
+        "category": "Medical",
+        "applies_to": [
+          "Junior",
+          "Senior"
+        ],
+        "choices": [],
+        "name": null,
+        "label": "I consent to my medical details to be shared with coaches/leaders for the purposes of the delivery of my safe participation in the hockey club activity"
+      },
+      {
+        "code": "medical_update",
+        "text": "I agree to notify the club of any changes to the medical information provided.",
+        "help_text": "",
+        "field_type": "text",
+        "required": true,
+        "active": true,
+        "sort_order": 0,
+        "category": "Medical",
+        "applies_to": [
+          "Junior",
+          "Senior"
+        ],
+        "choices": [],
+        "name": null,
+        "label": "I agree to notify the club of any changes to the medical information provided."
+      },
+      {
+        "code": "disability",
+        "text": "Do you have any physical or mental health conditions or illnesses that have lasted or are expected to last 12 months or more?",
+        "help_text": "",
+        "field_type": "text",
+        "required": false,
+        "active": true,
+        "sort_order": 0,
+        "category": "Disability",
+        "applies_to": [
+          "Junior",
+          "Senior"
+        ],
+        "choices": [],
+        "name": null,
+        "label": "Do you have any physical or mental health conditions or illnesses that have lasted or are expected to last 12 months or more?"
+      },
+      {
+        "code": "Ethnicity",
+        "text": "Ethnicity",
+        "help_text": "",
+        "field_type": "text",
+        "required": false,
+        "active": true,
+        "sort_order": 0,
+        "category": "Ethnicity",
+        "applies_to": [
+          "Junior",
+          "Senior"
+        ],
+        "choices": [],
+        "name": null,
+        "label": "Ethnicity"
+      },
+      {
+        "code": "declatation_senior",
+        "text": "I consider myself to be physically fit and capable of full participation and agree to notify the club of any changes to the medical information provided. Furthermore, I agree to abide by Redditch Hockey Club’s code of conduct for players and spectators.",
+        "help_text": "By Ticking this box you agreed that all of the above is factualy accurate",
+        "field_type": "text",
+        "required": true,
+        "active": true,
+        "sort_order": 0,
+        "category": "Declare",
+        "applies_to": [
+          "Senior"
+        ],
+        "choices": [],
+        "name": null,
+        "label": "I consider myself to be physically fit and capable of full participation and agree to notify the club of any changes to the medical information provided. Furthermore, I agree to abide by Redditch Hockey Club’s code of conduct for players and spectators."
+      },
+      {
+        "code": "school",
+        "text": "School/ College and Year",
+        "help_text": "",
+        "field_type": "text",
+        "required": true,
+        "active": true,
+        "sort_order": 0,
+        "category": "Participant Information",
+        "applies_to": [
+          "Junior"
+        ],
+        "choices": [],
+        "name": null,
+        "label": "School/ College and Year"
+      },
+      {
+        "code": "consent_loco",
+        "text": "I give my consent that if an emergency medical situation arises, the organisation/club may act as loco parentis. If the need arises for administration of first aid and/or other medical treatment which in the opinion of a qualified medical practitioner may",
+        "help_text": "",
+        "field_type": "text",
+        "required": false,
+        "active": true,
+        "sort_order": 0,
+        "category": "Consent",
+        "applies_to": [
+          "Junior"
+        ],
+        "choices": [],
+        "name": null,
+        "label": "I give my consent that if an emergency medical situation arises, the organisation/club may act as loco parentis. If the need arises for administration of first aid and/or other medical treatment which in the opinion of a qualified medical practitioner may"
+      },
+      {
+        "code": "consent_child_travel",
+        "text": "I consent to my son/daughter travelling to venues for matches and training by transport provided by the club which may include travelling in other players’ private cars",
+        "help_text": "",
+        "field_type": "text",
+        "required": false,
+        "active": true,
+        "sort_order": 0,
+        "category": "Consent",
+        "applies_to": [
+          "Junior"
+        ],
+        "choices": [],
+        "name": null,
+        "label": "I consent to my son/daughter travelling to venues for matches and training by transport provided by the club which may include travelling in other players’ private cars"
+      },
+      {
+        "code": "consent_marketing",
+        "text": "Marketing Consent - I would love to keep updated with news, events and offers from Redditch Hockey Club",
+        "help_text": "Marketing Consent",
+        "field_type": "text",
+        "required": false,
+        "active": true,
+        "sort_order": 0,
+        "category": "Consent",
+        "applies_to": [
+          "Junior",
+          "Senior"
+        ],
+        "choices": [],
+        "name": null,
+        "label": "Marketing Consent - I would love to keep updated with news, events and offers from Redditch Hockey Club"
+      },
+      {
+        "code": "code_conduct",
+        "text": "I agree to and understand to the code of conduct",
+        "help_text": "I agree to and understand to the code of conduct",
+        "field_type": "text",
+        "required": true,
+        "active": true,
+        "sort_order": 0,
+        "category": "Conduct",
+        "applies_to": [
+          "Junior",
+          "Senior"
+        ],
+        "choices": [],
+        "name": null,
+        "label": "I agree to and understand to the code of conduct"
+      },
+      {
+        "code": "occupation_senior",
+        "text": "What is your occupation?",
+        "help_text": "What is your occupation?",
+        "field_type": "text",
+        "required": false,
+        "active": true,
+        "sort_order": 0,
+        "category": "Participant Information",
+        "applies_to": [
+          "Senior"
+        ],
+        "choices": [],
+        "name": null,
+        "label": "What is your occupation?"
+      },
+      {
+        "code": "occupation_parent",
+        "text": "As a parent what is your occupation?",
+        "help_text": "As a parent what is your occupation?",
+        "field_type": "text",
+        "required": false,
+        "active": true,
+        "sort_order": 0,
+        "category": "Participant Information",
+        "applies_to": [
+          "Junior"
+        ],
+        "choices": [],
+        "name": null,
+        "label": "As a parent what is your occupation?"
+      },
+      {
+        "code": "doctors_surgery",
+        "text": "Doctors Surgery",
+        "help_text": "Doctors Surgery",
+        "field_type": "text",
+        "required": true,
+        "active": true,
+        "sort_order": 0,
+        "category": "Medical",
+        "applies_to": [
+          "Junior",
+          "Senior"
+        ],
+        "choices": [],
+        "name": null,
+        "label": "Doctors Surgery"
+      },
+      {
+        "code": "doctors_name",
+        "text": "Doctors Name",
+        "help_text": "",
+        "field_type": "text",
+        "required": true,
+        "active": true,
+        "sort_order": 0,
+        "category": "Medical",
+        "applies_to": [
+          "Junior",
+          "Senior"
+        ],
+        "choices": [],
+        "name": null,
+        "label": "Doctors Name"
+      },
+      {
+        "code": "conduct_respect",
+        "text": "I Confirm I have read and understood the above statment",
+        "help_text": "conduct Respect",
+        "field_type": "text",
+        "required": true,
+        "active": true,
+        "sort_order": 0,
+        "category": "Conduct",
+        "applies_to": [
+          "Junior",
+          "Senior"
+        ],
+        "choices": [],
+        "name": null,
+        "label": "I Confirm I have read and understood the above statment"
+      },
+      {
+        "code": "consent_photo_adult",
+        "text": "I Consent to the statment on Photography Usage",
+        "help_text": "Photo Consent Adult",
+        "field_type": "text",
+        "required": false,
+        "active": true,
+        "sort_order": 0,
+        "category": "Consent",
+        "applies_to": [
+          "Senior"
+        ],
+        "choices": [],
+        "name": null,
+        "label": "I Consent to the statment on Photography Usage"
+      },
+      {
+        "code": "consent_photo_child",
+        "text": "I Consent to the statment on Photography Usage",
+        "help_text": "Photo Consent Junior",
+        "field_type": "text",
+        "required": false,
+        "active": true,
+        "sort_order": 0,
+        "category": "Consent",
+        "applies_to": [
+          "Junior"
+        ],
+        "choices": [],
+        "name": null,
+        "label": "I Consent to the statment on Photography Usage"
+      },
+      {
+        "code": "declare_privacy",
+        "text": "I Consent to the Privacy Notice",
+        "help_text": "Privacy Notice",
+        "field_type": "text",
+        "required": true,
+        "active": true,
+        "sort_order": 0,
+        "category": "Declare",
+        "applies_to": [
+          "Junior",
+          "Senior"
+        ],
+        "choices": [],
+        "name": null,
+        "label": "I Consent to the Privacy Notice"
+      },
+      {
+        "code": "declatation_junior",
+        "text": "I consider my child to be physically fit and capable of full participation and agree to notify the club of any changes to the medical information provided. Furthermore, I agree to abide by Redditch Hockey Club’s code of conduct for parents and spectators.",
+        "help_text": "By Ticking this box you agreed that all of the above is factualy accurate",
+        "field_type": "text",
+        "required": true,
+        "active": true,
+        "sort_order": 0,
+        "category": "Declare",
+        "applies_to": [
+          "Junior"
+        ],
+        "choices": [],
+        "name": null,
+        "label": "I consider my child to be physically fit and capable of full participation and agree to notify the club of any changes to the medical information provided. Furthermore, I agree to abide by Redditch Hockey Club’s code of conduct for parents and spectators."
+      },
+      {
+        "code": "home_address_town",
+        "text": "Home Town",
+        "help_text": "Home Town",
+        "field_type": "text",
+        "required": true,
+        "active": true,
+        "sort_order": 0,
+        "category": "Participant Information",
+        "applies_to": [
+          "Junior",
+          "Senior"
+        ],
+        "choices": [],
+        "name": null,
+        "label": "Home Town"
+      },
+      {
+        "code": "home_address_postcode",
+        "text": "Post Code",
+        "help_text": "Post Code",
+        "field_type": "text",
+        "required": true,
+        "active": true,
+        "sort_order": 0,
+        "category": "Participant Information",
+        "applies_to": [
+          "Junior",
+          "Senior"
+        ],
+        "choices": [],
+        "name": null,
+        "label": "Post Code"
+      }
+    ],
+    "teams": [
+      {
+        "code": "Badgers",
+        "name": "Badgers",
+        "age_group": "",
+        "is_active": true
+      },
+      {
+        "code": "Ladies 1s",
+        "name": "Ladies 1s",
+        "age_group": "",
+        "is_active": true
+      },
+      {
+        "code": "Ladies 2s",
+        "name": "Ladies 2s",
+        "age_group": "",
+        "is_active": true
+      },
+      {
+        "code": "Mens 1s",
+        "name": "Mens 1s",
+        "age_group": "",
+        "is_active": true
+      },
+      {
+        "code": "Mens 2's",
+        "name": "Mens 2's",
+        "age_group": "",
+        "is_active": true
+      },
+      {
+        "code": "Mens 3s",
+        "name": "Mens 3s",
+        "age_group": "",
+        "is_active": true
+      },
+      {
+        "code": "Mens 4s",
+        "name": "Mens 4s",
+        "age_group": "",
+        "is_active": true
+      },
+      {
+        "code": "Under 10s",
+        "name": "Under 10s",
+        "age_group": "",
+        "is_active": true
+      },
+      {
+        "code": "Under 12s",
+        "name": "Under 12s",
+        "age_group": "",
+        "is_active": true
+      },
+      {
+        "code": "Under 8s",
+        "name": "Under 8s",
+        "age_group": "",
+        "is_active": true
+      }
+    ],
+    "team_memberships": [
+      {
+        "team": "Ladies 2s",
+        "player_public_id": "8baeeaf8-4d1d-4f27-b7f4-e4f14c146a7c",
+        "role": "",
+        "is_captain": false,
+        "start": null,
+        "end": null
+      },
+      {
+        "team": "Ladies 1s",
+        "player_public_id": "ccac48a0-27af-412d-b161-f68f29d138ff",
+        "role": "",
+        "is_captain": false,
+        "start": null,
+        "end": null
+      },
+      {
+        "team": "Mens 3s",
+        "player_public_id": "fd7c40d6-f3a7-4a75-8662-32a42c271330",
+        "role": "",
+        "is_captain": false,
+        "start": null,
+        "end": null
+      },
+      {
+        "team": "Under 10s",
+        "player_public_id": "bccbef47-a0fe-4c42-973d-73a1cdf78a65",
+        "role": "",
+        "is_captain": false,
+        "start": null,
+        "end": null
+      },
+      {
+        "team": "Ladies 2s",
+        "player_public_id": "bd2d3272-8a16-4d60-a935-b3a5e471fc5b",
+        "role": "",
+        "is_captain": false,
+        "start": null,
+        "end": null
+      },
+      {
+        "team": "Mens 2's",
+        "player_public_id": "278cdce3-cba2-47a7-89fe-213e34b27c46",
+        "role": "",
+        "is_captain": false,
+        "start": null,
+        "end": null
+      },
+      {
+        "team": "Mens 4s",
+        "player_public_id": "0b3adf11-dcdb-41a6-a043-754fd7836c5e",
+        "role": "",
+        "is_captain": false,
+        "start": null,
+        "end": null
+      },
+      {
+        "team": "Under 12s",
+        "player_public_id": "24b76930-73ba-4024-bfbe-9d2f570dfda7",
+        "role": "",
+        "is_captain": false,
+        "start": null,
+        "end": null
+      },
+      {
+        "team": "Ladies 2s",
+        "player_public_id": "af35cdcf-08b6-499c-8f8e-59c4a14705c5",
+        "role": "",
+        "is_captain": false,
+        "start": null,
+        "end": null
+      },
+      {
+        "team": "Ladies 2s",
+        "player_public_id": "b02a6bc7-35bc-45c7-94b2-68742221671d",
+        "role": "",
+        "is_captain": false,
+        "start": null,
+        "end": null
+      },
+      {
+        "team": "Mens 2's",
+        "player_public_id": "1ce4d94c-01c2-4ffd-a1ce-7625a7671d33",
+        "role": "",
+        "is_captain": false,
+        "start": null,
+        "end": null
+      },
+      {
+        "team": "Mens 4s",
+        "player_public_id": "278cdce3-cba2-47a7-89fe-213e34b27c46",
+        "role": "",
+        "is_captain": false,
+        "start": null,
+        "end": null
+      },
+      {
+        "team": "Mens 2's",
+        "player_public_id": "13160410-b883-4241-9184-4e4f3ac1617c",
+        "role": "",
+        "is_captain": false,
+        "start": null,
+        "end": null
+      }
+    ]
+  }
+}

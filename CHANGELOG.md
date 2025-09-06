@@ -40,6 +40,36 @@ Chevron aligned right, collapses on mobile, expands on md+.
 Keeps all your existing logic/permissions.
 
 -->
+## [0.5.0-beta] - 2025-09-06
+
+### Added
+- **Player export/import commands**
+  - `dump_players_seed`: export Players (with optional PlayerAnswers) to JSON
+  - `seed_players`: import Players (with optional PlayerAnswers) from JSON
+  - `--only-players` flag to skip answers (recommended for cross-env use, avoids mismatched `created_by` user IDs)
+  - `--dry-run` preview mode, `--purge` clears PlayerAnswers before import
+
+- **Memberships export/import commands**
+  - `dump_memberships_seed`: export demo seed JSON (Seasons, MembershipCategories, MembershipProducts, PaymentPlans, AddOnFees, MatchFeeTariffs; plus PlayerTypes, Positions, QuestionCategories, DynamicQuestions, Teams, TeamMemberships)
+  - `seed_memberships`: import demo seed JSON (idempotent upserts, `--dry-run`, `--purge`)
+  - Excludes Subscriptions and PlayerAnswers
+
+- **Season clone command**
+  - `clone_season`: clone products, payment plans, add-on fees, and match-fee tariffs from one season to another
+  - Flags:
+    - `--dry-run` – preview only (transaction rolled back)
+    - `--overwrite` – update existing rows to match source
+    - `--create-target` – auto-create target season (source dates +1y)
+    - `--include-inactive` – include inactive items
+
+
+### Notes
+- Players must exist before importing team memberships.
+- Match fees are mapped by `(season, sku)` — missing products in the target season will skip with a warning.
+- Use `--only-players` when moving between environments (forces users to re-enter answers).
+- Full export/import (without `--only-players`) should be limited to dev/test contexts.
+
+---
 
 ## [v0.4.0-beta] - 2025-09-06
 

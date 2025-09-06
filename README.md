@@ -60,6 +60,75 @@ python manage.py migrate
 python manage.py runserver
 ```
 
+## Memberships management commands
+
+This app ships with utilities to export/import demo data and to clone season setups.
+
+### Export demo seed:
+```bash
+python manage.py dump_memberships_seed --pretty -o seed_memberships.json
+```
+
+**Exports**:
+* Memberships: Seasons, MembershipCategories, MembershipProducts (with PaymentPlans), AddOnFees, MatchFeeTariffs
+* Members: PlayerTypes, Positions, QuestionCategories, DynamicQuestions, Teams, TeamMemberships
+  *Excludes Subscriptions and PlayerAnswer*
+
+**Import demo seed**
+```bash
+# dry run (no write)
+python manage.py seed_memberships seed_memberships.json --dry-run
+
+# import data
+python manage.py seed_memberships seed_memberships.json
+
+# purge existing before import
+python manage.py seed_memberships seed_memberships.json --purge
+```
+
+The importer is idempotent and resilient to small schema differences (auto-selects unique fields ``code/slug/name`` where appropriate). Players must already exist for team memberships to link.
+
+**Clone a season**
+Duplicate a season’s products, payment plans, add-on fees, and match-fee tariffs to another season.
+
+```bash
+# preview only
+python manage.py clone_season --from "2025/26" --to "2026/27" --create-target --dry-run
+
+# create missing rows in target
+python manage.py clone_season --from "2025/26" --to "2026/27" --create-target
+
+# also update existing rows to match source
+python manage.py clone_season --from "2025/26" --to "2026/27" --overwrite
+```
+**Flags**
+* ``--dry-run`` – preview changes (transaction rolled back)
+* ``--overwrite`` – update existing target rows
+* ``--create-target`` – auto-create the target season using source dates (+1 year)
+* ``--include-inactive`` – include inactive plans/add-ons/fees (default behavior clones them; flag is provided for explicitness)
+
+**Export / Import Players:**
+For testing and development you can round-trip Players, with an option to skip answers.
+```bash
+# Export ONLY players (no answers)
+python manage.py dump_players_seed --pretty -o seed_players.json --only-players
+
+# Import ONLY players (ignore answers even if present)
+python manage.py seed_players seed_players.json --only-players --dry-run
+python manage.py seed_players seed_players.json --only-players
+
+# Full round-trip (players + answers) for dev when you want it
+python manage.py dump_players_seed --pretty -o seed_players_full.json
+python manage.py seed_players seed_players_full.json --dry-run
+python manage.py seed_players seed_players_full.json
+```
+
+Notes:
+* ``--only-players`` is recommended across environments (avoids mismatched created_by user IDs).
+* Use full export/import (without ``--only-players``) only in dev/test contexts where PlayerAnswers should be retained.
+* ``--dry-run`` previews, ``--purge`` clears PlayerAnswers before import.
+
+
 ## 👥 Contributing
 We welcome contributions! Please read our Contributor Covenant
 
