@@ -1,4 +1,5 @@
 # consents/middleware.py
+from django.conf import settings
 from django.shortcuts import redirect
 from django.urls import resolve
 
@@ -19,6 +20,11 @@ class EnforceConsentsMiddleware:
         self.get_response = get_response
 
     def __call__(self, request):
+
+        # Skip entirely in tests/CI
+        if not getattr(settings, "ACCOUNTS_REQUIRE_CONSENT", True):
+            return self.get_response(request)
+
         if request.user.is_authenticated:
             try:
                 match = resolve(request.path_info)

@@ -314,6 +314,7 @@ SOCIALACCOUNT_PROVIDERS = {
 # ---------------------------------------------------------------------
 # Security & misc
 # ---------------------------------------------------------------------
+ACCOUNTS_REQUIRE_CONSENT = True
 X_FRAME_OPTIONS = "SAMEORIGIN"
 SILENCED_SYSTEM_CHECKS = ["security.W019"]
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"

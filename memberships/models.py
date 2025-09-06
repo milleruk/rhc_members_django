@@ -2,6 +2,7 @@ from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import QuerySet
+from django.utils import timezone
 from django.utils.timezone import localdate
 from django.utils.translation import gettext_lazy as _
 
@@ -176,6 +177,9 @@ class Subscription(models.Model):
         ("cancelled", "Cancelled"),
     )
 
+    STATUS_ACTIVE = "active"
+    STATUS_CANCELLED = "cancelled"
+
     player = models.ForeignKey(
         "members.Player", on_delete=models.CASCADE, related_name="subscriptions"
     )
@@ -240,6 +244,18 @@ class Subscription(models.Model):
         # Always align denormalised season before saving
         self.season = self.product.season
         super().save(*args, **kwargs)
+
+    def cancel(self, by_user=None, force=False):
+        """
+        Cancel the subscription. If `force=True`, allow cancelling even from ACTIVE.
+        """
+        allowed_states = {"pending", "trial", "active"}  # include active
+        if self.status in allowed_states or force:
+            self.status = self.STATUS_CANCELLED
+            self.cancelled_at = timezone.now()
+            self.save(update_fields=["status", "cancelled_at"])
+            return True
+        return False
 
 
 # === Helper ===

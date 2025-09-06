@@ -10,6 +10,7 @@ from django.db.models import BooleanField, Exists, OuterRef, Q, Value
 from django.http import Http404, HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
+from django.utils import timezone
 from django.utils.timezone import localdate
 from django.views.decorators.http import require_POST
 
@@ -334,16 +335,22 @@ def subscription_cancel(request: HttpRequest, sub_id: int) -> HttpResponse:
         raise Http404()
 
     # Server-side safety: creators can cancel pending, but only admins can cancel ACTIVE.
-    if sub.status == "active" and not _is_admin(request.user):
+    if sub.status == Subscription.STATUS_ACTIVE and not _is_admin(request.user):
         messages.error(request, "Active subscriptions can only be cancelled by a club admin.")
         return redirect("memberships:mine")
 
-    if sub.status in ["cancelled", "paused"]:
+    if sub.status in {
+        Subscription.STATUS_CANCELLED,
+        getattr(Subscription, "STATUS_PAUSED", "paused"),
+    }:
         messages.info(request, "This subscription is already not active.")
         return redirect("memberships:mine")
 
-    sub.status = "cancelled"
-    sub.save(update_fields=["status"])
+    sub.status = Subscription.STATUS_CANCELLED
+    if hasattr(sub, "cancelled_at"):
+        sub.cancelled_at = timezone.now()
+    sub.save(update_fields=["status"] + (["cancelled_at"] if hasattr(sub, "cancelled_at") else []))
+
     messages.success(
         request,
         f"Subscription for {sub.player} • {sub.product.name} ({sub.season.name}) has been cancelled.",
